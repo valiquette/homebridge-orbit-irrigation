@@ -8,7 +8,7 @@
       "properties": {
         "name": {
           "title": "Accessory Name",
-          "description": "Name for the accessory",
+          "description": "Name for this accessory",
           "type": "string",
           "required": true,
           "placeholder": "B-Hyve",
@@ -92,7 +92,7 @@
           },
         {
           "type": "help",
-          "helpvalue": "<p class='help-block'> Orbit b-hyve account login info.</p>"
+          "helpvalue": "<p class='help-block'> Orbit B-Hyve account login info.</p>"
         },
         {
           "type": "flex",

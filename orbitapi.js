@@ -34,7 +34,7 @@ OrbitAPI.prototype={
                 }
             }, 
             responseType: 'json'
-        }).catch(err => {this.log.error('Error getting API key %s', err)})
+        }).catch(err=>{this.log.error('Error getting API key %s', err)})
         this.log.debug('get token response',JSON.stringify(response.data,null,2))
         return  response
         }catch(err) {this.log.error('Error retrieving API key %s', err)}
@@ -53,7 +53,7 @@ OrbitAPI.prototype={
             'orbit-app-id': 'Bhyve Dashboard'
             },
             responseType: 'json'
-        }).catch(err => {this.log.error('Error getting devices %s', err)})
+        }).catch(err=>{this.log.error('Error getting devices %s', err)})
         this.log.debug('get devices response',JSON.stringify(response.data,null,2))
         return response
         }catch(err) {this.log.error('Error retrieving devices %s', err)}
@@ -72,7 +72,7 @@ OrbitAPI.prototype={
                 'orbit-app-id': 'Bhyve Dashboard'
                 },
                 responseType: 'json'
-            }).catch(err => {this.log.error('Error getting meshes %s', err)})
+            }).catch(err=>{this.log.error('Error getting meshes %s', err)})
             this.log.debug('get meshes response',JSON.stringify(response.data,null,2))
             return response
             }catch(err) {this.log.error('Error retrieving meshes %s', err)}
@@ -107,7 +107,7 @@ OrbitAPI.prototype={
                     ]
                   },
                 responseType: 'json'
-            }).catch(err => {this.log.error('Error getting graph %s', err)})
+            }).catch(err=>{this.log.error('Error getting graph %s', err)})
             this.log.debug('get device graphresponse',JSON.stringify(response.data,null,2))
             return response
             }catch(err) {this.log.error('Error retrieving graph %s', err)}
@@ -126,7 +126,7 @@ OrbitAPI.prototype={
                   'orbit-app-id': 'Bhyve Dashboard'
                   },
                   responseType: 'json'
-              }).catch(err => {this.log.error('Error getting scheduled %s', err)})
+              }).catch(err=>{this.log.error('Error getting scheduled %s', err)})
               this.log.debug('get timer programs response',JSON.stringify(response.data,null,2))
               return response
               }catch(err) {this.log.error('Error retrieving schedules %s', err)}
@@ -136,7 +136,7 @@ OrbitAPI.prototype={
         try { 
             this.log.debug('startZone', device.id, station, runTime);
             this.wsp.connect(token, device.id)
-                .then(ws => ws.send({
+                .then(ws=>ws.send({
                     event: "change_mode",
                     mode: "manual",
                     device_id: device.id, 
@@ -154,7 +154,7 @@ OrbitAPI.prototype={
       try { 
           this.log.debug('startZone', device.id, program);
           this.wsp.connect(token, device.id)
-              .then(ws => ws.send({
+              .then(ws=>ws.send({
                   event: "change_mode",
                   mode: "manual",
                   device_id: device.id, 
@@ -167,7 +167,7 @@ OrbitAPI.prototype={
         try { 
             this.log.debug('stopZone')
             this.wsp.connect(token, device.id)
-                .then(ws => ws.send({
+                .then(ws=>ws.send({
                     event: "change_mode",
                     mode: "manual",
                     device_id: device.id,
@@ -196,7 +196,7 @@ OrbitAPI.prototype={
             })
             this.log.debug('multiple run data',JSON.stringify(body,null,2))
             this.wsp.connect(token, mesh.bridge_device_id)
-                .then(ws => ws.send({
+                .then(ws=>ws.send({
                     event: "change_mode",
                     mode: "manual",
                     device_id: mesh.bridge_device_id,
@@ -209,7 +209,7 @@ OrbitAPI.prototype={
       try { 
           this.log.debug('stopZone')
           this.wsp.connect(token, device.id)
-              .then(ws => ws.send({
+              .then(ws=>ws.send({
                   event: "change_mode",
                   mode: "manual",
                   device_id: device.id,
@@ -223,7 +223,7 @@ OrbitAPI.prototype={
         try { 
             this.log.debug('standby')
             this.wsp.connect(token, device.id)
-                .then(ws => ws.send({
+                .then(ws=>ws.send({
                     event: "change_mode",
                     mode: mode,
                     device_id: device.id,
@@ -236,7 +236,7 @@ OrbitAPI.prototype={
         try { 
         this.log.info('Opening WebSocket Connection for %s',device.name)
         this.wsp.connect(token, device.id)
-            .then(ws => ws.send({
+            .then(ws=>ws.send({
                 name: device.name,
                 id:device.id,
                 event: "app_connection",
@@ -249,7 +249,7 @@ OrbitAPI.prototype={
         try { 
         this.log.info('Adding Event Listener for %s',device.name)
         this.wsp.connect(token, device.id)
-            .then(ws => ws.addEventListener('message', msg=>{
+            .then(ws=>ws.addEventListener('message', msg=>{
                 listner(msg.data, device.id)
             }))
         }catch(err) {this.log.error('Error configuring listener %s', err)}
@@ -259,7 +259,7 @@ OrbitAPI.prototype={
         try { 
         this.log.info('Syncing device %s info', device.name)
         this.wsp.connect(token, device.id)
-            .then(ws => ws.send({
+            .then(ws=>ws.send({
                 event: "sync",
                 device_id: device.id
             }))
@@ -276,68 +276,67 @@ class WebSocketProxy {
     }
 
     connect(token, deviceId) {
-        if (this.rws) {
-            return Promise.resolve(this.rws);
-        }
+      if (this.rws) {
+          return Promise.resolve(this.rws)
+      }
 
-        return new Promise((resolve, reject) => {
-            try {
-                this.rws = new reconnectingwebsocket(endpoint+'events', [], {
-                    WebSocket: ws,
-                    connectionTimeout: 10000,
-                    maxReconnectionDelay: 64000,
-                    minReconnectionDelay: 2000,
-                    reconnectionDelayGrowFactor: 2
-                })
+      return new Promise((resolve, reject)=>{
+        try {
+          this.rws = new reconnectingwebsocket(endpoint+'events', [], {
+              WebSocket: ws,
+              connectionTimeout: 10000,
+              maxReconnectionDelay: 64000,
+              minReconnectionDelay: 2000,
+              reconnectionDelayGrowFactor: 2
+          })
 
-                // Intercept send events for logging
-                const origSend = this.rws.send.bind(this.rws)
-                this.rws.send = (data, options, callback)=>{
-                    if (typeof data === 'object') {
-                        data = JSON.stringify(data,null,2)
-                    }
-                    this.log.debug('%s sending %s',deviceId,data)
-                    origSend(data, options, callback)
-                }
+          // Intercept send events for logging
+          const origSend = this.rws.send.bind(this.rws)
+          this.rws.send = (data, options, callback)=>{
+              if (typeof data === 'object') {
+                  data = JSON.stringify(data,null,2)
+              }
+              this.log.debug('%s sending %s',deviceId,data)
+              origSend(data, options, callback)
+          }
 
-                // Open
-                this.rws.addEventListener('open', ()=>{
-                    this.rws.send({
-                        event: 'app_connection',
-                        orbit_session_token: token,
-                        subscribe_device_id: deviceId
-                    })
-                    resolve(this.rws)
-                })
+          // Open
+          this.rws.addEventListener('open', ()=>{
+              this.rws.send({
+                  event: 'app_connection',
+                  orbit_session_token: token,
+                  subscribe_device_id: deviceId
+              })
+              resolve(this.rws)
+          })
 
-                // close
-                this.rws.addEventListener('close', msg=>{
-                    this.log.debug('recieved', JSON.parse(msg.data))
-                })
+          // close
+          this.rws.addEventListener('close', msg=>{
+              this.log.debug('connection closed', msg)
+          })
 
-                // Message
-                this.rws.addEventListener('message', msg=>{
-                    this.log.debug('recieved', JSON.parse(msg.data))
-                })
+          // Message
+          this.rws.addEventListener('message', msg=>{
+              this.log.debug('recieved message', JSON.parse(msg.data))
+          })
 
-                // Error
-                this.rws.addEventListener('error', msg=>{
-                    this.log.error('WebSocket Error', msg)
-                    this.rws.close()
-                    reject(msg)
-                })
+          // Error
+          this.rws.addEventListener('error', msg=>{
+              this.log.error('WebSocket Error', msg)
+              this.rws.close()
+              reject(msg)
+          })
 
-                // Ping
-                this.ping = setInterval(()=>{
-                this.rws.send({ event: 'ping' })
+          // Ping
+          this.ping = setInterval(()=>{
+            this.rws.send({ event: 'ping' })
             }, Math.floor(Math.random()*(maxPingInterval-minPingInterval))+minPingInterval)
-            }
-
-            catch (error) {
-                // Will not execute
-                this.log.error('caught', error.message);
-            };
-        });
+        
+          }catch (error) {
+            // Will not execute
+            this.log.error('caught', error.message);
+          }
+      })
     }
 }
 

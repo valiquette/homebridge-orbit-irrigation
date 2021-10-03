@@ -10,14 +10,14 @@ Orbit B-Hyve Irrigation System platform plugin for [Homebridge](https://github.c
 This plugin provides 3 options for use in HomeKit<br>Both option have additional switches as options for Standby/Off mode and a Run All across all devices along with any B-Hyve Schedules
 1.	Irrigation System Accessory with zones that are linked (default in configuration)
 2.	Irrigation System Accessory with separate zones shown as a single tile 
-3.	Irrigation System Accessory with separate zones shown as a separate tiles (option in Homekit)
+3.	Irrigation System Accessory with separate zones shown as a separate tiles (option in HomeKit)
 
 <br> There are plus and minus to each, so why not have options.
-<br> if you have more than one home on your B-Hyve account you may filter a home based on the street address for the location you want to display in Homekit.
+<br> if you have more than one home on your B-Hyve account you may filter devices for a home based on the street address for the location you want to display in HomeKit.
 
 ## Note on testing
 
-This plugin has only be tested against multiple hose timers. It should still work with multi zone controllers, feedback on those devices is welcome.
+This plugin has only be tested against multiple hose timers. It may still work with multi zone controllers. Feedback on those devices is welcome.
 
 ## Installation
 1. Install this plugin using: npm install -g homebridge-orbit-irrigation
