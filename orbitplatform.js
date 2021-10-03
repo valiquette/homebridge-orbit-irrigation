@@ -146,6 +146,9 @@ class PlatformOrbit {
                 uuid=UUIDGen.generate(newDevice.id)
                 //Remove cached accessory
                 this.log.debug('Removed cached device')
+                if(this.accessories[uuid]){
+                  this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
+                  //delete this.accessories[uuid]
                 this.log.debug('Creating and configuring new bridge')
                 
                 // Create and configure Bridge Service
@@ -170,10 +173,6 @@ class PlatformOrbit {
                 else{
                   this.log.info('Skipping Bridge')
                   //Remove cached accessory
-                  this.log.debug('Removed cached device')
-                  if(this.accessories[uuid]){
-                    this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
-                    //delete this.accessories[uuid]
                   }
                 }
               this.orbitapi.getMeshes(this.token,newDevice.mesh_id).then(response=>{
