@@ -766,8 +766,7 @@ class PlatformOrbit {
       }
     return
     }catch(err){
-      If(eventType == undefined)
-        {
+      if(eventType == undefined){
           eventType=err
           this.log.warn(message)
         }
