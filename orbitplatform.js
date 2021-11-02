@@ -765,7 +765,15 @@ class PlatformOrbit {
         }
       }
     return
-    }catch(err){this.log.error('Error updating service %s', err)}
+    }catch(err){
+      if(eventType == undefined){
+          eventType=err
+          this.log.warn(message)
+        }
+      this.log.error('Error updating service %s',eventType)
+    }
+    //}catch(err){this.log.error('Error updating service %s', eventType)}
+    //}catch(err){this.log.error('Error updating service %s', err)}
   }
 }
 
