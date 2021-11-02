@@ -3,7 +3,8 @@
 ## 1.0.3
 Fix
 -   Fixed a bug in error messaging when updating service with a bad message.
--   Bummped dependancy revs.
+-   Bummped nodejs dependancy to current LTS revs.
+-   Bummped homebridge dependancy to 1.3.5
 
 ## 1.0.2
 Fix
