@@ -84,23 +84,30 @@ class PlatformOrbit {
                   delete this.accessories[uuid]
                 }
                 let switchService
+
                 // Create and configure Irrigation Service
                 this.log.debug('Creating and configuring new device')                
                 let irrigationAccessory=this.createIrrigationAccessory(newDevice,uuid)
                 this.configureIrrigationService(newDevice,irrigationAccessory.getService(Service.IrrigationSystem))
                 
-                // Create and configure Battery Service
-                let batteryService=this.createBatteryService(newDevice)
-                this.configureBatteryService(batteryService)
-                irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(batteryService)
-                irrigationAccessory.addService(batteryService)
-                
+                // Create and configure Battery Service if needed
+                if(newDevice.battery!=null){
+                  this.log.info('Adding battery service for %s on hardware version %s', newDevice.name, newDevice.hardware_version)
+                  let batteryService=this.createBatteryService(newDevice)
+                  this.configureBatteryService(batteryService)
+                  irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(batteryService)
+                  irrigationAccessory.addService(batteryService)
+                }
+                else {
+                  this.log.info('%s on hardware version %s has no battery found, skipping add battery service', newDevice.name, newDevice.hardware_version)
+                }
+
                 // Create and configure Values services and link to Irrigation Service
                 newDevice.zones=newDevice.zones.sort(function (a, b){
                   return a.station - b.station
                 })
                 newDevice.zones.forEach((zone)=>{
-                  if(!this.useIrrigationDisplay && !zone.enabled){// need orbit version of enabled
+                  if(!this.useIrrigationDisplay && !zone.enabled){ // need orbit version of enabled
                     this.log.info('Skipping disabled zone %s',zone.name )
                   }
                   else {
@@ -766,10 +773,13 @@ class PlatformOrbit {
       }
     return
     }catch(err){
-      if(eventType == undefined){
-          eventType=err
-          this.log.warn(message)
+      this.log.warn(message) //temp
+      this.log.error('Error un-expected message')
+      if(eventType == null){ 
+    //if(eventType == undefined){
+          eventType="unknown"
         }
+      this.log.error('Error un-expected message')
       this.log.error('Error updating service %s',eventType)
     }
     //}catch(err){this.log.error('Error updating service %s', eventType)}

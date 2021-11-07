@@ -1,5 +1,10 @@
 # Changes
 
+## 1.0.4 beta
+Update
+-   Added verified badge to readme.
+-   Random error fixes.
+
 ## 1.0.3
 Fix
 -   Fixed a bug in error messaging when updating service with a bad message.
