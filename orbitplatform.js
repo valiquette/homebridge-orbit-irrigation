@@ -19,6 +19,7 @@ class PlatformOrbit {
     this.password=config.password
     this.token
     this.useIrrigationDisplay=config.useIrrigationDisplay
+    this.displayValveType=config.displayValveType
     this.defaultRuntime=config.defaultRuntime*60
     this.showStandby=config.showStandby
     this.showRunall=config.showRunall
@@ -27,6 +28,7 @@ class PlatformOrbit {
     this.locationMatch=true
     this.showBridge=config.showRunall
     this.showIncomingMessages=false
+    this.showOutgoingMessages=false
     this.lastMessage
     this.meshNetwork
     this.deviceGraph
@@ -107,7 +109,8 @@ class PlatformOrbit {
                   return a.station - b.station
                 })
                 newDevice.zones.forEach((zone)=>{
-                  if(!this.useIrrigationDisplay && !zone.enabled){ // need orbit version of enabled
+                  zone.enabled=true // need orbit version of enabled
+                  if(!this.useIrrigationDisplay && !zone.enabled){ 
                     this.log.info('Skipping disabled zone %s',zone.name )
                   }
                   else {
@@ -115,14 +118,15 @@ class PlatformOrbit {
                     let valveService=this.createValveService(newDevice)
                     this.configureValveService(newDevice, valveService)
                     if(this.useIrrigationDisplay){
-                      this.log.debug('Using irrigation system')
-                      irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(valveService) 
+                      this.log.warn('Using irrigation system')
+                      irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(valveService)
+                      irrigationAccessory.addService(valveService) 
                     }
                     else{
-                      this.log.debug('Using separate tiles')
+                      this.log.warn('Using separate tiles')
                       irrigationAccessory.getService(Service.IrrigationSystem)
+                      irrigationAccessory.addService(valveService)
                     }
-                    irrigationAccessory.addService(valveService)
                   }
                 })
                 if(this.showSchedules){
@@ -189,7 +193,7 @@ class PlatformOrbit {
               this.orbitapi.getDeviceGraph(this.token,newDevice.user_id).then(response=>{
                 this.log.debug('Found device graph for',response.data)
                 this.deviceGraph=response.data
-                this.setOnlineStatus(this.deviceGraph)
+                  this.setOnlineStatus(this.deviceGraph)
               })
               break
             }
@@ -287,6 +291,10 @@ class PlatformOrbit {
   }
   
   createValveService(device){
+    //Characteristic.ValveType.GENERIC_VALVE=0
+    //Characteristic.ValveType.IRRIGATION=1
+    //Characteristic.ValveType.SHOWER_HEAD=2
+    //Characteristic.ValveType.WATER_FAUCET=3
     this.log.debug("Created service for %s with id %s", device.name, device.id)
     // Create Valve Service
     let valve=new Service.Valve(device.name, device.id)
@@ -294,11 +302,10 @@ class PlatformOrbit {
     valve.addCharacteristic(Characteristic.SerialNumber) //Use Serial Number to store the zone id
     valve.addCharacteristic(Characteristic.Model)
     valve.addCharacteristic(Characteristic.ConfiguredName)
-    //valve.getCharacteristic(Characteristic.SetDuration).setProps({minValue:60, maxValue:3600, minStep:1, validValues:[60,180,300,600,1200]})
     valve
       .setCharacteristic(Characteristic.Active, Characteristic.Active.INACTIVE)
       .setCharacteristic(Characteristic.InUse, Characteristic.InUse.NOT_IN_USE)
-      .setCharacteristic(Characteristic.ValveType, Characteristic.ValveType.IRRIGATION)
+      .setCharacteristic(Characteristic.ValveType, this.displayValveType)
       .setCharacteristic(Characteristic.SetDuration, this.defaultRuntime)
       .setCharacteristic(Characteristic.RemainingDuration, 0)
       .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
@@ -608,23 +615,27 @@ class PlatformOrbit {
   }
 
   setOnlineStatus(graph){
-    //set current device status  
-    graph.devices.forEach((device)=>{
-      if(device.type=="sprinkler_timer"){
-        this.log.debug('device %s offline',device.name)
-        let uuid=UUIDGen.generate(device.id)
-        let irrigationAccessory=this.accessories[uuid]
-        let service=irrigationAccessory.getServiceById(Service.Valve, device.id)
-        service.getCharacteristic(Characteristic.StatusFault).updateValue(!device.is_connected)
-      }
-    }) 
+    //set current device status 
+    try{
+      graph.devices.forEach((device)=>{
+        if(device.type=="sprinkler_timer"){
+          this.log.debug('device %s offline',device.name)
+          let uuid=UUIDGen.generate(device.id)
+          let irrigationAccessory=this.accessories[uuid]
+          let service=irrigationAccessory.getServiceById(Service.Valve, device.id)
+          service.getCharacteristic(Characteristic.StatusFault).updateValue(!device.is_connected)
+        }
+      }) 
+    }catch(err){this.log.error('Error updating Online status %s', err)}
   } 
 
   updateService(message){
     try{
       let jsonBody=JSON.parse(message)
+      let eventType="unknown"
       let deviceName=this.deviceGraph.devices.filter( result=>result.id == jsonBody.device_id)[0].name
-      let eventType=this.deviceGraph.devices.filter( result=>result.id == jsonBody.device_id)[0].type
+      //let eventType=this.deviceGraph.devices.filter( result=>result.id == jsonBody.device_id)[0].type
+      eventType=this.deviceGraph.devices.filter( result=>result.id == jsonBody.device_id)[0].type
       let activeService
       let uuid=UUIDGen.generate(jsonBody.device_id)
       /*****************************
@@ -775,10 +786,10 @@ class PlatformOrbit {
     }catch(err){
       this.log.warn(message) //temp
       this.log.error('Error un-expected message')
-      if(eventType == null){ 
-    //if(eventType == undefined){
-          eventType="unknown"
-        }
+    //  if(eventType == null){ 
+    ////if(eventType == undefined){
+    //      eventType="unknown"
+    //    }
       this.log.error('Error un-expected message')
       this.log.error('Error updating service %s',eventType)
     }
