@@ -1,5 +1,17 @@
 # Changes
 
+## 1.0.5
+Fix
+-   Fix error starting if not using irrigation display
+-   Minor updates
+-   Code cleanup
+-   Added option to show valve as spigot
+
+## 1.0.4 beta
+Update
+-   Added verified badge to readme.
+-   Random error fixes.
+
 ## 1.0.3
 Fix
 -   Fixed a bug in error messaging when updating service with a bad message.

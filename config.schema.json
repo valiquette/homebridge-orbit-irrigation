@@ -46,7 +46,32 @@
             "type": "boolean",
             "required": true,
             "default": true
+            }, 
+        "displayValveType": {
+          "title": "Display Valves as",
+          "type": "integer",
+          "required": true,
+          "default": 0,
+          "description": "Select valve type to display when irrgation display is unchecked.",
+          "oneOf": [
+            {
+              "title": "Spigot",
+              "enum": [0]
             },
+            {
+              "title": "Irrigation",
+              "enum": [1]
+            },
+            {
+              "title": "Facuet",
+              "enum": [2]
+            },
+            {
+              "title": "Shower",
+              "enum": [3]
+            }
+          ]
+        },  
         "showStandby": {
           "title": "Expose switch for controller standby",
           "description": "Exposes off mode switch, when turned on all schedules from B-hyve will be disabled.",
@@ -121,6 +146,12 @@
           "flex-flow": "row wrap",
           "items": [
             "useIrrigationDisplay"
+          ]
+        },
+        {
+          "type": "flex",
+          "items": [
+            "displayValveType"
           ]
         },
         {
