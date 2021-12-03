@@ -72,6 +72,13 @@
             }
           ]
         },  
+        "showBridge": {
+          "title": "Expose bridge",
+          "description": "Exposes WiFi bridge configuration. May show as unsupportted in HomeKit.",
+          "type": "boolean",
+          "required": true,
+          "default": false
+        },
         "showStandby": {
           "title": "Expose switch for controller standby",
           "description": "Exposes off mode switch, when turned on all schedules from B-hyve will be disabled.",
@@ -160,6 +167,7 @@
           "description": "Expand to expose additonal switches",
           "expandable": true,
           "items": [
+            "showBridge",
             "showStandby",
             "showSchedules",
             "showRunall"
