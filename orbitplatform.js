@@ -26,7 +26,7 @@ class PlatformOrbit {
     this.showSchedules=config.showSchedules
     this.locationAddress=config.locationAddress
     this.locationMatch=true
-    this.showBridge=config.showRunall
+    this.showBridge=config.showBridge
     this.showIncomingMessages=false
     this.showOutgoingMessages=false
     this.lastMessage
@@ -118,12 +118,12 @@ class PlatformOrbit {
                     let valveService=this.createValveService(newDevice)
                     this.configureValveService(newDevice, valveService)
                     if(this.useIrrigationDisplay){
-                      this.log.warn('Using irrigation system')
+                      this.log.debug('Using irrigation system')
                       irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(valveService)
                       irrigationAccessory.addService(valveService) 
                     }
                     else{
-                      this.log.warn('Using separate tiles')
+                      this.log.debug('Using separate tiles')
                       irrigationAccessory.getService(Service.IrrigationSystem)
                       irrigationAccessory.addService(valveService)
                     }
@@ -159,9 +159,9 @@ class PlatformOrbit {
                 this.log.debug('Removed cached device')
                 if(this.accessories[uuid]){
                   this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
-                  //delete this.accessories[uuid]
-                this.log.debug('Creating and configuring new bridge')
-                
+                  delete this.accessories[uuid]///uncommented for test
+                }
+                this.log.debug('Creating and configuring new bridge')               
                 // Create and configure Bridge Service
                 let bridgeAccessory=this.createBridgeAccessory(newDevice,uuid)
                 let bridgeService=bridgeAccessory.getService(Service.BridgeConfiguration)
@@ -169,8 +169,8 @@ class PlatformOrbit {
                 this.configureBridgeService(bridgeService)
                 bridgeAccessory.addService(bridgeService)
                 this.accessories[uuid]=bridgeAccessory                    
-                if(this.showBridge){
-                  this.log.info('Adding Bridge')
+                if(this.showBridge || this.showRunall){
+                  this.log.info('Adding Bridge Configuration')
                   if(this.showRunall){
                     this.log.debug('adding new run all switch')
                     let switchService=this.createSwitchService(newDevice,' Run All')
@@ -180,12 +180,10 @@ class PlatformOrbit {
                     }
                   this.log.debug('Registering platform accessory')
                   this.api.registerPlatformAccessories(PluginName, PlatformName, [bridgeAccessory])
-                }
-                else{
-                  this.log.info('Skipping Bridge')
-                  //Remove cached accessory
                   }
-                }
+                else{
+                  this.log.info('Skipping Bridge Configuration')
+                  }
               this.orbitapi.getMeshes(this.token,newDevice.mesh_id).then(response=>{
                 this.log.debug('Found mesh netowrk for',response.data.name)
                 this.meshNetwork=response.data
@@ -632,10 +630,8 @@ class PlatformOrbit {
   updateService(message){
     try{
       let jsonBody=JSON.parse(message)
-      let eventType="unknown"
       let deviceName=this.deviceGraph.devices.filter( result=>result.id == jsonBody.device_id)[0].name
-      //let eventType=this.deviceGraph.devices.filter( result=>result.id == jsonBody.device_id)[0].type
-      eventType=this.deviceGraph.devices.filter( result=>result.id == jsonBody.device_id)[0].type
+      let eventType=this.deviceGraph.devices.filter( result=>result.id == jsonBody.device_id)[0].type
       let activeService
       let uuid=UUIDGen.generate(jsonBody.device_id)
       /*****************************
@@ -760,16 +756,20 @@ class PlatformOrbit {
         }
       break
       case "bridge":
-        let bridgeAccessory=this.accessories[uuid] 
-        let bridgeService=bridgeAccessory.getService(Service.BridgeConfiguration)
+        let bridgeAccessory
+        let bridgeService
+        if(this.showBridge || this.showRunall){
+          bridgeAccessory=this.accessories[uuid] 
+          bridgeService=bridgeAccessory.getService(Service.BridgeConfiguration)
+        }
         switch (jsonBody.event){   
           case "device_connected":
             this.log.info('%s connected at %s',deviceName,new Date(jsonBody.timestamp).toString())
-            bridgeService.getCharacteristic(Characteristic.DiscoverBridgedAccessories).updateValue(true)
+            if(this.showBridge || this.showRunall){bridgeService.getCharacteristic(Characteristic.DiscoverBridgedAccessories).updateValue(true)}
           break
           case "device_disconnected":
             this.log.warn('%s disconnected at %s This will show as non-responding in Homekit until the connection is restored',deviceName,jsonBody.timestamp)
-            bridgeService.getCharacteristic(Characteristic.DiscoverBridgedAccessories).updateValue(false)
+            if(this.showBridge || this.showRunall){bridgeService.getCharacteristic(Characteristic.DiscoverBridgedAccessories).updateValue(false)}
           break
           default:
             this.log.warn('Unknown bridge message received: %s',jsonBody.event);
@@ -779,22 +779,11 @@ class PlatformOrbit {
           break
           case "change_mode":
             //do nothing
-          break
+          break 
         }
       }
     return
-    }catch(err){
-      this.log.warn(message) //temp
-      this.log.error('Error un-expected message')
-    //  if(eventType == null){ 
-    ////if(eventType == undefined){
-    //      eventType="unknown"
-    //    }
-      this.log.error('Error un-expected message')
-      this.log.error('Error updating service %s',eventType)
-    }
-    //}catch(err){this.log.error('Error updating service %s', eventType)}
-    //}catch(err){this.log.error('Error updating service %s', err)}
+    }catch(err){this.log.error('Error updating service %s', err)}
   }
 }
 

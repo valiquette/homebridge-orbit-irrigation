@@ -1,5 +1,9 @@
 # Changes
 
+## 1.0.
+Fix
+-   Fix error that coudl cause plugin to crash and restart after restoring network connection when no additional switches are configured.
+
 ## 1.0.5
 Fix
 -   Fix error starting if not using irrigation display
