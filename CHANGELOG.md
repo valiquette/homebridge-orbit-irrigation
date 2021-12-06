@@ -3,7 +3,7 @@
 ## 1.0.7 beta
 Fix
 -   Initial build for multi zone Water Timers
--   Suppressed loggin pings to avoid filling up log file
+-   Suppressed logging pings to avoid filling up the log file
 -   Changed some of the logging text
 -   fixed HomeKit sync issue when timer expires
 
