@@ -1,8 +1,15 @@
 # Changes
 
-## 1.0.
+## 1.0.7 beta
 Fix
--   Fix error that coudl cause plugin to crash and restart after restoring network connection when no additional switches are configured.
+-   Initial build for multi zone Water Timers
+-   Suppressed loggin pings to avoid filling up log file
+-   Changed some of the logging text
+-   fixed HomeKit sync issue when timer expires
+
+## 1.0.6
+Fix
+-   Fix error that could cause plugin to crash and restart after restoring network connection when no additional switches are configured.
 
 ## 1.0.5
 Fix
