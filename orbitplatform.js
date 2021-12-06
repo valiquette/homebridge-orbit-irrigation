@@ -59,16 +59,22 @@ class PlatformOrbit {
       this.log.info('Found account for',response.data.user_name)
       this.log.debug('Found token',response.data.orbit_api_key)  
       this.token=response.data.orbit_api_key
+      
+      this.orbitapi.getDeviceGraph(this.token,response.data.user_id).then(response=>{
+        this.log.debug('Found device graph for user id %s, %s',response.data.user_id,response.data)
+        this.deviceGraph=response.data
+        this.setOnlineStatus(this.deviceGraph)
+      })
+        
         // get an array of the devices
-
         this.orbitapi.getDevices(this.token).then(response=>{
           response.data.filter((device)=>{
             if(!this.locationAddress || this.locationAddress==device.address.line_1){  
-              this.log.info('Adding device %s found at the configured location: %s',device.name,device.address.line_1)
+              this.log.info('Adding %s device %s found at the configured location: %s',device.hardware_version,device.name,device.address.line_1)
               this.locationMatch=true
             }
             else{
-              this.log.info('Skipping device %s at %s, not found at the configured location: %s',device.name,device.address.line_1,this.locationAddress)
+              this.log.info('Skipping %s device %s at %s, not found at the configured location: %s',device.hardware_version,device.name,device.address.line_1,this.locationAddress)
               this.locationMatch=false
             }
             return this.locationMatch
@@ -81,11 +87,11 @@ class PlatformOrbit {
                 
                 //Remove cached accessory
                 this.log.debug('Removed cached device')
+                let switchService
                 if(this.accessories[uuid]){
                   this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
                   delete this.accessories[uuid]
                 }
-                let switchService
 
                 // Create and configure Irrigation Service
                 this.log.debug('Creating and configuring new device')                
@@ -94,14 +100,16 @@ class PlatformOrbit {
                 
                 // Create and configure Battery Service if needed
                 if(newDevice.battery!=null){
-                  this.log.info('Adding battery service for %s on hardware version %s', newDevice.name, newDevice.hardware_version)
+                  this.log.info('Adding battery service for %s', newDevice.name)
+                  //this.log.info('Adding battery service for %s on hardware version %s', newDevice.name, newDevice.hardware_version)
                   let batteryService=this.createBatteryService(newDevice)
                   this.configureBatteryService(batteryService)
                   irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(batteryService)
                   irrigationAccessory.addService(batteryService)
                 }
                 else {
-                  this.log.info('%s on hardware version %s has no battery found, skipping add battery service', newDevice.name, newDevice.hardware_version)
+                  this.log.info('%s has no battery found, skipping add battery service', newDevice.name)
+                  //this.log.info('%s on hardware version %s has no battery found, skipping add battery service', newDevice.name, newDevice.hardware_version)
                 }
 
                 // Create and configure Values services and link to Irrigation Service
@@ -161,8 +169,9 @@ class PlatformOrbit {
                   this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
                   delete this.accessories[uuid]///uncommented for test
                 }
-                this.log.debug('Creating and configuring new bridge')               
+
                 // Create and configure Bridge Service
+                this.log.debug('Creating and configuring new bridge')                        
                 let bridgeAccessory=this.createBridgeAccessory(newDevice,uuid)
                 let bridgeService=bridgeAccessory.getService(Service.BridgeConfiguration)
                 bridgeService=this.createBridgeService(newDevice)
@@ -184,17 +193,13 @@ class PlatformOrbit {
                 else{
                   this.log.info('Skipping Bridge Configuration')
                   }
-              this.orbitapi.getMeshes(this.token,newDevice.mesh_id).then(response=>{
-                this.log.debug('Found mesh netowrk for',response.data.name)
-                this.meshNetwork=response.data
-              })
-              this.orbitapi.getDeviceGraph(this.token,newDevice.user_id).then(response=>{
-                this.log.debug('Found device graph for',response.data)
-                this.deviceGraph=response.data
-                  this.setOnlineStatus(this.deviceGraph)
-              })
               break
             }
+
+            this.orbitapi.getMeshes(this.token,newDevice.mesh_id).then(response=>{
+              this.log.debug('Found mesh netowrk for',response.data.name)
+              this.meshNetwork=response.data
+            })
             this.log.debug('establish connection for %s',newDevice.name)
             this.orbitapi.openConnection(this.token, newDevice)
             this.orbitapi.onMessage(this.token, newDevice, this.updateService.bind(this))
@@ -617,7 +622,7 @@ class PlatformOrbit {
     try{
       graph.devices.forEach((device)=>{
         if(device.type=="sprinkler_timer"){
-          this.log.debug('device %s offline',device.name)
+          this.log.debug('device %s connected=%s',device.name, device.is_connected)
           let uuid=UUIDGen.generate(device.id)
           let irrigationAccessory=this.accessories[uuid]
           let service=irrigationAccessory.getServiceById(Service.Valve, device.id)
@@ -667,7 +672,8 @@ class PlatformOrbit {
             irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
             activeService=irrigationAccessory.getServiceById(Service.Valve, jsonBody.device_id)
             if(activeService){
-              activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.ACTIVE)
+              //activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.ACTIVE)
+              activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
               activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
             }
           break

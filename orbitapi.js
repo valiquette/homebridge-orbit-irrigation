@@ -62,7 +62,7 @@ OrbitAPI.prototype={
     getMeshes: async function(token,meshId){
         // Get mesh details
         try {  
-            this.log.info('Retrieving devices')
+            this.log.info('Retrieving mesh info')
             const response = await axios({
                 method: 'get',
                 url: endpoint + 'meshes/'+meshId,
@@ -72,16 +72,16 @@ OrbitAPI.prototype={
                 'orbit-app-id': 'Bhyve Dashboard'
                 },
                 responseType: 'json'
-            }).catch(err=>{this.log.error('Error getting meshes %s', err)})
-            this.log.debug('get meshes response',JSON.stringify(response.data,null,2))
+            }).catch(err=>{this.log.error('Error getting mesh info %s', err)})
+            this.log.debug('get mesh info response',JSON.stringify(response.data,null,2))
             return response
-            }catch(err) {this.log.error('Error retrieving meshes %s', err)}
+            }catch(err) {this.log.error('Error retrieving mesh info %s', err)}
         },
 
       getDeviceGraph: async function(token,userId){
         // Get device graph details
         try {  
-            this.log.info('Retrieving device info')
+            this.log.info('Retrieving device graph info')
             const response = await axios({
                 method: 'post',
                 url: endpoint + 'graph2',
@@ -108,7 +108,7 @@ OrbitAPI.prototype={
                   },
                 responseType: 'json'
             }).catch(err=>{this.log.error('Error getting graph %s', err)})
-            this.log.debug('get device graphresponse',JSON.stringify(response.data,null,2))
+            this.log.debug('get device graph response',JSON.stringify(response.data,null,2))
             return response
             }catch(err) {this.log.error('Error retrieving graph %s', err)}
         }, 
@@ -293,12 +293,13 @@ class WebSocketProxy {
           // Intercept send events for logging
           const origSend = this.rws.send.bind(this.rws)
           this.rws.send = (data, options, callback)=>{
-              if (typeof data === 'object') {
+            if (typeof data === 'object') {
                   data = JSON.stringify(data,null,2)
               }
-              //temp to supress ping info from filling debug log
-              if (data!= {event: 'ping'}){ 
-                this.log.debug('%s sending %s',deviceId,data) 
+              //supress ping info from filling debug log 
+              //this.log.debug(JSON.parse(data).event)
+              if (JSON.parse(data).event!= 'ping'){ 
+                this.log.debug('%s sending %s', deviceId, data) 
               }
               origSend(data, options, callback)
           }
