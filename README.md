@@ -18,7 +18,7 @@ This plugin provides 3 options for use in HomeKit<br>Both option have additional
 
 ## Note on testing
 
-This plugin has only be tested against multiple hose timers. It may still work with multi zone controllers. Feedback on those devices is welcome.
+This plugin has only be tested against hardware types BH1-0001, HT25-0000 and WG25G2-0001. It may still work with hardware models. Feedback on those devices is welcome.
 
 ## Installation
 1. Install this plugin using: npm install -g homebridge-orbit-irrigation
@@ -34,11 +34,14 @@ This plugin has only be tested against multiple hose timers. It may still work w
             "name": "B-Hyve",
             "email": "username@mail.com",
             "password": "password",
+           "locationAddress": "123 Easy St",
             "defaultRuntime": 1,
             "useIrrigationDisplay": true,
+            "displayValveType": 1,
+            "showBridge": false,
             "showStandby": false,
             "showRunall": false,
-            "showSchedules": false
+            "showSchedules": false,
             "_bridge": {
                 "username": "0E:76:36:78:EC:92",
                 "port": 30395

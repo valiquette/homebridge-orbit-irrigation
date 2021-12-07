@@ -18,6 +18,7 @@ class PlatformOrbit {
     this.email=config.email
     this.password=config.password
     this.token
+    this.userId
     this.useIrrigationDisplay=config.useIrrigationDisplay
     this.displayValveType=config.displayValveType
     this.defaultRuntime=config.defaultRuntime*60
@@ -30,6 +31,7 @@ class PlatformOrbit {
     this.showIncomingMessages=false
     this.showOutgoingMessages=false
     this.lastMessage
+    this.activeZone
     this.meshNetwork
     this.deviceGraph
     this.accessories=[]
@@ -53,24 +55,27 @@ class PlatformOrbit {
   getDevices(){
     this.log.debug('Fetching build info...')
     this.log.info('Getting Account info...')
-    let uuid
     // login to the API and get the token
     this.orbitapi.getToken(this.email,this.password).then(response=>{
       this.log.info('Found account for',response.data.user_name)
       this.log.debug('Found token',response.data.orbit_api_key)  
       this.token=response.data.orbit_api_key
-      
-      this.orbitapi.getDeviceGraph(this.token,response.data.user_id).then(response=>{
-        this.log.debug('Found device graph for user id %s, %s',response.data.user_id,response.data)
+      this.userId=response.data.user_id  
+      this.orbitapi.getDeviceGraph(this.token,this.userId).then(response=>{
+        this.log.debug('Found device graph for user id %s, %s',this.userId,response.data)
         this.deviceGraph=response.data
-        this.setOnlineStatus(this.deviceGraph)
       })
-        
         // get an array of the devices
         this.orbitapi.getDevices(this.token).then(response=>{
           response.data.filter((device)=>{
             if(!this.locationAddress || this.locationAddress==device.address.line_1){  
-              this.log.info('Adding %s device %s found at the configured location: %s',device.hardware_version,device.name,device.address.line_1)
+              //this.log.info('Adding %s device %s found at the configured location: %s',device.hardware_version,device.name,device.address.line_1)
+              if(device.is_connected){
+                this.log.info('Adding online %s device %s found at the configured location: %s',device.hardware_version,device.name,device.address.line_1)
+              }
+              else{
+                this.log.info('Adding offline %s device %s found at the configured location: %s',device.hardware_version,device.name,device.address.line_1)
+              }
               this.locationMatch=true
             }
             else{
@@ -79,12 +84,12 @@ class PlatformOrbit {
             }
             return this.locationMatch
           }).forEach((newDevice)=>{
+            //adding devices that met filter criteria
+            this.log.debug('Found device %s with status %s',newDevice.name,newDevice.status.run_mode)
+            let uuid=UUIDGen.generate(newDevice.id)
             switch (newDevice.type){
               case "sprinkler_timer":
-                this.log.info('Adding Sprinkler Timer')
-                // Generate irrigation service uuid
-                uuid=UUIDGen.generate(newDevice.id)
-                
+                this.log.debug('Adding Device Sprinkler Timer')
                 //Remove cached accessory
                 this.log.debug('Removed cached device')
                 let switchService
@@ -92,123 +97,127 @@ class PlatformOrbit {
                   this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
                   delete this.accessories[uuid]
                 }
+              // Create and configure Irrigation Service
+              this.log.debug('Creating and configuring new device')                
+              let irrigationAccessory=this.createIrrigationAccessory(newDevice,uuid)
+              let irrigationSystemService=irrigationAccessory.getService(Service.IrrigationSystem)
+              this.configureIrrigationService(newDevice,irrigationSystemService)
+              
+              //set current device status 
+              irrigationSystemService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
 
-                // Create and configure Irrigation Service
-                this.log.debug('Creating and configuring new device')                
-                let irrigationAccessory=this.createIrrigationAccessory(newDevice,uuid)
-                this.configureIrrigationService(newDevice,irrigationAccessory.getService(Service.IrrigationSystem))
-                
-                // Create and configure Battery Service if needed
-                if(newDevice.battery!=null){
-                  this.log.info('Adding battery service for %s', newDevice.name)
-                  //this.log.info('Adding battery service for %s on hardware version %s', newDevice.name, newDevice.hardware_version)
-                  let batteryService=this.createBatteryService(newDevice)
-                  this.configureBatteryService(batteryService)
-                  irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(batteryService)
-                  irrigationAccessory.addService(batteryService)
+              // Create and configure Battery Service if needed
+              if(newDevice.battery!=null){
+                this.log.info('Adding battery service for %s', newDevice.name)
+                let batteryService=this.createBatteryService(newDevice)
+                this.configureBatteryService(batteryService)
+                irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(batteryService)
+                irrigationAccessory.addService(batteryService)
+              }
+              else {
+                this.log.debug('%s has no battery found, skipping add battery service', newDevice.name)
+              }
+
+              // Create and configure Values services and link to Irrigation Service
+              newDevice.zones=newDevice.zones.sort(function (a, b){
+                return a.station - b.station
+              })
+              newDevice.zones.forEach((zone)=>{
+                zone.enabled=true // need orbit version of enabled
+                if(!this.useIrrigationDisplay && !zone.enabled){ 
+                  this.log.info('Skipping disabled zone %s',zone.name )
                 }
                 else {
-                  this.log.info('%s has no battery found, skipping add battery service', newDevice.name)
-                  //this.log.info('%s on hardware version %s has no battery found, skipping add battery service', newDevice.name, newDevice.hardware_version)
-                }
-
-                // Create and configure Values services and link to Irrigation Service
-                newDevice.zones=newDevice.zones.sort(function (a, b){
-                  return a.station - b.station
-                })
-                newDevice.zones.forEach((zone)=>{
-                  zone.enabled=true // need orbit version of enabled
-                  if(!this.useIrrigationDisplay && !zone.enabled){ 
-                    this.log.info('Skipping disabled zone %s',zone.name )
+                  this.log.debug('adding zone %s',zone.name )
+                  let valveService=this.createValveService(zone)
+                  this.configureValveService(newDevice, valveService)
+                  if(this.useIrrigationDisplay){
+                    this.log.debug('Using irrigation system')
+                    irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(valveService)
+                    irrigationAccessory.addService(valveService) 
                   }
-                  else {
-                    this.log.debug('adding zone %s',zone.name )
-                    let valveService=this.createValveService(newDevice)
-                    this.configureValveService(newDevice, valveService)
-                    if(this.useIrrigationDisplay){
-                      this.log.debug('Using irrigation system')
-                      irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(valveService)
-                      irrigationAccessory.addService(valveService) 
-                    }
-                    else{
-                      this.log.debug('Using separate tiles')
-                      irrigationAccessory.getService(Service.IrrigationSystem)
-                      irrigationAccessory.addService(valveService)
-                    }
+                  else{
+                    this.log.debug('Using separate tiles')
+                    irrigationAccessory.getService(Service.IrrigationSystem)
+                    irrigationAccessory.addService(valveService)
                   }
-                })
-                if(this.showSchedules){
-                  this.orbitapi.getTimerPrograms(this.token,newDevice).then(response=>{
-                    response.data.forEach((schedule)=>{
-                      this.log.debug('adding schedules %s program %s',schedule.name, schedule.program )
-                      switchService=this.createScheduleSwitchService(schedule)
-                      this.configureSwitchService(newDevice, switchService)
-                      irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(switchService)
-                      irrigationAccessory.addService(switchService)
-                    })
-                  }).catch(err=>{this.log.error('Failed to get schedule for device', err)})        
-                }       
-                if(this.showStandby){
-                  this.log.debug('adding new standby switch')
-                  switchService=this.createSwitchService(newDevice,' Standby')
-                  this.configureSwitchService(newDevice, switchService)
-                  irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(switchService) 
-                  irrigationAccessory.addService(switchService)
                 }
-
-                // Register platform accessory
-                this.log.debug('Registering platform accessory');
-                this.api.registerPlatformAccessories(PluginName, PlatformName, [irrigationAccessory])
-                this.accessories[uuid]=irrigationAccessory
-              break
-              case "bridge":
-                uuid=UUIDGen.generate(newDevice.id)
-                //Remove cached accessory
-                this.log.debug('Removed cached device')
-                if(this.accessories[uuid]){
-                  this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
-                  delete this.accessories[uuid]///uncommented for test
-                }
-
-                // Create and configure Bridge Service
-                this.log.debug('Creating and configuring new bridge')                        
-                let bridgeAccessory=this.createBridgeAccessory(newDevice,uuid)
-                let bridgeService=bridgeAccessory.getService(Service.BridgeConfiguration)
-                bridgeService=this.createBridgeService(newDevice)
-                this.configureBridgeService(bridgeService)
-                bridgeAccessory.addService(bridgeService)
-                this.accessories[uuid]=bridgeAccessory                    
-                if(this.showBridge || this.showRunall){
-                  this.log.info('Adding Bridge Configuration')
-                  if(this.showRunall){
-                    this.log.debug('adding new run all switch')
-                    let switchService=this.createSwitchService(newDevice,' Run All')
+              })
+              if(this.showSchedules){
+                this.orbitapi.getTimerPrograms(this.token,newDevice).then(response=>{
+                  response.data.forEach((schedule)=>{
+                    this.log.debug('adding schedules %s program %s',schedule.name, schedule.program )
+                    switchService=this.createScheduleSwitchService(schedule)
                     this.configureSwitchService(newDevice, switchService)
-                    bridgeAccessory.getService(Service.BridgeConfiguration).addLinkedService(switchService) 
-                    bridgeAccessory.addService(switchService)
-                    }
-                  this.log.debug('Registering platform accessory')
-                  this.api.registerPlatformAccessories(PluginName, PlatformName, [bridgeAccessory])
-                  }
-                else{
-                  this.log.info('Skipping Bridge Configuration')
-                  }
-              break
-            }
+                    irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(switchService)
+                    irrigationAccessory.addService(switchService)
+                  })
+                }).catch(err=>{this.log.error('Failed to get schedule for device', err)})        
+              }       
+              if(this.showRunall){
+                this.log.debug('adding new run all switch')
+                switchService=this.createSwitchService(newDevice,' Run All')
+                this.configureSwitchService(newDevice, switchService)
+                irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(switchService)
+                irrigationAccessory.addService(switchService)
+                }
+              if(this.showStandby){
+                this.log.debug('adding new standby switch')
+                switchService=this.createSwitchService(newDevice,' Standby')
+                this.configureSwitchService(newDevice, switchService)
+                irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(switchService) 
+                irrigationAccessory.addService(switchService)
+              }
 
-            this.orbitapi.getMeshes(this.token,newDevice.mesh_id).then(response=>{
-              this.log.debug('Found mesh netowrk for',response.data.name)
-              this.meshNetwork=response.data
-            })
-            this.log.debug('establish connection for %s',newDevice.name)
-            this.orbitapi.openConnection(this.token, newDevice)
-            this.orbitapi.onMessage(this.token, newDevice, this.updateService.bind(this))
-            // Send Sync after 2 sec delay, match state to bhyve state 
-            setTimeout(()=>{ 
-              this.orbitapi.sync(this.token, newDevice)
-            }, 2000)
+              // Register platform accessory
+              this.log.debug('Registering platform accessory');
+              this.api.registerPlatformAccessories(PluginName, PlatformName, [irrigationAccessory])
+              this.accessories[uuid]=irrigationAccessory
+            break
+            case "bridge":
+              //Remove cached accessory
+              this.log.debug('Removed cached device')
+              if(this.accessories[uuid]){
+                this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
+                delete this.accessories[uuid]
+              }
+
+              // Create and configure Bridge Service
+              this.log.debug('Creating and configuring new bridge')                        
+              let bridgeAccessory=this.createBridgeAccessory(newDevice,uuid)
+              let bridgeService=bridgeAccessory.getService(Service.BridgeConfiguration)
+              bridgeService=this.createBridgeService(newDevice)
+              this.configureBridgeService(bridgeService)
+
+              //set current device status 
+              bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
+
+
+              bridgeAccessory.addService(bridgeService)
+              this.accessories[uuid]=bridgeAccessory                    
+              if(this.showBridge){
+                this.log.info('Adding Bridge Configuration')
+                this.log.debug('Registering platform accessory')
+                this.api.registerPlatformAccessories(PluginName, PlatformName, [bridgeAccessory])
+                }
+              else{
+                this.log.info('Skipping Bridge Configuration')
+                }
+            break
+          }
+          this.orbitapi.getMeshes(this.token,newDevice.mesh_id).then(response=>{
+            this.log.debug('Found mesh netowrk for',response.data.name)
+            this.meshNetwork=response.data
           })
-        }).catch(err=>{this.log.error('Failed to get token', err)})
+          this.log.debug('establish connection for %s',newDevice.name)
+          this.orbitapi.openConnection(this.token, newDevice)
+          this.orbitapi.onMessage(this.token, newDevice, this.updateService.bind(this))
+          // Send Sync after 2 sec delay, match state to bhyve state 
+          setTimeout(()=>{ 
+            this.orbitapi.sync(this.token, newDevice)
+          }, 2000)
+        })
+      }).catch(err=>{this.log.error('Failed to get token', err)})
     }).catch(err=>{this.log.error('Failed to get info for build', err)})
   }
 
@@ -222,7 +231,7 @@ class PlatformOrbit {
   }
 
   createIrrigationAccessory(device,uuid){
-    this.log.debug('Create Irrigation service %s %s',device.id,device.name)
+    this.log.debug('Create irrigation service %s %s',device.id,device.name)
     // Create new Irrigation System Service
     let newPlatformAccessory=new PlatformAccessory(device.name, uuid)
     newPlatformAccessory.addService(Service.IrrigationSystem, device.name)
@@ -248,7 +257,7 @@ class PlatformOrbit {
   }
 
   configureIrrigationService(device,irrigationSystemService){
-    this.log.info('Configure Irrigation service for %s', irrigationSystemService.getCharacteristic(Characteristic.Name).value)
+    this.log.info('Configure irrigation service for %s', irrigationSystemService.getCharacteristic(Characteristic.Name).value)
     // Configure IrrigationSystem Service
     irrigationSystemService 
       .setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
@@ -293,14 +302,15 @@ class PlatformOrbit {
     }
   }
   
-  createValveService(device){
+  createValveService(zone){
     //Characteristic.ValveType.GENERIC_VALVE=0
     //Characteristic.ValveType.IRRIGATION=1
     //Characteristic.ValveType.SHOWER_HEAD=2
     //Characteristic.ValveType.WATER_FAUCET=3
-    this.log.debug("Created service for %s with id %s", device.name, device.id)
+    this.log.debug("Created valve service for %s with id %s", zone.name, zone.station)
     // Create Valve Service
-    let valve=new Service.Valve(device.name, device.id)
+    let valve=new Service.Valve(zone.name, zone.station)
+    zone.enabled=true // need orbit version of enabled
     valve.addCharacteristic(Characteristic.CurrentTime) // Use CurrentTime to store the run time ending
     valve.addCharacteristic(Characteristic.SerialNumber) //Use Serial Number to store the zone id
     valve.addCharacteristic(Characteristic.Model)
@@ -312,13 +322,13 @@ class PlatformOrbit {
       .setCharacteristic(Characteristic.SetDuration, this.defaultRuntime)
       .setCharacteristic(Characteristic.RemainingDuration, 0)
       .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
-      .setCharacteristic(Characteristic.ServiceLabelIndex, device.station)
+      .setCharacteristic(Characteristic.ServiceLabelIndex, zone.station)
       .setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
-      .setCharacteristic(Characteristic.SerialNumber, device.id)
-      .setCharacteristic(Characteristic.Name, device.name)
-      .setCharacteristic(Characteristic.ConfiguredName, device.name)
-      .setCharacteristic(Characteristic.Model, device.type)
-      if(true==true){//(zone.enabled){ //faked out no disabled value
+      .setCharacteristic(Characteristic.SerialNumber, UUIDGen.generate("zone-" + zone.station))
+      .setCharacteristic(Characteristic.Name, zone.name)
+      .setCharacteristic(Characteristic.ConfiguredName, zone.name)
+      .setCharacteristic(Characteristic.Model, zone.sprinkler_type)
+      if (zone.enabled){
         valve.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)}
       else{
         valve.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.NOT_CONFIGURED)
@@ -327,7 +337,7 @@ class PlatformOrbit {
   }
 
   configureValveService(device, valveService){
-    this.log.info("Configured zone-%s service for %s",valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value, valveService.getCharacteristic(Characteristic.Name).value)
+    this.log.info("Configured valve service for zone-%s %s",valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value, valveService.getCharacteristic(Characteristic.Name).value)
     // Configure Valve Service
     valveService
       .getCharacteristic(Characteristic.Active)
@@ -368,18 +378,16 @@ class PlatformOrbit {
 
   statusLowBattery(batteryService,callback){
   let currentValue=batteryService.getCharacteristic(Characteristic.BatteryLevel).value
-  if(currentValue<40){
-    this.log.warn('Battery Status Low',currentValue)
-    //batteryService.setCharacteristic(Characteristic.StatusLowBattery,Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)
+  if(currentValue<25){
+    this.log.warn('Battery Status Low %s%',currentValue)
   }
   callback(currentValue)
 }
 
   createBridgeAccessory(device,uuid){
-    this.log.debug('Create Bridge service %s %s',device.id,device.name)
+    this.log.debug('Create bridge service %s %s',device.id,device.name)
     // Create new Irrigation System Service
     let newPlatformAccessory=new PlatformAccessory(device.name, uuid)
-    //newPlatformAccessory.addService(Service.BridgeConfiguration, device.name)
     // Create AccessoryInformation Service
     newPlatformAccessory.getService(Service.AccessoryInformation)
       .setCharacteristic(Characteristic.Name, device.name)
@@ -460,8 +468,8 @@ class PlatformOrbit {
       this.log.info("Starting zone-%s %s for %s mins", valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value, valveService.getCharacteristic(Characteristic.Name).value, runTime/60)
       let station=valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value
       this.orbitapi.startZone(this.token, device, station, runTime/60)
-      valveService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
       irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.Active.ACTIVE)
+      valveService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
       //json start stuff
       let myJsonStart={
         source: "local",
@@ -493,8 +501,8 @@ class PlatformOrbit {
       // Turn off/stopping the valve
       this.log.info("Stopping Zone", valveService.getCharacteristic(Characteristic.Name).value)
       this.orbitapi.stopZone(this.token, device,)
-      valveService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
       irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.Active.INACTIVE)
+      valveService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
       //json stop stuff
       let myJsonStop={ 
         source: "local",
@@ -615,21 +623,6 @@ class PlatformOrbit {
     else{
       callback(null, switchService.getCharacteristic(Characteristic.On).value)
     }
-  }
-
-  setOnlineStatus(graph){
-    //set current device status 
-    try{
-      graph.devices.forEach((device)=>{
-        if(device.type=="sprinkler_timer"){
-          this.log.debug('device %s connected=%s',device.name, device.is_connected)
-          let uuid=UUIDGen.generate(device.id)
-          let irrigationAccessory=this.accessories[uuid]
-          let service=irrigationAccessory.getServiceById(Service.Valve, device.id)
-          service.getCharacteristic(Characteristic.StatusFault).updateValue(!device.is_connected)
-        }
-      }) 
-    }catch(err){this.log.error('Error updating Online status %s', err)}
   } 
 
   updateService(message){
@@ -657,9 +650,11 @@ class PlatformOrbit {
           let switchService=irrigationAccessory.getServiceById(Service.Switch,UUIDGen.generate(jsonBody.device_id+' Standby'))  
         switch (jsonBody.event){        
           case "watering_in_progress_notification":
-            if(jsonBody.source!='local'){this.log.info('Watering in progress device %s for %s mins',deviceName, Math.round(jsonBody.run_time))}
-            activeService=irrigationAccessory.getServiceById(Service.Valve, jsonBody.device_id)
+            irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
+            this.activeZone=jsonBody.current_station
+            activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone)
             if(activeService){
+              if(jsonBody.source!='local'){this.log.info('Device %s, %s zone watering in progress for %s mins',deviceName, activeService.getCharacteristic(Characteristic.Name).value, Math.round(jsonBody.run_time))}
               activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.ACTIVE)
               activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
               activeService.getCharacteristic(Characteristic.RemainingDuration).updateValue(jsonBody.run_time * 60)
@@ -668,20 +663,19 @@ class PlatformOrbit {
             }
           break
           case "watering_complete":
-            if(jsonBody.source!='local'){this.log.info('Device %s watering completed',deviceName)}
             irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
-            activeService=irrigationAccessory.getServiceById(Service.Valve, jsonBody.device_id)
+            activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone)
             if(activeService){
-              //activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.ACTIVE)
+              if(jsonBody.source!='local'){this.log.info('Device %s, %s zone watering completed',deviceName, activeService.getCharacteristic(Characteristic.Name).value)}
               activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
               activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
             }
           break
           case "device_idle":
-            this.log.info('Device %s idle, watering stopped',deviceName)
             irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
-            activeService=irrigationAccessory.getServiceById(Service.Valve, jsonBody.device_id)
+            activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone)
             if(activeService){
+              this.log.info('Device %s, %s zone idle',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
               activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
               activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
             }
@@ -764,18 +758,18 @@ class PlatformOrbit {
       case "bridge":
         let bridgeAccessory
         let bridgeService
-        if(this.showBridge || this.showRunall){
+        if(this.showBridge){
           bridgeAccessory=this.accessories[uuid] 
           bridgeService=bridgeAccessory.getService(Service.BridgeConfiguration)
         }
         switch (jsonBody.event){   
           case "device_connected":
             this.log.info('%s connected at %s',deviceName,new Date(jsonBody.timestamp).toString())
-            if(this.showBridge || this.showRunall){bridgeService.getCharacteristic(Characteristic.DiscoverBridgedAccessories).updateValue(true)}
+            if(this.showBridge){bridgeService.getCharacteristic(Characteristic.DiscoverBridgedAccessories).updateValue(true)}
           break
           case "device_disconnected":
             this.log.warn('%s disconnected at %s This will show as non-responding in Homekit until the connection is restored',deviceName,jsonBody.timestamp)
-            if(this.showBridge || this.showRunall){bridgeService.getCharacteristic(Characteristic.DiscoverBridgedAccessories).updateValue(false)}
+            if(this.showBridge){bridgeService.getCharacteristic(Characteristic.DiscoverBridgedAccessories).updateValue(false)}
           break
           default:
             this.log.warn('Unknown bridge message received: %s',jsonBody.event);
