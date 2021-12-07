@@ -19,8 +19,8 @@ OrbitAPI.prototype={
     getToken: async function(email,password){
     // Get token
     try {  
-        this.log.info('Retrieving API key')
-        const response = await axios({
+        this.log.debug('Retrieving API key')
+        let response = await axios({
             method: 'post',
             url: endpoint + 'session',
             headers: {
@@ -43,7 +43,7 @@ OrbitAPI.prototype={
     getDevices: async function(token){
     // Get the device details
     try {  
-        this.log.info('Retrieving devices')
+        this.log.debug('Retrieving devices')
         const response = await axios({
             method: 'get',
             url: endpoint + 'devices',
@@ -62,7 +62,7 @@ OrbitAPI.prototype={
     getMeshes: async function(token,meshId){
         // Get mesh details
         try {  
-            this.log.info('Retrieving mesh info')
+            this.log.debug('Retrieving mesh info')
             const response = await axios({
                 method: 'get',
                 url: endpoint + 'meshes/'+meshId,
@@ -81,7 +81,7 @@ OrbitAPI.prototype={
       getDeviceGraph: async function(token,userId){
         // Get device graph details
         try {  
-            this.log.info('Retrieving device graph info')
+            this.log.debug('Retrieving device graph info')
             const response = await axios({
                 method: 'post',
                 url: endpoint + 'graph2',
@@ -116,7 +116,7 @@ OrbitAPI.prototype={
         getTimerPrograms: async function(token,device){
           // Get mesh details
           try {  
-              this.log.info('Retrieving schedules')
+              this.log.debug('Retrieving schedules')
               const response = await axios({
                   method: 'get',
                   url: endpoint + 'sprinkler_timer_programs?device_id='+device.id,
@@ -234,7 +234,7 @@ OrbitAPI.prototype={
 
     openConnection:function(token, device){
         try { 
-        this.log.info('Opening WebSocket Connection for %s',device.name)
+        this.log.debug('Opening WebSocket Connection for %s',device.name)
         this.wsp.connect(token, device.id)
             .then(ws=>ws.send({
                 name: device.name,
@@ -247,7 +247,7 @@ OrbitAPI.prototype={
 
     onMessage: function(token, device, listner){
         try { 
-        this.log.info('Adding Event Listener for %s',device.name)
+        this.log.debug('Adding Event Listener for %s',device.name)
         this.wsp.connect(token, device.id)
             .then(ws=>ws.addEventListener('message', msg=>{
                 listner(msg.data, device.id)
@@ -257,7 +257,7 @@ OrbitAPI.prototype={
 
     sync: function(token, device){
         try { 
-        this.log.info('Syncing device %s info', device.name)
+        this.log.debug('Syncing device %s info', device.name)
         this.wsp.connect(token, device.id)
             .then(ws=>ws.send({
                 event: "sync",
