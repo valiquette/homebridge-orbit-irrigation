@@ -32,6 +32,7 @@ class PlatformOrbit {
     this.showOutgoingMessages=false
     this.lastMessage
     this.activeZone
+    this.activeProgram
     this.meshNetwork
     this.deviceGraph
     this.accessories=[]
@@ -417,7 +418,7 @@ class PlatformOrbit {
   }
 
   getValveValue(valveService, characteristicName, callback){
-    this.log.debug("getValue", valveService.getCharacteristic(Characteristic.Name).value, characteristicName);
+    //this.log.debug("getValue", valveService.getCharacteristic(Characteristic.Name).value, characteristicName);
     switch (characteristicName){
       case "ValveActive":
         //this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName,valveService.getCharacteristic(Characteristic.Active).value)
@@ -527,14 +528,15 @@ class PlatformOrbit {
 
   createScheduleSwitchService(schedule){
     // Create Valve Service
-    this.log.debug("Created service for %s with id %s and program %s", schedule.name, schedule.id,schedule.program);
-    let switchService=new Service.Switch(schedule.name, schedule.id) 
+    this.log.debug("Created service for %s with id %s and program %s", schedule.name, schedule.id, schedule.program);
+    let switchService=new Service.Switch(schedule.name, schedule.program) 
     switchService.addCharacteristic(Characteristic.ConfiguredName)
     switchService.addCharacteristic(Characteristic.SerialNumber)
     switchService 
       .setCharacteristic(Characteristic.On, false)
       .setCharacteristic(Characteristic.Name, schedule)
-      .setCharacteristic(Characteristic.SerialNumber, schedule.program+'-'+schedule.id)
+      //.setCharacteristic(Characteristic.SerialNumber, schedule.program+'-'+schedule.id)
+      .setCharacteristic(Characteristic.SerialNumber, schedule.id)
       .setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
     return switchService
   }
@@ -603,7 +605,8 @@ class PlatformOrbit {
         else{
           if(value){
             switchService.getCharacteristic(Characteristic.On).updateValue(true)
-            this.orbitapi.startSchedule (this.token,device,switchService.getCharacteristic(Characteristic.SerialNumber).value.substring(0,1))
+            this.orbitapi.startSchedule (this.token,device,switchService.subtype)
+            this.activeProgram=switchService.subtype
           } 
           else {
             switchService.getCharacteristic(Characteristic.On).updateValue(false)
@@ -651,31 +654,59 @@ class PlatformOrbit {
         switch (jsonBody.event){        
           case "watering_in_progress_notification":
             irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
-            this.activeZone=jsonBody.current_station
-            activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone)
+            activeService=irrigationAccessory.getServiceById(Service.Valve, jsonBody.current_station)
             if(activeService){
-              if(jsonBody.source!='local'){this.log.info('Device %s, %s zone watering in progress for %s mins',deviceName, activeService.getCharacteristic(Characteristic.Name).value, Math.round(jsonBody.run_time))}
+              //stop last if program is running
+              if(jsonBody.program!= 'manual'){
+                this.log.info('Running Program %s',irrigationAccessory.getServiceById(Service.Switch, jsonBody.program).getCharacteristic(Characteristic.Name).value)
+                if(this.activeZone){
+                  activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone)
+                  if(jsonBody.source!='local'){
+                    this.log.info('Device %s, %s zone watering completed',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
+                  }
+                  activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
+                  activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
+                }
+              }
+              //start new
+              activeService=irrigationAccessory.getServiceById(Service.Valve, jsonBody.current_station)
+              if(jsonBody.source!='local'){
+                this.log.info('Device %s, %s zone watering in progress for %s mins',deviceName, activeService.getCharacteristic(Characteristic.Name).value, Math.round(jsonBody.run_time))
+                this.activeZone=jsonBody.current_station
+              }
               activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.ACTIVE)
               activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
               activeService.getCharacteristic(Characteristic.RemainingDuration).updateValue(jsonBody.run_time * 60)
               let endTime= new Date(Date.now() + parseInt(jsonBody.run_time) * 60 * 1000).toISOString()
-              activeService.getCharacteristic(Characteristic.CurrentTime).updateValue(endTime)
+              activeService.getCharacteristic(Characteristic.CurrentTime).updateValue(endTime)        
             }
           break
           case "watering_complete":
             irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
             activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone)
             if(activeService){
-              if(jsonBody.source!='local'){this.log.info('Device %s, %s zone watering completed',deviceName, activeService.getCharacteristic(Characteristic.Name).value)}
+              if(jsonBody.source!='local'){
+                this.log.info('Device %s, %s zone watering completed',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
+                this.activeZone=false
+              }
               activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
               activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
             }
+            
           break
           case "device_idle":
             irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
+            activeService=irrigationAccessory.getServiceById(Service.Switch, this.activeProgram)
+            if(activeService){
+              //this.log.info('Device %s, %s zone idle',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
+              this.log.info('Program %s completed',activeService.getCharacteristic(Characteristic.Name).value)
+              activeService.getCharacteristic(Characteristic.On).updateValue(false)
+              this.activeProgram=false
+            }
             activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone)
             if(activeService){
-              this.log.info('Device %s, %s zone idle',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
+              //this.log.info('Device %s, %s zone idle',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
+              this.log.info('Device %s idle',deviceName)
               activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
               activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
             }

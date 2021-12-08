@@ -296,8 +296,7 @@ class WebSocketProxy {
             if (typeof data === 'object') {
                   data = JSON.stringify(data,null,2)
               }
-              //supress ping info from filling debug log 
-              //this.log.debug(JSON.parse(data).event)
+              //this.log.debug(JSON.parse(data).event) //comment line to supress ping info from filling debug log 
               if (JSON.parse(data).event!= 'ping'){ 
                 this.log.debug('%s sending %s', deviceId, data) 
               }
