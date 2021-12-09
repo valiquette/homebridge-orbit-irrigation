@@ -8,7 +8,7 @@
 
 ## About
 
-This plugin provides 3 options for use in HomeKit<br>Both option have additional switches as options for Standby/Off mode and a Run All across all devices along with any B-Hyve Schedules
+This plugin provides 3 options for use in HomeKit<br>Both option have additional switches as options for Standby/Off mode and a Run All across all devices along with any B-Hyve Program Schedules
 1.	Irrigation System Accessory with zones that are linked (default in configuration)
 2.	Irrigation System Accessory with separate zones shown as a single tile 
 3.	Irrigation System Accessory with separate zones shown as a separate tiles (option in HomeKit)
@@ -16,9 +16,10 @@ This plugin provides 3 options for use in HomeKit<br>Both option have additional
 <br> There are plus and minus to each, so why not have options.
 <br> if you have more than one home on your B-Hyve account you may filter devices for a home based on the street address for the location you want to display in HomeKit.
 
-## Note on testing
+## Notes on testing
 
-This plugin has only be tested against hardware types BH1-0001, HT25-0000 and WG25G2-0001. It may still work with hardware models. Feedback on those devices is welcome.
+This plugin has been tested against hardware types BH1-0001, HT25-0000 and WG25G2-0001. 
+<br>It may still work with other hardware models. Feedback on those devices is welcome.
 
 ## Installation
 1. Install this plugin using: npm install -g homebridge-orbit-irrigation
@@ -27,14 +28,14 @@ This plugin has only be tested against hardware types BH1-0001, HT25-0000 and WG
 4. Run Homebridge
 5. Pair to HomeKit
 
-## Config.json example
+## Config.json example with child bridge
 ```
 "platforms": [
         {
             "name": "B-Hyve",
             "email": "username@mail.com",
             "password": "password",
-           "locationAddress": "123 Easy St",
+            "locationAddress": "123 Easy St",
             "defaultRuntime": 1,
             "useIrrigationDisplay": true,
             "displayValveType": 1,
