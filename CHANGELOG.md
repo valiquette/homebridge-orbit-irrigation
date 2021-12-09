@@ -6,7 +6,8 @@ Fix
 -   Suppressed logging pings to avoid filling up the log file
 -   Moved some info logging to debug
 -   Changed some of the logging text
--   fixed bug with HomeKit sync when timer expires
+-   Fixed bug with HomeKit sync when timer expires
+-   Fixed bug with schedules not sowing as stopped if completed.
 
 ## 1.0.6
 Fix
