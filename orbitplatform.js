@@ -535,7 +535,6 @@ class PlatformOrbit {
     switchService 
       .setCharacteristic(Characteristic.On, false)
       .setCharacteristic(Characteristic.Name, schedule)
-      //.setCharacteristic(Characteristic.SerialNumber, schedule.program+'-'+schedule.id)
       .setCharacteristic(Characteristic.SerialNumber, schedule.id)
       .setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
     return switchService
@@ -606,7 +605,7 @@ class PlatformOrbit {
           if(value){
             switchService.getCharacteristic(Characteristic.On).updateValue(true)
             this.orbitapi.startSchedule (this.token,device,switchService.subtype)
-            this.activeProgram=switchService.subtype
+            //this.activeProgram=switchService.subtype
           } 
           else {
             switchService.getCharacteristic(Characteristic.On).updateValue(false)
@@ -658,7 +657,13 @@ class PlatformOrbit {
             if(activeService){
               //stop last if program is running
               if(jsonBody.program!= 'manual'){
-                this.log.info('Running Program %s',irrigationAccessory.getServiceById(Service.Switch, jsonBody.program).getCharacteristic(Characteristic.Name).value)
+                if(this.showSchedules){
+                  this.log.info('Running Program %s',irrigationAccessory.getServiceById(Service.Switch, jsonBody.program).getCharacteristic(Characteristic.Name).value)
+                }
+                else{
+                  this.log.info('Running Program %s',jsonBody.program)
+                }
+                this.activeProgram=jsonBody.program
                 if(this.activeZone){
                   activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone)
                   if(jsonBody.source!='local'){
@@ -702,6 +707,12 @@ class PlatformOrbit {
               this.log.info('Program %s completed',activeService.getCharacteristic(Characteristic.Name).value)
               activeService.getCharacteristic(Characteristic.On).updateValue(false)
               this.activeProgram=false
+            }
+            else{
+              if(this.activeProgram){
+                this.log.info('Program %s completed',this.activeProgram)
+                this.activeProgram=false
+              }
             }
             activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone)
             if(activeService){
