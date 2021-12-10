@@ -1,6 +1,6 @@
 /* todo list
 What to do with Bridge
-Simple valve only for hose timer
+Add simple Valve
 Known issues 
 Run multiple API does not work, even if run from hhyve site.
 API does not return program end
