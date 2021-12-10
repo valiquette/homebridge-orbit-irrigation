@@ -3,8 +3,9 @@ const ws = require('ws')
 const reconnectingwebsocket = require('reconnecting-websocket')
 
 const endpoint = 'https://api.orbitbhyve.com/v1/'
+const WS_endpoint = 'wss://api.orbitbhyve.com/v1/'
 
-const maxPingInterval = 30000 // Websocket get's timed out after 30s, will set randmon value between 20 and 25
+const maxPingInterval = 25000 // Websocket get's timed out after 30s, will set randmon value between 20 and 25
 const minPingInterval = 20000
 
 function OrbitAPI (platform,log){
@@ -282,12 +283,17 @@ class WebSocketProxy {
 
       return new Promise((resolve, reject)=>{
         try {
-          this.rws = new reconnectingwebsocket(endpoint+'events', [], {
-              WebSocket: ws,
-              connectionTimeout: 10000,
-              maxReconnectionDelay: 64000,
-              minReconnectionDelay: 2000,
-              reconnectionDelayGrowFactor: 2
+          this.rws = new reconnectingwebsocket(WS_endpoint+'events', [], {
+            WebSocket: ws,
+            maxReconnectionDelay: 10000, //64000
+            minReconnectionDelay: 1000 + Math.random() * 4000, //2000
+            reconnectionDelayGrowFactor: 1.3, //2
+            minUptime: 5000,
+            connectionTimeout: 4000, //10000
+            maxRetries: Infinity,
+            maxEnqueuedMessages: Infinity,
+            startClosed: false,
+            debug: false,
           })
 
           // Intercept send events for logging
