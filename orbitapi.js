@@ -5,7 +5,7 @@ const reconnectingwebsocket = require('reconnecting-websocket')
 const endpoint = 'https://api.orbitbhyve.com/v1/'
 const WS_endpoint = 'wss://api.orbitbhyve.com/v1/'
 
-const maxPingInterval = 25000 // Websocket get's timed out after 30s, will set random value between 20 and 25
+const maxPingInterval = 25000 // Websocket get's timed out after 30s, will set a random value between 20 and 25
 const minPingInterval = 20000
 
 function OrbitAPI (platform,log){
