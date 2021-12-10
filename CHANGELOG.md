@@ -1,5 +1,6 @@
 # Changes
 
+## 1.1.0
 Update
 -   Updated build for multi zone Water Timers
 -   Bummped dependancies

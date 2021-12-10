@@ -19,7 +19,7 @@ This plugin provides 3 options for use in HomeKit<br>Both option have additional
 ## Notes on testing
 
 This plugin has been tested against hardware types BH1-0001, HT25-0000 and WG25G2-0001. 
-<br>It may still work with other hardware models. Feedback on those devices is welcome.
+<br>This plugin may still work with other hardware models and feedback on those devices is welcome.
 
 ## Installation
 1. Install this plugin using: npm install -g homebridge-orbit-irrigation
