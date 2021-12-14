@@ -7,8 +7,8 @@ API does not return program end
 */
 
 'use strict'
-const packageJson=require('./package')
-const OrbitAPI=require('./orbitapi.js')
+let packageJson=require('./package')
+let OrbitAPI=require('./orbitapi.js')
 
 class PlatformOrbit {
 
