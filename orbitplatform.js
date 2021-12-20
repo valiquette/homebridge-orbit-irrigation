@@ -55,7 +55,7 @@ class PlatformOrbit {
   }
 
   getDevices(){
-    this.log.debug('Fetching build info...')
+    this.log.debug('Fetching Build info...')
     this.log.info('Getting Account info...')
     // login to the API and get the token
     this.orbitapi.getToken(this.email,this.password).then(response=>{
@@ -110,7 +110,7 @@ class PlatformOrbit {
 
               // Create and configure Battery Service if needed
               if(newDevice.battery!=null){
-                this.log.info('Adding battery service for %s', newDevice.name)
+                this.log.info('Adding Battery service for %s', newDevice.name)
                 let batteryService=this.createBatteryService(newDevice)
                 this.configureBatteryService(batteryService)
                 irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(batteryService)
@@ -134,7 +134,7 @@ class PlatformOrbit {
                   let valveService=this.createValveService(zone)
                   this.configureValveService(newDevice, valveService)
                   if(this.useIrrigationDisplay){
-                    this.log.debug('Using irrigation system')
+                    this.log.debug('Using Irrigation system')
                     irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(valveService)
                     irrigationAccessory.addService(valveService) 
                   }
@@ -194,7 +194,6 @@ class PlatformOrbit {
               //set current device status 
               bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
 
-
               bridgeAccessory.addService(bridgeService)
               this.accessories[uuid]=bridgeAccessory                    
               if(this.showBridge){
@@ -233,7 +232,7 @@ class PlatformOrbit {
   }
 
   createIrrigationAccessory(device,uuid){
-    this.log.debug('Create irrigation service %s %s',device.id,device.name)
+    this.log.debug('Create Irrigation service %s %s',device.id,device.name)
     // Create new Irrigation System Service
     let newPlatformAccessory=new PlatformAccessory(device.name, uuid)
     newPlatformAccessory.addService(Service.IrrigationSystem, device.name)
@@ -387,7 +386,7 @@ class PlatformOrbit {
 }
 
   createBridgeAccessory(device,uuid){
-    this.log.debug('Create bridge service %s %s',device.id,device.name)
+    this.log.debug('Create Bridge service %s %s',device.id,device.name)
     // Create new Irrigation System Service
     let newPlatformAccessory=new PlatformAccessory(device.name, uuid)
     // Create AccessoryInformation Service
@@ -402,6 +401,7 @@ class PlatformOrbit {
       .setCharacteristic(Characteristic.SoftwareRevision, packageJson.version)
     return newPlatformAccessory;
   }
+  
   createBridgeService(device){
     this.log.debug("create bridge service for %s",device.name )
     // Create Bridge Service
