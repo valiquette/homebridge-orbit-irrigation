@@ -7,8 +7,8 @@ API does not return program end
 */
 
 'use strict'
-const packageJson=require('./package')
-const OrbitAPI=require('./orbitapi.js')
+let packageJson=require('./package')
+let OrbitAPI=require('./orbitapi.js')
 
 class PlatformOrbit {
 
@@ -55,7 +55,7 @@ class PlatformOrbit {
   }
 
   getDevices(){
-    this.log.debug('Fetching build info...')
+    this.log.debug('Fetching Build info...')
     this.log.info('Getting Account info...')
     // login to the API and get the token
     this.orbitapi.getToken(this.email,this.password).then(response=>{
@@ -66,7 +66,7 @@ class PlatformOrbit {
       this.orbitapi.getDeviceGraph(this.token,this.userId).then(response=>{
         this.log.debug('Found device graph for user id %s, %s',this.userId,response.data)
         this.deviceGraph=response.data
-      })
+      }).catch(err=>{this.log.error('Failed to get graph response %s', err)})
         // get an array of the devices
         this.orbitapi.getDevices(this.token).then(response=>{
           response.data.filter((device)=>{
@@ -110,7 +110,7 @@ class PlatformOrbit {
 
               // Create and configure Battery Service if needed
               if(newDevice.battery!=null){
-                this.log.info('Adding battery service for %s', newDevice.name)
+                this.log.info('Adding Battery service for %s', newDevice.name)
                 let batteryService=this.createBatteryService(newDevice)
                 this.configureBatteryService(batteryService)
                 irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(batteryService)
@@ -134,7 +134,7 @@ class PlatformOrbit {
                   let valveService=this.createValveService(zone)
                   this.configureValveService(newDevice, valveService)
                   if(this.useIrrigationDisplay){
-                    this.log.debug('Using irrigation system')
+                    this.log.debug('Using Irrigation system')
                     irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(valveService)
                     irrigationAccessory.addService(valveService) 
                   }
@@ -194,7 +194,6 @@ class PlatformOrbit {
               //set current device status 
               bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
 
-
               bridgeAccessory.addService(bridgeService)
               this.accessories[uuid]=bridgeAccessory                    
               if(this.showBridge){
@@ -207,10 +206,15 @@ class PlatformOrbit {
                 }
             break
           }
-          this.orbitapi.getMeshes(this.token,newDevice.mesh_id).then(response=>{
-            this.log.debug('Found mesh netowrk for',response.data.name)
-            this.meshNetwork=response.data
-          })
+          if(newDevice.mesh_id){
+            this.orbitapi.getMeshes(this.token,newDevice.mesh_id).then(response=>{
+              this.log.debug('Found mesh netowrk for',response.data.name)
+              this.meshNetwork=response.data
+            }).catch(err=>{this.log.error('Failed to get mesh response %s', err)})
+          }
+          else{
+            this.log.debug('Skipping Mesh info for %s with firmware %s',newDevice.hardware_version, newDevice.firmware_version)
+          }
           this.log.debug('establish connection for %s',newDevice.name)
           this.orbitapi.openConnection(this.token, newDevice)
           this.orbitapi.onMessage(this.token, newDevice, this.updateService.bind(this))
@@ -233,7 +237,7 @@ class PlatformOrbit {
   }
 
   createIrrigationAccessory(device,uuid){
-    this.log.debug('Create irrigation service %s %s',device.id,device.name)
+    this.log.debug('Create Irrigation service %s %s',device.id,device.name)
     // Create new Irrigation System Service
     let newPlatformAccessory=new PlatformAccessory(device.name, uuid)
     newPlatformAccessory.addService(Service.IrrigationSystem, device.name)
@@ -387,7 +391,7 @@ class PlatformOrbit {
 }
 
   createBridgeAccessory(device,uuid){
-    this.log.debug('Create bridge service %s %s',device.id,device.name)
+    this.log.debug('Create Bridge service %s %s',device.id,device.name)
     // Create new Irrigation System Service
     let newPlatformAccessory=new PlatformAccessory(device.name, uuid)
     // Create AccessoryInformation Service
@@ -402,6 +406,7 @@ class PlatformOrbit {
       .setCharacteristic(Characteristic.SoftwareRevision, packageJson.version)
     return newPlatformAccessory;
   }
+  
   createBridgeService(device){
     this.log.debug("create bridge service for %s",device.name )
     // Create Bridge Service
@@ -477,7 +482,7 @@ class PlatformOrbit {
         source: "local",
         event: 'watering_in_progress_notification',
         program: 'manual',
-        current_station: device.station,
+        current_station: valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value,
         run_time: runTime/60,
         started_watering_station_at: new Date().toISOString(),
         rain_sensor_hold: false,
@@ -509,7 +514,7 @@ class PlatformOrbit {
       let myJsonStop={ 
         source: "local",
         timestamp: new Date().toISOString(),
-        event: 'device_idle',
+        event: 'watering_complete',
         device_id: device.id
         } 
       this.log.debug(myJsonStop)
@@ -589,11 +594,12 @@ class PlatformOrbit {
         else{
           if(value){
             switchService.getCharacteristic(Characteristic.On).updateValue(true)
-            this.orbitapi.startMultipleZone (this.token,this.meshNetwork,device,this.defaultRuntime/60)
+            this.orbitapi.startMultipleZone (this.token,device,this.defaultRuntime/60)
+						this.log.info('Running all zones for %s min each',this.defaultRuntime/60)
           } 
           else {
             switchService.getCharacteristic(Characteristic.On).updateValue(false)
-            this.orbitapi.stopDevice(this.token,this.meshNetwork.bridge_device_id)
+            this.orbitapi.stopDevice(this.token,device)
           }
           callback()
         }
@@ -650,7 +656,8 @@ class PlatformOrbit {
         case "sprinkler_timer":
           let irrigationAccessory=this.accessories[uuid]
           let irrigationSystemService=irrigationAccessory.getService(Service.IrrigationSystem)
-          let switchService=irrigationAccessory.getServiceById(Service.Switch,UUIDGen.generate(jsonBody.device_id+' Standby'))  
+          let switchServiceStandby=irrigationAccessory.getServiceById(Service.Switch,UUIDGen.generate(jsonBody.device_id+' Standby'))
+					let switchServiceRunall=irrigationAccessory.getServiceById(Service.Switch,UUIDGen.generate(jsonBody.device_id+' Run All'))   
         switch (jsonBody.event){        
           case "watering_in_progress_notification":
             irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
@@ -703,6 +710,10 @@ class PlatformOrbit {
           case "device_idle":
             irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
             activeService=irrigationAccessory.getServiceById(Service.Switch, this.activeProgram)
+						if(this.showRunall && switchServiceRunall.getCharacteristic(Characteristic.On).value){
+							switchServiceRunall.getCharacteristic(Characteristic.On).updateValue(false)
+							this.log.info('Running all zones completed')
+						}
             if(activeService){
               //this.log.info('Device %s, %s zone idle',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
               this.log.info('Program %s completed',activeService.getCharacteristic(Characteristic.Name).value)
@@ -728,15 +739,15 @@ class PlatformOrbit {
             switch (jsonBody.mode){
               case "auto":
                 irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).updateValue(Characteristic.ProgramMode.PROGRAM_SCHEDULED)
-                if(this.showStandby){switchService.getCharacteristic(Characteristic.On).updateValue(false)}
+                if(this.showStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(false)}
               break
               case "manual":
                 irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).updateValue(Characteristic.ProgramMode.PROGRAM_SCHEDULED_MANUAL_MODE_)
-                if(this.showStandby){switchService.getCharacteristic(Characteristic.On).updateValue(false)}
+                if(this.showStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(false)}
               break
               case "off":
                 irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).updateValue(Characteristic.ProgramMode.NO_PROGRAM_SCHEDULED)
-                if(this.showStandby){switchService.getCharacteristic(Characteristic.On).updateValue(true)}
+                if(this.showStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(true)}
               break
             }
           break

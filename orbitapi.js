@@ -1,12 +1,12 @@
-const axios = require('axios')
-const ws = require('ws')
-const reconnectingwebsocket = require('reconnecting-websocket')
+let axios = require('axios')
+let ws = require('ws')
+let reconnectingwebsocket = require('reconnecting-websocket')
 
-const endpoint = 'https://api.orbitbhyve.com/v1/'
-const WS_endpoint = 'wss://api.orbitbhyve.com/v1/'
+let endpoint = 'https://api.orbitbhyve.com/v1/'
+let WS_endpoint = 'wss://api.orbitbhyve.com/v1/'
 
-const maxPingInterval = 25000 // Websocket get's timed out after 30s, will set a random value between 20 and 25
-const minPingInterval = 20000
+let maxPingInterval = 25000 // Websocket get's timed out after 30s, will set a random value between 20 and 25
+let minPingInterval = 20000
 
 function OrbitAPI (platform,log){
     this.log=log
@@ -45,7 +45,7 @@ OrbitAPI.prototype={
     // Get the device details
     try {  
         this.log.debug('Retrieving devices')
-        const response = await axios({
+        let response = await axios({
             method: 'get',
             url: endpoint + 'devices',
             headers: {
@@ -64,7 +64,7 @@ OrbitAPI.prototype={
         // Get mesh details
         try {  
             this.log.debug('Retrieving mesh info')
-            const response = await axios({
+            let response = await axios({
                 method: 'get',
                 url: endpoint + 'meshes/'+meshId,
                 headers: {
@@ -83,7 +83,7 @@ OrbitAPI.prototype={
         // Get device graph details
         try {  
             this.log.debug('Retrieving device graph info')
-            const response = await axios({
+            let response = await axios({
                 method: 'post',
                 url: endpoint + 'graph2',
                 headers: {
@@ -118,7 +118,7 @@ OrbitAPI.prototype={
           // Get mesh details
           try {  
               this.log.debug('Retrieving schedules')
-              const response = await axios({
+              let response = await axios({
                   method: 'get',
                   url: endpoint + 'sprinkler_timer_programs?device_id='+device.id,
                   headers: {
@@ -177,31 +177,27 @@ OrbitAPI.prototype={
         }catch(err) {this.log.error('Error starting zone %s', err)}
     },
 
-    startMultipleZone: function(token, mesh, zones, runTime){
+    startMultipleZone: function(token, device, runTime){
           try { 
             let body=[]
-            mesh.devices.forEach((device)=>{
-                if(mesh.bridge_device_id!=device.device_id){
-                    //zones.forEach((zone,index)=>{
-                        //if(zone.enabled){
-                        body.push(
-                            {
-                            device_id: device.ble_device_id,
-                            run_time: runTime,
-                            station: 1
-                            }
-                        )
-                        //}
-                    //})
-                }
-            })
-            this.log.debug('multiple run data',JSON.stringify(body,null,2))
-            this.wsp.connect(token, mesh.bridge_device_id)
+                    device.zones.forEach((zone)=>{
+											zone.enabled=true // need orbit version of enabled
+                        if(zone.enabled){
+													body.push(
+														{
+														station: zone.station,
+														run_time: runTime
+														}
+													)
+                        }
+                    })
+            this.log.debug('multiple zone run data',JSON.stringify(body,null,2))
+            this.wsp.connect(token, device.id)
                 .then(ws=>ws.send({
                     event: "change_mode",
                     mode: "manual",
-                    device_id: mesh.bridge_device_id,
-                    station: body
+                    device_id: device.id,
+                    stations: body
                 }))
         }catch(err) {this.log.error('Error starting multiple zone %s', err)}
     },
