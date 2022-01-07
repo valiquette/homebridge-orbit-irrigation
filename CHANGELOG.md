@@ -1,9 +1,16 @@
 # Changes
 
+## 1.1.2
+Fix
+-   Corrected error handeling for older model types that could cause plugin to fail to start.
+-		Corrected bugs with Run-All switch when more than one controller is present on account.
+Update
+-		Added supoort for Gen-1 Water Timer WT25 
+-		Updated readme with supported models.
+
 ## 1.1.1
 Update
 -   Code cleanup
-
 
 ## 1.1.0
 Update
@@ -12,7 +19,7 @@ Update
 
 ## 1.0.7 beta
 Fix
--   Initial build for multi zone Water Timers
+-   Initial build for multi zone Water Timers WT25G2
 -   Suppressed logging pings to avoid filling up the log file
 -   Moved some info logging to debug
 -   Changed some of the logging text

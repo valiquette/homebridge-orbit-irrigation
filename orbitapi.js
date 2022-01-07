@@ -177,31 +177,27 @@ OrbitAPI.prototype={
         }catch(err) {this.log.error('Error starting zone %s', err)}
     },
 
-    startMultipleZone: function(token, mesh, zones, runTime){
+    startMultipleZone: function(token, device, runTime){
           try { 
             let body=[]
-            mesh.devices.forEach((device)=>{
-                if(mesh.bridge_device_id!=device.device_id){
-                    //zones.forEach((zone,index)=>{
-                        //if(zone.enabled){
-                        body.push(
-                            {
-                            device_id: device.ble_device_id,
-                            run_time: runTime,
-                            station: 1
-                            }
-                        )
-                        //}
-                    //})
-                }
-            })
-            this.log.debug('multiple run data',JSON.stringify(body,null,2))
-            this.wsp.connect(token, mesh.bridge_device_id)
+                    device.zones.forEach((zone)=>{
+											zone.enabled=true // need orbit version of enabled
+                        if(zone.enabled){
+													body.push(
+														{
+														station: zone.station,
+														run_time: runTime
+														}
+													)
+                        }
+                    })
+            this.log.debug('multiple zone run data',JSON.stringify(body,null,2))
+            this.wsp.connect(token, device.id)
                 .then(ws=>ws.send({
                     event: "change_mode",
                     mode: "manual",
-                    device_id: mesh.bridge_device_id,
-                    station: body
+                    device_id: device.id,
+                    stations: body
                 }))
         }catch(err) {this.log.error('Error starting multiple zone %s', err)}
     },
