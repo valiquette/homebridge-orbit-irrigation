@@ -23,6 +23,7 @@ class PlatformOrbit {
     this.useIrrigationDisplay=config.useIrrigationDisplay
     this.displayValveType=config.displayValveType
     this.defaultRuntime=config.defaultRuntime*60
+		this.runtimeSource=config.runtimeSource
     this.showStandby=config.showStandby
     this.showRunall=config.showRunall
     this.showSchedules=config.showSchedules
@@ -110,11 +111,12 @@ class PlatformOrbit {
 
               // Create and configure Battery Service if needed
               if(newDevice.battery!=null){
-                this.log.info('Adding Battery service for %s', newDevice.name)
-                let batteryService=this.createBatteryService(newDevice)
-                this.configureBatteryService(batteryService)
-                irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(batteryService)
-                irrigationAccessory.addService(batteryService)
+                this.log.info('Adding Battery status for %s', newDevice.name)
+                let batteryStatus=this.createBatteryService(newDevice)
+                this.configureBatteryService(batteryStatus)
+                irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(batteryStatus)
+								//irrigationAccessory.getService(Service.IrrigationSystem)
+                irrigationAccessory.addService(batteryStatus)
               }
               else {
                 this.log.debug('%s has no battery found, skipping add battery service', newDevice.name)
@@ -131,7 +133,7 @@ class PlatformOrbit {
                 }
                 else {
                   this.log.debug('adding zone %s',zone.name )
-                  let valveService=this.createValveService(zone)
+                  let valveService=this.createValveService(zone, newDevice.manual_preset_runtime_sec)
                   this.configureValveService(newDevice, valveService)
                   if(this.useIrrigationDisplay){
                     this.log.debug('Using Irrigation system')
@@ -183,27 +185,34 @@ class PlatformOrbit {
                 this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
                 delete this.accessories[uuid]
               }
-
+							if(this.showBridge){
               // Create and configure Bridge Service
-              this.log.debug('Creating and configuring new bridge')                        
-              let bridgeAccessory=this.createBridgeAccessory(newDevice,uuid)
-              let bridgeService=bridgeAccessory.getService(Service.BridgeConfiguration)
-              bridgeService=this.createBridgeService(newDevice)
-              this.configureBridgeService(bridgeService)
+							this.orbitapi.getMeshes(this.token,newDevice.mesh_id).then(response=>{
+								this.meshNetwork=response.data
+								this.log.debug('Creating and configuring new bridge')                       
+								let bridgeAccessory=this.createBridgeAccessory(newDevice,uuid)
+								let bridgeService=bridgeAccessory.getService(Service.Tunnel)
+								bridgeService=this.createBridgeService(newDevice,this.meshNetwork)
+								this.configureBridgeService(bridgeService)
 
-              //set current device status 
-              bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
-
-              bridgeAccessory.addService(bridgeService)
-              this.accessories[uuid]=bridgeAccessory                    
-              if(this.showBridge){
-                this.log.info('Adding Bridge Configuration')
-                this.log.debug('Registering platform accessory')
-                this.api.registerPlatformAccessories(PluginName, PlatformName, [bridgeAccessory])
-                }
-              else{
-                this.log.info('Skipping Bridge Configuration')
-                }
+								//set current device status 
+								bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
+							
+								bridgeAccessory.addService(bridgeService)
+								this.accessories[uuid]=bridgeAccessory                     
+								//if(this.showBridge){
+									this.log.info('Adding Bridge')
+									this.log.debug('Registering platform accessory')
+									this.api.registerPlatformAccessories(PluginName, PlatformName, [bridgeAccessory])
+								//	}
+								//else{
+								//	this.log.info('Skipping Bridge')
+								//	}
+							}).catch(err=>{this.log.error('Failed to add bridge %s', err)})
+						}
+							else{
+								this.log.info('Skipping Bridge')
+								}
             break
           }
           if(newDevice.mesh_id){
@@ -263,7 +272,7 @@ class PlatformOrbit {
   }
 
   configureIrrigationService(device,irrigationSystemService){
-    this.log.info('Configure irrigation service for %s', irrigationSystemService.getCharacteristic(Characteristic.Name).value)
+    this.log.info('Configure Irrigation system for %s', irrigationSystemService.getCharacteristic(Characteristic.Name).value)
     // Configure IrrigationSystem Service
     irrigationSystemService 
       .setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
@@ -308,15 +317,36 @@ class PlatformOrbit {
     }
   }
   
-  createValveService(zone){
+  createValveService(zone,manual_preset_runtime_sec){
     //Characteristic.ValveType.GENERIC_VALVE=0
     //Characteristic.ValveType.IRRIGATION=1
     //Characteristic.ValveType.SHOWER_HEAD=2
     //Characteristic.ValveType.WATER_FAUCET=3
-    this.log.debug("Created valve service for %s with id %s", zone.name, zone.station)
+
     // Create Valve Service
     let valve=new Service.Valve(zone.name, zone.station)
-    zone.enabled=true // need orbit version of enabled
+		let defaultRuntime=this.defaultRuntime
+		zone.enabled=true // need orbit version of enabled
+		try{
+			switch (this.runtimeSource) {
+				case 0:
+					defaultRuntime=this.defaultRuntime
+				break
+				case 1:
+					if(manual_preset_runtime_sec>0){
+						defaultRuntime=manual_preset_runtime_sec
+					}
+				break
+				case 2:
+					if(zone.flow_data.cycle_run_time_sec>0){
+						defaultRuntime=zone.flow_data.cycle_run_time_sec
+					}
+				break
+			}
+		}catch(err){
+			this.log.debug('error setting runtime, using default runtime')
+			}
+		this.log.debug("Created valve service for %s with id %s with %s min runtime", zone.name, zone.station, Math.round(defaultRuntime/60))
     valve.addCharacteristic(Characteristic.CurrentTime) // Use CurrentTime to store the run time ending
     valve.addCharacteristic(Characteristic.SerialNumber) //Use Serial Number to store the zone id
     valve.addCharacteristic(Characteristic.Model)
@@ -325,7 +355,7 @@ class PlatformOrbit {
       .setCharacteristic(Characteristic.Active, Characteristic.Active.INACTIVE)
       .setCharacteristic(Characteristic.InUse, Characteristic.InUse.NOT_IN_USE)
       .setCharacteristic(Characteristic.ValveType, this.displayValveType)
-      .setCharacteristic(Characteristic.SetDuration, this.defaultRuntime)
+      .setCharacteristic(Characteristic.SetDuration, Math.ceil(defaultRuntime/60)*60)
       .setCharacteristic(Characteristic.RemainingDuration, 0)
       .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
       .setCharacteristic(Characteristic.ServiceLabelIndex, zone.station)
@@ -343,8 +373,8 @@ class PlatformOrbit {
   }
 
   configureValveService(device, valveService){
-    this.log.info("Configured valve service for zone-%s %s",valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value, valveService.getCharacteristic(Characteristic.Name).value)
-    // Configure Valve Service
+    this.log.info("Configured zone-%s for %s with %s min runtime",valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value, valveService.getCharacteristic(Characteristic.Name).value, valveService.getCharacteristic(Characteristic.SetDuration).value/60)
+		// Configure Valve Service
     valveService
       .getCharacteristic(Characteristic.Active)
       .on('get', this.getValveValue.bind(this, valveService, "ValveActive"))
@@ -368,31 +398,34 @@ class PlatformOrbit {
   createBatteryService(device){
     this.log.debug("create battery service for %s",device.name )
     // Create Battery Service
-    let batteryService=new Service.Battery(device.name,device.id)
-    batteryService
-    .setCharacteristic(Characteristic.StatusLowBattery,Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL)
-    .setCharacteristic(Characteristic.BatteryLevel,device.battery.percent)
-    return batteryService
+    let batteryStatus=new Service.Battery(device.name,device.id)
+    batteryStatus
+			.setCharacteristic(Characteristic.StatusLowBattery,Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL)
+			.setCharacteristic(Characteristic.BatteryLevel,device.battery.percent)
+    return batteryStatus
   }
   
-  configureBatteryService(batteryService){
-    this.log.debug("configure battery service for %s",batteryService.getCharacteristic(Characteristic.Name).value)
-    batteryService
-    .getCharacteristic(Characteristic.StatusLowBattery)
-    .on('get', this.statusLowBattery.bind(this,batteryService))
+  configureBatteryService(batteryStatus){
+    this.log.debug("configured battery service for %s",batteryStatus.getCharacteristic(Characteristic.Name).value)
+    batteryStatus
+			.getCharacteristic(Characteristic.StatusLowBattery)
+			.on('get', this.getStatusLowBattery.bind(this,batteryStatus))
   }
 
-  statusLowBattery(batteryService,callback){
-  let currentValue=batteryService.getCharacteristic(Characteristic.BatteryLevel).value
-  if(currentValue<25){
-    this.log.warn('Battery Status Low %s%',currentValue)
-  }
-  callback(currentValue)
+  getStatusLowBattery(batteryStatus,callback){
+  let batteryValue=batteryStatus.getCharacteristic(Characteristic.BatteryLevel).value
+	let currentValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL
+  if(batteryValue<=10){
+    this.log.warn('Battery Status Low %s%',batteryValue)
+		batteryStatus.setCharacteristic(Characteristic.StatusLowBattery,Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)
+		currentValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW
+		}
+  callback(null,currentValue)
 }
 
   createBridgeAccessory(device,uuid){
     this.log.debug('Create Bridge service %s %s',device.id,device.name)
-    // Create new Irrigation System Service
+    // Create new Bridge System Service
     let newPlatformAccessory=new PlatformAccessory(device.name, uuid)
     // Create AccessoryInformation Service
     newPlatformAccessory.getService(Service.AccessoryInformation)
@@ -407,19 +440,23 @@ class PlatformOrbit {
     return newPlatformAccessory;
   }
   
-  createBridgeService(device){
+  createBridgeService(device,mesh){
     this.log.debug("create bridge service for %s",device.name )
     // Create Bridge Service
-    let bridgeService=new Service.BridgeConfiguration(device.name,device.id)
+    //let bridgeService=new Service.BridgeConfiguration(device.name,device.id) 
+		let bridgeService=new Service.Tunnel(device.name,device.id)
     bridgeService
-    .setCharacteristic(Characteristic.DiscoverBridgedAccessories,true)
+		.setCharacteristic(Characteristic.AccessoryIdentifier,mesh.name)
+		.setCharacteristic(Characteristic.TunneledAccessoryAdvertising,true)
+		.setCharacteristic(Characteristic.TunneledAccessoryConnected,true)
+		.setCharacteristic(Characteristic.TunneledAccessoryStateNumber,Object.keys(mesh.devices).length)
     return bridgeService
   }
 
   configureBridgeService(bridgeService){
-    this.log.debug("configure bridge service for %s",bridgeService.getCharacteristic(Characteristic.Name).value)
+    this.log.debug("configured bridge for %s",bridgeService.getCharacteristic(Characteristic.Name).value)
     bridgeService
-    .getCharacteristic(Characteristic.ConfigureBridgedAccessoryStatus)
+    .getCharacteristic(Characteristic.TunneledAccessoryConnected)
     //.on('get', this.somthing.bind(this,bridgeService))
   }
 
@@ -561,7 +598,7 @@ class PlatformOrbit {
 
   configureSwitchService(device, switchService){
     // Configure Valve Service
-    this.log.info("Configured service for %s" ,switchService.getCharacteristic(Characteristic.Name).value)
+    this.log.info("Configured switch for %s" ,switchService.getCharacteristic(Characteristic.Name).value)
     switchService
       .getCharacteristic(Characteristic.On)
       .on('get', this.getSwitchValue.bind(this, switchService))

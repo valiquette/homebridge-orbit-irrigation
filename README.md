@@ -15,6 +15,7 @@ This plugin provides 3 options for use in HomeKit<br>Both option have additional
 
 <br> There are plus and minus to each, so why not have options.
 <br> if you have more than one home on your B-Hyve account you may filter devices for a home based on the street address for the location you want to display in HomeKit.
+<br> If you have set manual preset runtimes for you controller or set zone flow rates in the B-Hyve app you can use these values for inital runtimes seen in HomeKit
 
 ## Notes on testing
 
@@ -31,23 +32,24 @@ This plugin has been tested or verified against hardware model/types BH1-0001, H
 ## Config.json example with child bridge
 ```
 "platforms": [
-        {
-            "name": "B-Hyve",
-            "email": "username@mail.com",
-            "password": "password",
-            "locationAddress": "123 Easy St",
-            "defaultRuntime": 1,
-            "useIrrigationDisplay": true,
-            "displayValveType": 1,
-            "showBridge": false,
-            "showStandby": false,
-            "showRunall": false,
-            "showSchedules": false,
-            "_bridge": {
-                "username": "0E:76:36:78:EC:92",
-                "port": 30395
-            },
-            "platform": "bhyve"
-        }
+	{
+		"name": "B-Hyve",
+		"email": "username@mail.com",
+		"password": "password",
+		"locationAddress": "123 Easy St",
+		"defaultRuntime": 1,
+		"runtimeSource": 0,
+		"useIrrigationDisplay": true,
+		"displayValveType": 1,
+		"showBridge": false,
+		"showStandby": false,
+		"showRunall": false,
+		"showSchedules": false,
+		"_bridge": {
+			"username": "0E:76:36:78:EC:92",
+			"port": 30395
+		},
+		"platform": "bhyve"
+	}
 ]
 ```
