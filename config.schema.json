@@ -1,177 +1,191 @@
 {
-    "pluginAlias": "bhyve",
-    "headerDisplay": "Homebridge plugin for Orbit B-Hyve Hose & Water Timers",
-    "pluginType": "platform",
-    "singular": true,
-    "schema": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "title": "Accessory Name",
-          "description": "Name for this accessory",
-          "type": "string",
-          "required": true,
-          "placeholder": "B-Hyve",
-          "default": "B-Hyve"
-        },
-        "email": {
-            "title": "Email",
-            "type": "string",
-            "placeholder": "username@gmail.com",
-            "required": true
-        },
-        "password": {
-            "title": "Password",
-            "type": "string",
-            "placeholder": "password",
-            "required": true
-        },
-        "locationAddress": {
-            "title": "Street Address",
-            "type": "string",
-            "required": false,
-            "placeholder": ""
-          },
-        "defaultRuntime": {
-            "title": "Default Runtime in Minutes",
-            "description": "Default number of minutes to run zones if not provided.",
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 60,
-            "required": true,
-            "default": 1
-            },
-        "useIrrigationDisplay": {
-            "title": "Display as Irrigation System in HomeKit",
-            "type": "boolean",
-            "required": true,
-            "default": true
-            }, 
-        "displayValveType": {
-          "title": "Display Valves as",
-          "type": "integer",
-          "required": true,
-          "default": 0,
-          "description": "Select valve type to display when irrgation display is unchecked.",
-          "oneOf": [
-            {
-              "title": "Spigot",
-              "enum": [0]
-            },
-            {
-              "title": "Irrigation",
-              "enum": [1]
-            },
-            {
-              "title": "Shower",
-              "enum": [2]
-            },
-            {
-              "title": "Faucet",
-              "enum": [3]
-            }
-          ]
-        },  
-        "showBridge": {
-          "title": "Expose bridge",
-          "description": "Exposes WiFi bridge configuration. May show as unsupportted in HomeKit.",
-          "type": "boolean",
-          "required": true,
-          "default": false
-        },
-        "showStandby": {
-          "title": "Expose switch for controller standby",
-          "description": "Exposes off mode switch, when turned on all schedules from B-hyve will be disabled.",
-          "type": "boolean",
-          "required": true,
-          "default": false
-        },
-        "showRunall": {
-          "title": "All zones",
-          "description": "Adds a switch to run all zones all device for the default time.",
-          "type": "boolean",
-          "required": true,
-          "default": false
-        },
-        "showSchedules": {
-          "title": "Expose switches for schedules",
-          "description": "Exposes schedules as defined in the B-Hyve app as a switches for quick run from HomeKit.",
-          "type": "boolean",
-          "required": true,
-          "default": false
-        }
-    }
-    },
-    "layout": [
-        {
-          "type": "help",
-          "helpvalue": "<h4><b>Required settings<b/></h4>"
-        },
-        {
-          "type": "flex",
-          "flex-flow": "row wrap",
-          "items": [
-            "name"
-          ]
-        },
-        {
-            "type": "flex",
-            "flex-flow": "row wrap",
-            "items": [
-              "email",
-              "password"
-            ]
-          },
-        {
-          "type": "help",
-          "helpvalue": "<p class='help-block'> Orbit B-Hyve account login info.</p>"
-        },
-        {
-          "type": "flex",
-          "flex-flow": "row wrap",
-          "items": [
-            "locationAddress"
-          ]
-        },
-        {
-          "type": "help",
-          "helpvalue": "<p class='help-block'> If you have more than one location and want to display them in separate Homebridge/HomeKit homes you can retrive only the devices at this address otherwise leave blank.<br/>The address must match the address configured in the b-hyve app, review the log file to see how the adresses as configured in the b-hyve app.</p>"
-        },
-        {
-          "type": "flex",
-          "flex-flow": "row wrap",
-          "items": [
-            "defaultRuntime"
-          ]
-        },
-        {
-          "type": "help",
-          "helpvalue": "<h6><b>HomeKit Display</b></h6><p class='help-block'> Display this accessory in HomeKit as a irrigation system with integrated sprinker zones.<br/>If unchecked, the irrigation system zones will displayed as individual tiles with the option in Homekit to show single or separate.</p>"
-        },
-        {
-          "type": "flex",
-          "flex-flow": "row wrap",
-          "items": [
-            "useIrrigationDisplay"
-          ]
-        },
-        {
-          "type": "flex",
-          "items": [
-            "displayValveType"
-          ]
-        },
-        {
-          "type": "fieldset",
-          "title": "Additional Switches",
-          "description": "Expand to expose additonal switches",
-          "expandable": true,
-          "items": [
-            "showBridge",
-            "showStandby",
-            "showSchedules",
-            "showRunall"
-          ]
-        }  
-    ]
+	"pluginAlias": "bhyve",
+	"headerDisplay": "Homebridge plugin for Orbit B-Hyve Hose & Water Timers",
+	"pluginType": "platform",
+	"singular": true,
+	"schema": {
+		"type": "object",
+		"properties": {
+			"name": {
+				"title": "Accessory Name",
+				"description": "Name for this accessory",
+				"type": "string",
+				"required": true,
+				"placeholder": "B-Hyve",
+				"default": "B-Hyve"
+			},
+			"email": {
+				"title": "Email",
+				"type": "string",
+				"placeholder": "username@gmail.com",
+				"required": true
+			},
+			"password": {
+				"title": "Password",
+				"type": "string",
+				"placeholder": "password",
+				"required": true
+			},
+			"locationAddress": {
+				"title": "Street Address",
+				"type": "string",
+				"required": false,
+				"placeholder": ""
+			},
+			"defaultRuntime": {
+				"title": "Default Runtime in Minutes",
+				"description": "Default number of minutes to run zones if not provided.",
+				"type": "integer",
+				"minimum": 1,
+				"maximum": 60,
+				"required": true,
+				"default": 1
+			},
+			"runtimeSource": {
+				"title": "Runtime source",
+				"type": "integer",
+				"required": true,
+				"default": 0,
+				"description": "Select a source to load intial values for each zones runtime. These can be changed in HomeKit.<br/>These sources need to be configuted or present in B-Hyve app or the default time will be used.",
+				"oneOf": [
+					{
+						"title": "Plugin default runtime",
+						"enum": [0]
+					},
+					{
+						"title": "Device Manual Preset runtimes from B-Hyve",
+						"enum": [1]
+					},
+					{
+						"title": "Zone Cycle runtimes from B-Hyve",
+						"enum": [2]
+					}
+				]
+			}, 	
+			"useIrrigationDisplay": {
+				"title": "Display as Irrigation System in HomeKit",
+				"type": "boolean",
+				"required": true,
+				"default": true
+				}, 
+			"displayValveType": {
+				"title": "Display Valves as",
+				"type": "integer",
+				"required": true,
+				"default": 1,
+				"description": "Select valve type to display when display as irrigation system is unchecked.",
+				"oneOf": [
+					{
+						"title": "Generic Valve",
+						"enum": [0]
+					},
+					{
+						"title": "Irrigation",
+						"enum": [1]
+					}
+				]
+			},  
+			"showBridge": {
+				"title": "Expose bridge",
+				"description": "Exposes WiFi bridge.",
+				"type": "boolean",
+				"required": true,
+				"default": false
+			},
+			"showStandby": {
+				"title": "Expose switch for controller standby",
+				"description": "Exposes off mode switch, when turned on all schedules from B-hyve will be disabled.",
+				"type": "boolean",
+				"required": true,
+				"default": false
+			},
+			"showRunall": {
+				"title": "All zones",
+				"description": "Adds a switch to run all zones all device for the default time.",
+				"type": "boolean",
+				"required": true,
+				"default": false
+			},
+			"showSchedules": {
+				"title": "Expose switches for schedules",
+				"description": "Exposes schedules as defined in the B-Hyve app as a switches for quick run from HomeKit.",
+				"type": "boolean",
+				"required": true,
+				"default": false
+			}
+		}
+	},
+	"layout": [
+		{
+			"type": "help",
+			"helpvalue": "<h4><b>Required settings<b/></h4>"
+		},
+		{
+			"type": "flex",
+			"flex-flow": "row wrap",
+			"items": [
+				"name"
+			]
+		},
+		{
+				"type": "flex",
+				"flex-flow": "row wrap",
+				"items": [
+					"email",
+					"password"
+				]
+			},
+		{
+			"type": "help",
+			"helpvalue": "<p class='help-block'> Orbit B-Hyve account login info.</p>"
+		},
+		{
+			"type": "flex",
+			"flex-flow": "row wrap",
+			"items": [
+				"locationAddress"
+			]
+		},
+		{
+			"type": "help",
+			"helpvalue": "<h6><b>Location Support</b></h6><p class='help-block'> If you have more than one location and want to display them in separate Homebridge/HomeKit homes you can retrive only the devices at this street address otherwise leave blank.<br/>The address must match the address configured in the b-hyve app, review the log file to see how the adresses as configured in the b-hyve app.</p>"
+		},
+		{
+			"type": "flex",
+			"flex-flow": "row wrap",
+			"items": [
+				"defaultRuntime",
+				"runtimeSource"
+			]
+		},
+		{
+			"type": "help",
+			"helpvalue": "<h6><b>HomeKit Display</b></h6><p class='help-block'> Display this accessory in HomeKit as a irrigation system with integrated sprinker zones.<br/>If unchecked, the irrigation system zones will displayed as individual tiles with the option in Homekit to show single or separate.</p>"
+		},
+		{
+			"type": "flex",
+			"flex-flow": "row wrap",
+			"items": [
+				"useIrrigationDisplay"
+			]
+		},
+		{
+			"type": "flex",
+			"items": [
+				"displayValveType"
+			]
+		},
+		{
+			"type": "fieldset",
+			"title": "Additional Switches",
+			"description": "Expand to expose additonal switches",
+			"expandable": true,
+			"items": [
+				"showBridge",
+				"showStandby",
+				"showSchedules",
+				"showRunall"
+			]
+		}  
+	]
 }
