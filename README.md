@@ -33,23 +33,23 @@ This plugin has been tested or verified against hardware model/types BH1-0001, H
 ```
 "platforms": [
 	{
-			"name": "B-Hyve",
-			"email": "username@mail.com",
-			"password": "password",
-			"locationAddress": "123 Easy St",
-			"defaultRuntime": 1,
-			"runtimeSource": 0,
-			"useIrrigationDisplay": true,
-			"displayValveType": 1,
-			"showBridge": false,
-			"showStandby": false,
-			"showRunall": false,
-			"showSchedules": false,
-			"_bridge": {
-					"username": "0E:76:36:78:EC:92",
-					"port": 30395
-			},
-			"platform": "bhyve"
+		"name": "B-Hyve",
+		"email": "username@mail.com",
+		"password": "password",
+		"locationAddress": "123 Easy St",
+		"defaultRuntime": 1,
+		"runtimeSource": 0,
+		"useIrrigationDisplay": true,
+		"displayValveType": 1,
+		"showBridge": false,
+		"showStandby": false,
+		"showRunall": false,
+		"showSchedules": false,
+		"_bridge": {
+			"username": "0E:76:36:78:EC:92",
+			"port": 30395
+		},
+		"platform": "bhyve"
 	}
 ]
 ```
