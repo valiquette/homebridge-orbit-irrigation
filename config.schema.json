@@ -181,7 +181,6 @@
 			"description": "Expand to expose additonal switches",
 			"expandable": true,
 			"items": [
-				"showBridge",
 				"showStandby",
 				"showSchedules",
 				"showRunall"
