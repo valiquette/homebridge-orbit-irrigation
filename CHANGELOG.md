@@ -4,7 +4,8 @@
 Enhancment
 - Added configuration option to load zones with intial runtime option from H-Hyve. Runtime or flow rates will have to be configured in the App. Defautls will be used if no valid times are found.
 -	Added low battery status to HomeKit status for Hose Timers
--	Removed Shower and Faucet valve types which are not compatable with an irrigation system
+-	Removed Shower and Faucet valve types which are not compatable with an irrigation system from config schema
+- Removed Show Bridge option from config schema
 -	Updated readme
 - Code Cleanup
 

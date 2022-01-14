@@ -186,30 +186,25 @@ class PlatformOrbit {
                 delete this.accessories[uuid]
               }
 							if(this.showBridge){
-              // Create and configure Bridge Service
-							this.orbitapi.getMeshes(this.token,newDevice.mesh_id).then(response=>{
-								this.meshNetwork=response.data
-								this.log.debug('Creating and configuring new bridge')                       
-								let bridgeAccessory=this.createBridgeAccessory(newDevice,uuid)
-								let bridgeService=bridgeAccessory.getService(Service.Tunnel)
-								bridgeService=this.createBridgeService(newDevice,this.meshNetwork)
-								this.configureBridgeService(bridgeService)
+								// Create and configure Bridge Service
+								this.orbitapi.getMeshes(this.token,newDevice.mesh_id).then(response=>{
+									this.meshNetwork=response.data
+									this.log.debug('Creating and configuring new bridge')                       
+									let bridgeAccessory=this.createBridgeAccessory(newDevice,uuid)
+									let bridgeService=bridgeAccessory.getService(Service.Tunnel)
+									bridgeService=this.createBridgeService(newDevice,this.meshNetwork)
+									this.configureBridgeService(bridgeService)
 
-								//set current device status 
-								bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
-							
-								bridgeAccessory.addService(bridgeService)
-								this.accessories[uuid]=bridgeAccessory                     
-								//if(this.showBridge){
+									//set current device status 
+									bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)	
+
+									bridgeAccessory.addService(bridgeService)
+									this.accessories[uuid]=bridgeAccessory                     
 									this.log.info('Adding Bridge')
 									this.log.debug('Registering platform accessory')
 									this.api.registerPlatformAccessories(PluginName, PlatformName, [bridgeAccessory])
-								//	}
-								//else{
-								//	this.log.info('Skipping Bridge')
-								//	}
-							}).catch(err=>{this.log.error('Failed to add bridge %s', err)})
-						}
+								}).catch(err=>{this.log.error('Failed to add bridge %s', err)})
+							}
 							else{
 								this.log.info('Skipping Bridge')
 								}
