@@ -71,8 +71,18 @@ class PlatformOrbit {
         // get an array of the devices
         this.orbitapi.getDevices(this.token).then(response=>{
           response.data.filter((device)=>{
+						if(device.address==undefined){
+							device.address={
+							"line_1":"undefined location",
+							"line_2":"",
+							"city":"",
+							"state":"",
+							"postal_code":"",
+							"country":""
+							}
+							this.log.debug('No location address defined, adding dummy location %s',device.address)
+						}
             if(!this.locationAddress || this.locationAddress==device.address.line_1){  
-              //this.log.info('Adding %s device %s found at the configured location: %s',device.hardware_version,device.name,device.address.line_1)
               if(device.is_connected){
                 this.log.info('Adding online %s device %s found at the configured location: %s',device.hardware_version,device.name,device.address.line_1)
               }

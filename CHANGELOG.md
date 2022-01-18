@@ -1,5 +1,10 @@
 # Changes
 
+## 1.1.4
+Fix
+- Corrected an error when no address is defined in the B-Hyve account.
+-	Security update (CVE-2022-0155).
+
 ## 1.1.3
 Enhancment
 - Added configuration option to load zones with intial runtime option from H-Hyve. Runtime or flow rates will have to be configured in the App. Defautls will be used if no valid times are found.
