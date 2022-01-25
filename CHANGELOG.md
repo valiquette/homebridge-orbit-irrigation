@@ -4,6 +4,7 @@
 Update
 - Verified support for Gen2 Bridge BH1G2-0001 and Hose Timer HT31-0001.
 -	Inital support for Flood Sensors FS1-0001.
+-	Bumped dependencies
 
 ## 1.1.4
 Fix
@@ -34,7 +35,7 @@ Update
 ## 1.1.0
 Update
 - Updated build for multi zone Water Timers
-- Bummped dependancies
+- Bumped dependancies
 
 ## 1.0.7 beta
 Fix
@@ -64,13 +65,13 @@ Update
 ## 1.0.3
 Fix
 - Fixed a bug in error messaging when updating service with a bad message.
-- Bummped nodejs dependancy to current LTS revs.
-- Bummped homebridge dependancy to 1.3.5
+- Bumped nodejs dependancy to current LTS revs.
+- Bumped homebridge dependancy to 1.3.5
 
 ## 1.0.2
 Fix
 - Fixed a bug where homekit may show incorrect non-responding state.
-- Bummped dependancy revs.
+- Bumped dependancy revs.
 
 ## 1.0.1
 Initial 
