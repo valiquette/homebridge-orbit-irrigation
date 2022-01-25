@@ -19,8 +19,13 @@ This plugin provides 3 options for use in HomeKit<br>Both option have additional
 
 ## Notes on testing
 
-This plugin has been tested or verified against hardware model/types BH1-0001, HT25-0000 WG25-001 and WG25G2-0001. 
-<br>Other hardware models/types may still work with this plugin and any feedback on devices not listed is welcome.
+This plugin has been tested or verified against hardware model/types
+- Bridges BH1-0001 and BH1G2-0001 
+- Hose Timers HT25-0000 and HT31-0001
+- Water Timers WG25-0001 and WG25G2-0001
+- Flood Sensors FS1-0001
+
+Other hardware models/types may still work with this plugin and any feedback on devices not listed is welcome.
 
 ## Installation
 1. Install this plugin using: npm install -g homebridge-orbit-irrigation

@@ -1,6 +1,5 @@
 /* todo list
 What to do with Bridge
-Add simple Valve
 Known issues 
 Run multiple API does not work, even if run from hhyve site.
 API does not return program end
@@ -30,12 +29,15 @@ class PlatformOrbit {
     this.locationAddress=config.locationAddress
     this.locationMatch=true
     this.showBridge=config.showBridge
+		this.showFloodSensor=config.showFloodSensor
+		this.showTempSensor=config.showTempSensor
     this.showIncomingMessages=false
     this.showOutgoingMessages=false
     this.lastMessage
     this.activeZone
     this.activeProgram
     this.meshNetwork
+		this.networkTopology //='61ef2f454f0cf51668f23bc2'
     this.deviceGraph
     this.accessories=[]
     if(!config.email || !config.password){
@@ -70,7 +72,12 @@ class PlatformOrbit {
       }).catch(err=>{this.log.error('Failed to get graph response %s', err)})
         // get an array of the devices
         this.orbitapi.getDevices(this.token).then(response=>{
-          response.data.filter((device)=>{
+					response.data=response.data.sort(function (a, b){ //read bridge info first
+						return a.type > b.type ? 1
+									:a.type < b.type ? -1
+									:0
+					})				
+         	response.data.filter((device)=>{
 						if(device.address==undefined){
 							device.address={
 							"line_1":"undefined location",
@@ -84,25 +91,41 @@ class PlatformOrbit {
 						}
             if(!this.locationAddress || this.locationAddress==device.address.line_1){  
               if(device.is_connected){
-                this.log.info('Adding online %s device %s found at the configured location: %s',device.hardware_version,device.name,device.address.line_1)
+                this.log.info('Online device %s %s found at the configured location: %s',device.hardware_version,device.name,device.address.line_1)
               }
               else{
-                this.log.info('Adding offline %s device %s found at the configured location: %s',device.hardware_version,device.name,device.address.line_1)
+                this.log.info('Offline device %s %s found at the configured location: %s',device.hardware_version,device.name,device.address.line_1)
               }
               this.locationMatch=true
             }
+						else if(this.locationAddress ||this.networkTopology==device.network_topology_id){ 
+							//this.log.warn(this.networkTopology,device.network_topology_id) 
+              if(device.is_connected){
+                this.log.info('Online device %s %s found at the configured location: %s',device.hardware_version,device.name,device.location)
+              }
+              else{
+                this.log.info('Offline device %s %s found at the configured location: %s',device.hardware_version,device.name,device.location)
+              }
+              this.locationMatch=true
+						}
             else{
-              this.log.info('Skipping %s device %s at %s, not found at the configured location: %s',device.hardware_version,device.name,device.address.line_1,this.locationAddress)
+              this.log.info('Skipping device %s %s at %s, not found at the configured location: %s',device.hardware_version,device.name,device.address.line_1,this.locationAddress)
               this.locationMatch=false
             }
-            return this.locationMatch
+            return this.locationMatch 
           }).forEach((newDevice)=>{
+						this.log.warn(this.networkTopology,newDevice.name,newDevice.network_topology_id) 
             //adding devices that met filter criteria
-            this.log.debug('Found device %s with status %s',newDevice.name,newDevice.status.run_mode)
             let uuid=UUIDGen.generate(newDevice.id)
             switch (newDevice.type){
               case "sprinkler_timer":
-                this.log.debug('Adding Device Sprinkler Timer')
+                this.log.debug('Adding Sprinkler Timer Device')
+								if(newDevice.status.run_mode){
+									this.log.debug('Found device %s with status %s',newDevice.name,newDevice.status.run_mode) 
+								}
+								else{
+									this.log.warn('Found device %s with an unknown status %s, please check connection status',newDevice.name)
+								}
                 //Remove cached accessory
                 this.log.debug('Removed cached device')
                 let switchService
@@ -110,53 +133,53 @@ class PlatformOrbit {
                   this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
                   delete this.accessories[uuid]
                 }
-              // Create and configure Irrigation Service
-              this.log.debug('Creating and configuring new device')                
-              let irrigationAccessory=this.createIrrigationAccessory(newDevice,uuid)
-              let irrigationSystemService=irrigationAccessory.getService(Service.IrrigationSystem)
-              this.configureIrrigationService(newDevice,irrigationSystemService)
-              
-              //set current device status 
-              irrigationSystemService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
+								// Create and configure Irrigation Service
+								this.log.debug('Creating and configuring new device')                
+								let irrigationAccessory=this.createIrrigationAccessory(newDevice,uuid)
+								let irrigationSystemService=irrigationAccessory.getService(Service.IrrigationSystem)
+								this.configureIrrigationService(newDevice,irrigationSystemService)
+								
+								//set current device status 
+								irrigationSystemService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
 
-              // Create and configure Battery Service if needed
-              if(newDevice.battery!=null){
-                this.log.info('Adding Battery status for %s', newDevice.name)
-                let batteryStatus=this.createBatteryService(newDevice)
-                this.configureBatteryService(batteryStatus)
-                irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(batteryStatus)
-								//irrigationAccessory.getService(Service.IrrigationSystem)
-                irrigationAccessory.addService(batteryStatus)
-              }
-              else {
-                this.log.debug('%s has no battery found, skipping add battery service', newDevice.name)
-              }
+								// Create and configure Battery Service if needed
+								if(newDevice.battery!=null){
+									this.log.info('Adding Battery status for %s', newDevice.name)
+									let batteryStatus=this.createBatteryService(newDevice)
+									this.configureBatteryService(batteryStatus)
+									irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(batteryStatus)
+									//irrigationAccessory.getService(Service.IrrigationSystem)
+									irrigationAccessory.addService(batteryStatus)
+								}
+								else {
+									this.log.debug('%s has no battery found, skipping add battery service', newDevice.name)
+								}
 
               // Create and configure Values services and link to Irrigation Service
               newDevice.zones=newDevice.zones.sort(function (a, b){
                 return a.station - b.station
               })
-              newDevice.zones.forEach((zone)=>{
-                zone.enabled=true // need orbit version of enabled
-                if(!this.useIrrigationDisplay && !zone.enabled){ 
-                  this.log.info('Skipping disabled zone %s',zone.name )
-                }
-                else {
-                  this.log.debug('adding zone %s',zone.name )
-                  let valveService=this.createValveService(zone, newDevice.manual_preset_runtime_sec)
-                  this.configureValveService(newDevice, valveService)
-                  if(this.useIrrigationDisplay){
-                    this.log.debug('Using Irrigation system')
-                    irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(valveService)
-                    irrigationAccessory.addService(valveService) 
-                  }
-                  else{
-                    this.log.debug('Using separate tiles')
-                    irrigationAccessory.getService(Service.IrrigationSystem)
-                    irrigationAccessory.addService(valveService)
-                  }
-                }
-              })
+								newDevice.zones.forEach((zone)=>{
+									zone.enabled=true // need orbit version of enabled
+									if(!this.useIrrigationDisplay && !zone.enabled){ 
+										this.log.info('Skipping disabled zone %s',zone.name )
+									}
+									else {
+										this.log.debug('adding zone %s',zone.name )
+										let valveService=this.createValveService(zone, newDevice.manual_preset_runtime_sec)
+										this.configureValveService(newDevice, valveService)
+										if(this.useIrrigationDisplay){
+											this.log.debug('Using Irrigation system')
+											irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(valveService)
+											irrigationAccessory.addService(valveService) 
+										}
+										else{
+											this.log.debug('Using separate tiles')
+											irrigationAccessory.getService(Service.IrrigationSystem)
+											irrigationAccessory.addService(valveService)
+										}
+									}
+								})
               if(this.showSchedules){
                 this.orbitapi.getTimerPrograms(this.token,newDevice).then(response=>{
                   response.data.forEach((schedule)=>{
@@ -189,37 +212,127 @@ class PlatformOrbit {
               this.accessories[uuid]=irrigationAccessory
             break
             case "bridge":
+							//this.log.warn('network topology id',x)
+							//async function x(callback){
+							this.log.debug('Adding Bridge Device')
+							this.log.debug('Found device %s',newDevice.name) 				
               //Remove cached accessory
               this.log.debug('Removed cached device')
               if(this.accessories[uuid]){
                 this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
                 delete this.accessories[uuid]
               }
-							if(this.showBridge){
-								// Create and configure Bridge Service
-								this.orbitapi.getMeshes(this.token,newDevice.mesh_id).then(response=>{
-									this.meshNetwork=response.data
-									this.log.debug('Creating and configuring new bridge')                       
-									let bridgeAccessory=this.createBridgeAccessory(newDevice,uuid)
-									let bridgeService=bridgeAccessory.getService(Service.Tunnel)
-									bridgeService=this.createBridgeService(newDevice,this.meshNetwork)
-									this.configureBridgeService(bridgeService)
+							switch (newDevice.hardware_version){
+								case "BH1-0001":
+									// Create and configure Gen 1Bridge Service
+									this.orbitapi.getMeshes(this.token,newDevice.mesh_id).then(response=>{
+										this.meshNetwork=response.data
+										this.log.debug('Creating and configuring new bridge')                       
+										let bridgeAccessory=this.createBridgeAccessory(newDevice,uuid)
+										let bridgeService=bridgeAccessory.getService(Service.Tunnel)
+										bridgeService=this.createBridgeService(newDevice,this.meshNetwork,false)
+										this.configureBridgeService(bridgeService)
 
-									//set current device status 
-									bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)	
+										//set current device status 
+										bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)	
+										
+										if(this.showBridge){
+											bridgeAccessory.addService(bridgeService)
+											this.accessories[uuid]=bridgeAccessory                     
+											this.log.info('Adding Gen-1 Bridge')
+											this.log.debug('Registering platform accessory')
+											this.api.registerPlatformAccessories(PluginName, PlatformName, [bridgeAccessory])
+										}
+										else{
+											this.log.info('Skipping Bridge')
+											}
+									}).catch(err=>{this.log.error('Failed to add bridge %s', err)})
+								break
+								case "BH1G2-0001":
+									// Create and configure Gen2 Bridge Service
+									this.orbitapi.getNetworkTopologies(this.token,newDevice.network_topology_id).then(response=>{
+										this.networkTopology=response.data
+										this.log.debug('Creating and configuring new bridge')                       
+										let bridgeAccessory=this.createBridgeAccessory(newDevice,uuid)
+										let bridgeService=bridgeAccessory.getService(Service.Tunnel)
+										bridgeService=this.createBridgeService(newDevice,this.networkTopology,true)
+										this.configureBridgeService(bridgeService)
 
-									bridgeAccessory.addService(bridgeService)
-									this.accessories[uuid]=bridgeAccessory                     
-									this.log.info('Adding Bridge')
-									this.log.debug('Registering platform accessory')
-									this.api.registerPlatformAccessories(PluginName, PlatformName, [bridgeAccessory])
-								}).catch(err=>{this.log.error('Failed to add bridge %s', err)})
-							}
-							else{
-								this.log.info('Skipping Bridge')
-								}
+										//set current device status 
+										bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)	
+										
+										if(this.showBridge){
+											bridgeAccessory.addService(bridgeService)
+											this.accessories[uuid]=bridgeAccessory                     
+											this.log.info('Adding Gen-2 Bridge')
+											this.log.debug('Registering platform accessory')
+											this.api.registerPlatformAccessories(PluginName, PlatformName, [bridgeAccessory])
+										}
+										else{
+											this.log.info('Skipping Bridge')
+											}
+									}).catch(err=>{this.log.error('Failed to add bridge %s', err)})
+										break
+									}
+									//callback(this.networkTopology.id)
+								//}
             break
-          }
+						case "flood_sensor":
+							this.log.warn(this.networkTopology,newDevice.network_topology_id) 
+							this.log.debug('Adding Flood Sensor Device')
+							this.log.debug('Found device %s',newDevice.name) 				
+							//Remove cached accessory
+							this.log.debug('Removed cached device')
+							if(this.accessories[uuid]){
+								this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
+								delete this.accessories[uuid]
+							}
+							if(this.showFloodSensor){
+								this.log.info('Adding Flood Sensor for %s', newDevice.name)
+								let leakAccessory=this.createLeakAccessory(newDevice,uuid)
+								let leakSensor=this.createLeakService(newDevice)
+								this.configureLeakService(leakSensor)
+								leakAccessory.addService(leakSensor)
+
+								this.log.info('Adding Battery status for %s', newDevice.name)
+								let batteryStatus=this.createBatteryService(newDevice)
+								this.configureBatteryService(batteryStatus)
+								leakAccessory.getService(Service.LeakSensor).addLinkedService(batteryStatus)
+								leakAccessory.addService(batteryStatus)
+								this.accessories[uuid]=leakAccessory                     					
+								this.log.debug('Registering platform accessory')
+								this.api.registerPlatformAccessories(PluginName, PlatformName, [leakAccessory])
+							}
+							if(this.showTempSensor){
+								this.log.info('Adding Temperature Sensor for %s', newDevice.name)
+								let tempSensor=this.createTempService(newDevice)
+								this.configureTempService(tempSensor)
+								if(!this.showFloodSensor){
+									let tempAccessory=this.createTempAccessory(newDevice,uuid)
+									tempAccessory.getService(Service.TemperatureSensor)
+									tempAccessory.addService(tempSensor)
+
+									this.log.info('Adding Battery status for %s', newDevice.name)
+									let batteryStatus=this.createBatteryService(newDevice)
+									this.configureBatteryService(batteryStatus)
+									tempAccessory.getService(Service.TemperatureSensor).addLinkedService(batteryStatus)
+									tempAccessory.addService(batteryStatus)
+									this.accessories[uuid]=tempAccessory 
+									this.log.debug('Registering platform accessory')
+									this.api.registerPlatformAccessories(PluginName, PlatformName, [tempAccessory])	
+								}
+								else{
+								let leakAccessory=this.accessories[uuid]
+								leakAccessory.getService(Service.TemperatureSensor)
+								leakAccessory.addService(tempSensor)
+								}
+							}
+						break
+						default:
+							// do nothing
+					}
+
+					/*
           if(newDevice.mesh_id){
             this.orbitapi.getMeshes(this.token,newDevice.mesh_id).then(response=>{
               this.log.debug('Found mesh netowrk for',response.data.name)
@@ -229,6 +342,8 @@ class PlatformOrbit {
           else{
             this.log.debug('Skipping Mesh info for %s with firmware %s',newDevice.hardware_version, newDevice.firmware_version)
           }
+					*/
+
           this.log.debug('establish connection for %s',newDevice.name)
           this.orbitapi.openConnection(this.token, newDevice)
           this.orbitapi.onMessage(this.token, newDevice, this.updateService.bind(this))
@@ -426,7 +541,85 @@ class PlatformOrbit {
 		currentValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW
 		}
   callback(null,currentValue)
-}
+	}
+
+	createLeakAccessory(device,uuid){
+    this.log.debug('Create Bridge service %s %s',device.id,device.name)
+    // Create new Bridge System Service
+    let newPlatformAccessory=new PlatformAccessory(device.name, uuid)
+    // Create AccessoryInformation Service
+    newPlatformAccessory.getService(Service.AccessoryInformation)
+      .setCharacteristic(Characteristic.Name, device.name)
+      .setCharacteristic(Characteristic.Manufacturer, "Orbit")
+      .setCharacteristic(Characteristic.SerialNumber, device.mac_address)
+      .setCharacteristic(Characteristic.Model, device.type)
+      .setCharacteristic(Characteristic.Identify, true)
+      .setCharacteristic(Characteristic.FirmwareRevision, device.firmware_version)
+      .setCharacteristic(Characteristic.HardwareRevision, device.hardware_version)
+      .setCharacteristic(Characteristic.SoftwareRevision, packageJson.version)
+    return newPlatformAccessory;
+  }
+
+	createLeakService(device){
+		this.log.debug("create leak sensor for %s",device.name )
+		// Create Leak Sensor Service
+		let leakSensor=new Service.LeakSensor(device.name,device.id)
+		leakSensor
+			.setCharacteristic(Characteristic.LeakDetected,Characteristic.LeakDetected.LEAK_NOT_DETECTED)
+			.setCharacteristic(Characteristic.StatusTampered,Characteristic.StatusTampered.NOT_TAMPERED)
+		return leakSensor
+	}
+
+	configureLeakService(leakSensor){
+		this.log.debug("configured leak sensor for %s",leakSensor.getCharacteristic(Characteristic.Name).value)
+		leakSensor
+			.getCharacteristic(Characteristic.LeakDetected)
+			.on('get', this.getLeakStatus.bind(this,leakSensor))
+	}
+
+	getLeakStatus(leakSensor,callback){
+	let leak=leakSensor.getCharacteristic(Characteristic.LeakDetected).value
+	let currentValue = Characteristic.LeakDetected.LEAK_NOT_DETECTED
+	if(leak){
+		this.log.warn('Leak Detected')
+		leakSensor.setCharacteristic(Characteristic.LeakDetected,Characteristic.LeakDetected.LEAK_DETECTED)
+		currentValue = Characteristic.LeakDetected.LEAK_DETECTED
+		}
+	callback(null,currentValue)
+	}
+
+	createTempAccessory(device,uuid){
+    this.log.debug('Create Bridge service %s %s',device.id,device.name)
+    // Create new Bridge System Service
+    let newPlatformAccessory=new PlatformAccessory(device.name, uuid)
+    // Create AccessoryInformation Service
+    newPlatformAccessory.getService(Service.AccessoryInformation)
+      .setCharacteristic(Characteristic.Name, device.name)
+      .setCharacteristic(Characteristic.Manufacturer, "Orbit")
+      .setCharacteristic(Characteristic.SerialNumber, device.mac_address)
+      .setCharacteristic(Characteristic.Model, device.type)
+      .setCharacteristic(Characteristic.Identify, true)
+      .setCharacteristic(Characteristic.FirmwareRevision, device.firmware_version)
+      .setCharacteristic(Characteristic.HardwareRevision, device.hardware_version)
+      .setCharacteristic(Characteristic.SoftwareRevision, packageJson.version)
+    return newPlatformAccessory;
+  }
+
+	createTempService(device){
+		this.log.debug("create temperature sensor service for %s",device.name )
+		// Create Leak Sensor Service
+		let tempSensor=new Service.TemperatureSensor(device.name,'tempSensor')
+		tempSensor
+			.setCharacteristic(Characteristic.CurrentTemperature,(device.status.temp_f-32)*5/9)
+		return tempSensor
+	}
+
+	configureTempService(tempSensor){
+		this.log.debug("configured temp sensor for %s",tempSensor.getCharacteristic(Characteristic.Name).value)
+		tempSensor
+			.getCharacteristic(Characteristic.CurrentTemperature)
+			//.on('get', this.getLeakStatus.bind(this,leakSensor))
+	}
 
   createBridgeAccessory(device,uuid){
     this.log.debug('Create Bridge service %s %s',device.id,device.name)
@@ -445,16 +638,24 @@ class PlatformOrbit {
     return newPlatformAccessory;
   }
   
-  createBridgeService(device,mesh){
+  createBridgeService(device,network,G2){
     this.log.debug("create bridge service for %s",device.name )
     // Create Bridge Service
-    //let bridgeService=new Service.BridgeConfiguration(device.name,device.id) 
 		let bridgeService=new Service.Tunnel(device.name,device.id)
-    bridgeService
-		.setCharacteristic(Characteristic.AccessoryIdentifier,mesh.name)
+    if(G2){
+			bridgeService
+			.setCharacteristic(Characteristic.AccessoryIdentifier,network.network_key)
+			.setCharacteristic(Characteristic.TunneledAccessoryAdvertising,true)
+			.setCharacteristic(Characteristic.TunneledAccessoryConnected,true)
+			.setCharacteristic(Characteristic.TunneledAccessoryStateNumber,Object.keys(network.devices).length)
+		}
+		else{
+		bridgeService
+		.setCharacteristic(Characteristic.AccessoryIdentifier,network.ble_network_key)
 		.setCharacteristic(Characteristic.TunneledAccessoryAdvertising,true)
 		.setCharacteristic(Characteristic.TunneledAccessoryConnected,true)
-		.setCharacteristic(Characteristic.TunneledAccessoryStateNumber,Object.keys(mesh.devices).length)
+		.setCharacteristic(Characteristic.TunneledAccessoryStateNumber,Object.keys(network.devices).length-1)
+		}
     return bridgeService
   }
 

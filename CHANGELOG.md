@@ -1,5 +1,10 @@
 # Changes
 
+## 1.2.0 beta
+Update
+- Verified support for Gen2 Bridge BH1G2-0001 and Hose Timer HT31-0001.
+-	Inital support for Flood Sensors FS1-0001.
+
 ## 1.1.4
 Fix
 - Corrected an error when no address is defined in the B-Hyve account.
