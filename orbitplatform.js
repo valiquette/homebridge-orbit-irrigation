@@ -335,7 +335,6 @@ class PlatformOrbit {
       }).catch(err=>{this.log.error('Failed to get token', err)})
     }).catch(err=>{this.log.error('Failed to get info for build', err)})
   }
-
   //**
   //** REQUIRED - Homebridge will call the "configureAccessory" method once for every cached accessory restored
   //**
@@ -618,7 +617,7 @@ class PlatformOrbit {
 	}
 	
 	configureOccupancyService(occupancyStatus){
-		this.log.debug("configured Occupancy service") // for %s",occupancyStatus.getCharacteristic(Characteristic.Name).value)
+		this.log.debug("configured Occupancy service")
 		occupancyStatus
 			.getCharacteristic(Characteristic.OccupancyDetected)
 			.on('get', this.getStatusOccupancy.bind(this,occupancyStatus))
