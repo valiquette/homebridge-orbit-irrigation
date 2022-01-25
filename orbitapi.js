@@ -280,7 +280,19 @@ OrbitAPI.prototype={
                 device_id: device.id
             }))
         }catch(err) {this.log.error('Error syncing data %s', err)}
-    }
+    },
+
+		identify: function(token, device){
+			try { 
+			this.log.debug('Identify device %s info', device.name)
+			this.wsp.connect(token, device.id)
+					.then(ws=>ws.send({
+							event: "fs_identify",
+							device_id: device.id,
+							identify_time_ms:5000
+					}))
+			}catch(err) {this.log.error('Error syncing data %s', err)}
+	}
 
 }
 

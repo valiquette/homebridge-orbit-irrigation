@@ -103,6 +103,12 @@
 				"required": true,
 				"default": false
 			},
+			"showLimitsSensor": {
+				"title": "Expose Occupancy Sensors in HomeKit for Temperature high/low limits",
+				"type": "boolean",
+				"required": true,
+				"default": false
+			},
 			"showStandby": {
 				"title": "Expose switch for controller standby",
 				"description": "Exposes off mode switch, when turned on all schedules from B-hyve will be disabled.",
@@ -191,7 +197,8 @@
 			"flex-flow": "row wrap",
 			"items": [
 				"showTempSensor",
-				"showFloodSensor"
+				"showFloodSensor",
+				"showLimitsSensor"
 			]
 		},
 		{
