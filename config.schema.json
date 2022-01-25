@@ -46,7 +46,7 @@
 				"type": "integer",
 				"required": true,
 				"default": 0,
-				"description": "Select a source to load intial values for each zones runtime. These can be changed in HomeKit.<br/>These sources need to be configuted or present in B-Hyve app or the default time will be used.",
+				"description": "Select a source to load intial values for each zones runtime. These can be changed in HomeKit.<br/>These sources need to be configured or present in B-Hyve app or the default time will be used.",
 				"oneOf": [
 					{
 						"title": "Plugin default runtime",
@@ -86,8 +86,25 @@
 				]
 			},  
 			"showBridge": {
-				"title": "Expose bridge",
-				"description": "Exposes WiFi bridge.",
+				"title": "Expose WiFi Hub in HomeKit",
+				"type": "boolean",
+				"required": true,
+				"default": false
+			},
+			"showFloodSensor": {
+				"title": "Expose Flood Sensors in HomeKit",
+				"type": "boolean",
+				"required": true,
+				"default": false
+			},
+			"showTempSensor": {
+				"title": "Expose Temperature Sensors in HomeKit",
+				"type": "boolean",
+				"required": true,
+				"default": false
+			},
+			"showLimitsSensor": {
+				"title": "Expose Occupancy Sensors in HomeKit for Temperature high/low limits",
 				"type": "boolean",
 				"required": true,
 				"default": false
@@ -128,6 +145,10 @@
 			]
 		},
 		{
+			"type": "help",
+			"helpvalue": "<p class='help-block'> <h6>Orbit B-Hyve account login info.</h6></p>"
+		},
+		{
 				"type": "flex",
 				"flex-flow": "row wrap",
 				"items": [
@@ -137,7 +158,7 @@
 			},
 		{
 			"type": "help",
-			"helpvalue": "<p class='help-block'> Orbit B-Hyve account login info.</p>"
+			"helpvalue": "<h6><b>Location Support</b></h6><p class='help-block'> If you have more than one location and want to display them in separate Homebridge/HomeKit homes you can retrive only the devices at this street address otherwise leave blank.<br/>The address must match the address configured in the b-hyve app, review the log file to see the adresses as configured in the b-hyve app.</p>"
 		},
 		{
 			"type": "flex",
@@ -145,10 +166,6 @@
 			"items": [
 				"locationAddress"
 			]
-		},
-		{
-			"type": "help",
-			"helpvalue": "<h6><b>Location Support</b></h6><p class='help-block'> If you have more than one location and want to display them in separate Homebridge/HomeKit homes you can retrive only the devices at this street address otherwise leave blank.<br/>The address must match the address configured in the b-hyve app, review the log file to see how the adresses as configured in the b-hyve app.</p>"
 		},
 		{
 			"type": "flex",
@@ -160,19 +177,28 @@
 		},
 		{
 			"type": "help",
-			"helpvalue": "<h6><b>HomeKit Display</b></h6><p class='help-block'> Display this accessory in HomeKit as a irrigation system with integrated sprinker zones.<br/>If unchecked, the irrigation system zones will displayed as individual tiles with the option in Homekit to show single or separate.</p>"
+			"helpvalue": "<h6><b>HomeKit Display</b></h6><p class='help-block'> Display these accessories in HomeKit as a irrigation system with integrated sprinker zones.<br/>If unchecked, the irrigation system zones will displayed as individual tiles with the option in Homekit to show single or separate.</p>"
 		},
 		{
 			"type": "flex",
 			"flex-flow": "row wrap",
 			"items": [
-				"useIrrigationDisplay"
+				"useIrrigationDisplay",
+				"showBridge",
+				"displayValveType"
 			]
 		},
 		{
+			"type": "help",
+			"helpvalue": "<h6><b>Flood Sensor</b></h6><p class='help-block'> Display these sensors in HomeKit.</p>"
+		},
+		{
 			"type": "flex",
+			"flex-flow": "row wrap",
 			"items": [
-				"displayValveType"
+				"showTempSensor",
+				"showFloodSensor",
+				"showLimitsSensor"
 			]
 		},
 		{

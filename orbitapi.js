@@ -79,6 +79,25 @@ OrbitAPI.prototype={
             }catch(err) {this.log.error('Error retrieving mesh info %s', err)}
         },
 
+		getNetworkTopologies: async function(token,networkTopologyId){
+			// Get mesh details
+			try {  
+					this.log.debug('Retrieving network topology info')
+					let response = await axios({
+							method: 'get',
+							url: endpoint + 'network_topologies/'+networkTopologyId,
+							headers: {
+							'Content-Type': 'application/json',
+							'orbit-api-key': token, 
+							'orbit-app-id': 'Bhyve Dashboard'
+							},
+							responseType: 'json'
+					}).catch(err=>{this.log.error('Error getting network topologies info %s', err)})
+					this.log.debug('get network topology info response',JSON.stringify(response.data,null,2))
+					return response
+					}catch(err) {this.log.error('Error retrieving network topologies info %s', err)}
+			},
+
       getDeviceGraph: async function(token,userId){
         // Get device graph details
         try {  
@@ -261,7 +280,19 @@ OrbitAPI.prototype={
                 device_id: device.id
             }))
         }catch(err) {this.log.error('Error syncing data %s', err)}
-    }
+    },
+
+		identify: function(token, device){
+			try { 
+			this.log.debug('Identify device %s info', device.name)
+			this.wsp.connect(token, device.id)
+					.then(ws=>ws.send({
+							event: "fs_identify",
+							device_id: device.id,
+							identify_time_ms:5000
+					}))
+			}catch(err) {this.log.error('Error syncing data %s', err)}
+	}
 
 }
 
