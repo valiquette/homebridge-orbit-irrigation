@@ -37,7 +37,8 @@ class PlatformOrbit {
     this.activeZone
     this.activeProgram
     this.meshNetwork
-		this.networkTopology //='61ef2f454f0cf51668f23bc2'
+		this.networkTopology
+		this.networkTopologyId
     this.deviceGraph
     this.accessories=[]
     if(!config.email || !config.password){
@@ -91,30 +92,31 @@ class PlatformOrbit {
 						}
             if(!this.locationAddress || this.locationAddress==device.address.line_1){  
               if(device.is_connected){
-                this.log.info('Online device %s %s found at the configured location: %s',device.hardware_version,device.name,device.address.line_1)
-              }
+                this.log.info('Online device %s %s found at the configured location address: %s',device.hardware_version,device.name,device.address.line_1)
+								if(device.network_topology_id){
+									this.networkTopologyId=device.network_topology_id
+              	}
+							}
               else{
-                this.log.info('Offline device %s %s found at the configured location: %s',device.hardware_version,device.name,device.address.line_1)
+                this.log.info('Offline device %s %s found at the configured location address: %s',device.hardware_version,device.name,device.address.line_1)
               }
               this.locationMatch=true
             }
-						else if(this.locationAddress ||this.networkTopology==device.network_topology_id){ 
-							//this.log.warn(this.networkTopology,device.network_topology_id) 
+						else if(this.networkTopologyId==device.network_topology_id){ 
               if(device.is_connected){
-                this.log.info('Online device %s %s found at the configured location: %s',device.hardware_version,device.name,device.location)
+                this.log.info('Online device %s %s found for the location: %s',device.hardware_version,device.name,device.location_name)
               }
               else{
-                this.log.info('Offline device %s %s found at the configured location: %s',device.hardware_version,device.name,device.location)
+                this.log.info('Offline device %s %s found for the location: %s',device.hardware_version,device.name,device.location_name)
               }
               this.locationMatch=true
 						}
             else{
-              this.log.info('Skipping device %s %s at %s, not found at the configured location: %s',device.hardware_version,device.name,device.address.line_1,this.locationAddress)
+              this.log.info('Skipping device %s %s at %s, not found at the configured location address: %s',device.hardware_version,device.name,device.address.line_1,this.locationAddress)
               this.locationMatch=false
             }
             return this.locationMatch 
           }).forEach((newDevice)=>{
-						this.log.warn(this.networkTopology,newDevice.name,newDevice.network_topology_id) 
             //adding devices that met filter criteria
             let uuid=UUIDGen.generate(newDevice.id)
             switch (newDevice.type){
@@ -212,8 +214,6 @@ class PlatformOrbit {
               this.accessories[uuid]=irrigationAccessory
             break
             case "bridge":
-							//this.log.warn('network topology id',x)
-							//async function x(callback){
 							this.log.debug('Adding Bridge Device')
 							this.log.debug('Found device %s',newDevice.name) 				
               //Remove cached accessory
@@ -274,11 +274,8 @@ class PlatformOrbit {
 									}).catch(err=>{this.log.error('Failed to add bridge %s', err)})
 										break
 									}
-									//callback(this.networkTopology.id)
-								//}
             break
 						case "flood_sensor":
-							this.log.warn(this.networkTopology,newDevice.network_topology_id) 
 							this.log.debug('Adding Flood Sensor Device')
 							this.log.debug('Found device %s',newDevice.name) 				
 							//Remove cached accessory
@@ -288,13 +285,13 @@ class PlatformOrbit {
 								delete this.accessories[uuid]
 							}
 							if(this.showFloodSensor){
-								this.log.info('Adding Flood Sensor for %s', newDevice.name)
+								this.log.info('Adding Flood Sensor for %s %s',newDevice.location_name, newDevice.name)
 								let leakAccessory=this.createLeakAccessory(newDevice,uuid)
 								let leakSensor=this.createLeakService(newDevice)
 								this.configureLeakService(leakSensor)
 								leakAccessory.addService(leakSensor)
 
-								this.log.info('Adding Battery status for %s', newDevice.name)
+								this.log.info('Adding Battery status for %s %s',newDevice.location_name, newDevice.name)
 								let batteryStatus=this.createBatteryService(newDevice)
 								this.configureBatteryService(batteryStatus)
 								leakAccessory.getService(Service.LeakSensor).addLinkedService(batteryStatus)
@@ -304,7 +301,7 @@ class PlatformOrbit {
 								this.api.registerPlatformAccessories(PluginName, PlatformName, [leakAccessory])
 							}
 							if(this.showTempSensor){
-								this.log.info('Adding Temperature Sensor for %s', newDevice.name)
+								this.log.info('Adding Temperature Sensor for %s %s',newDevice.location_name, newDevice.name)
 								let tempSensor=this.createTempService(newDevice)
 								this.configureTempService(tempSensor)
 								if(!this.showFloodSensor){
@@ -312,7 +309,7 @@ class PlatformOrbit {
 									tempAccessory.getService(Service.TemperatureSensor)
 									tempAccessory.addService(tempSensor)
 
-									this.log.info('Adding Battery status for %s', newDevice.name)
+									this.log.info('Adding Battery status for %s %s',newDevice.location_name, newDevice.name)
 									let batteryStatus=this.createBatteryService(newDevice)
 									this.configureBatteryService(batteryStatus)
 									tempAccessory.getService(Service.TemperatureSensor).addLinkedService(batteryStatus)
@@ -361,7 +358,7 @@ class PlatformOrbit {
   //**
   configureAccessory(accessory){
     // Added cached devices to the accessories arrary
-    this.log('Found cached accessory, configuring %s', accessory.displayName);
+    this.log.debug('Found cached accessory, configuring %s', accessory.displayName);
     this.accessories[accessory.UUID]=accessory;
   }
 
