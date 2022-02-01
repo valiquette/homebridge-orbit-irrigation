@@ -38,12 +38,13 @@ class PlatformOrbit {
     this.activeZone
     this.activeProgram
     this.meshNetwork
+		this.meshId
 		this.networkTopology
 		this.networkTopologyId
     this.deviceGraph
     this.accessories=[]
     if(!config.email || !config.password){
-      this.log.error('Valid email and passwoard are required in order to communicate with the b-hyve, please check the plugin config')
+      this.log.error('Valid email and password are required in order to communicate with the b-hyve, please check the plugin config')
     }
       this.log('Starting Orbit Platform using homebridge API', api.version)
       if(api){
@@ -86,7 +87,6 @@ class PlatformOrbit {
 							"line_2":"",
 							"city":"",
 							"state":"",
-							"postal_code":"",
 							"country":""
 							}
 							this.log.debug('No location address defined, adding dummy location %s',device.address)
@@ -97,18 +97,23 @@ class PlatformOrbit {
 								if(device.network_topology_id){
 									this.networkTopologyId=device.network_topology_id
               	}
+								if(device.mesh_id){
+									this.meshId=device.mesh_id
+              	}
 							}
               else{
                 this.log.info('Offline device %s %s found at the configured location address: %s',device.hardware_version,device.name,device.address.line_1)
+								this.log.warn('%s is disconnected! This will show as non-responding in Homekit until the connection is restored.',device.name)
               }
               this.locationMatch=true
             }
-						else if(this.networkTopologyId==device.network_topology_id){ 
+						else if(this.networkTopologyId==device.network_topology_id || this.meshId==device.mesh_id){ 
               if(device.is_connected){
                 this.log.info('Online device %s %s found for the location: %s',device.hardware_version,device.name,device.location_name)
               }
               else{
                 this.log.info('Offline device %s %s found for the location: %s',device.hardware_version,device.name,device.location_name)
+								this.log.warn('%s is disconnected! This will show as non-responding in Homekit until the connection is restored.',device.name)
               }
               this.locationMatch=true
 						}
@@ -169,7 +174,7 @@ class PlatformOrbit {
 									}
 									else {
 										this.log.debug('adding zone %s',zone.name )
-										let valveService=this.createValveService(zone, newDevice.manual_preset_runtime_sec)
+										let valveService=this.createValveService(zone, newDevice)
 										this.configureValveService(newDevice, valveService)
 										if(this.useIrrigationDisplay){
 											this.log.debug('Using Irrigation system')
@@ -312,18 +317,17 @@ class PlatformOrbit {
 								this.configureTempService(tempSensor)
 								FSAccessory.getService(Service.TemperatureSensor)
 								FSAccessory.addService(tempSensor)
-								if(this.showLimitsSensor){
-									let occupancySensor=this.createOccupancyService(newDevice)
-									this.configureOccupancyService(occupancySensor)
-									FSAccessory.getService(Service.OccupancySensor)
-									FSAccessory.addService(occupancySensor)
-								}
+							}
+							if(this.showLimitsSensor){
+								let occupancySensor=this.createOccupancyService(newDevice)
+								this.configureOccupancyService(occupancySensor)
+								FSAccessory.getService(Service.OccupancySensor)
+								FSAccessory.addService(occupancySensor)
 							}
 						break
 						default:
 							// do nothing
 					}
-
           this.log.debug('establish connection for %s',newDevice.name)
           this.orbitapi.openConnection(this.token, newDevice)
           this.orbitapi.onMessage(this.token, newDevice, this.updateService.bind(this))
@@ -343,7 +347,9 @@ class PlatformOrbit {
     this.log.debug('Found cached accessory, configuring %s', accessory.displayName);
     this.accessories[accessory.UUID]=accessory;
   }
-
+  //**
+  //** Create and configures accessories
+  //**
   createIrrigationAccessory(device,uuid){
     this.log.debug('Create Irrigation service %s %s',device.id,device.name)
     // Create new Irrigation System Service
@@ -354,7 +360,7 @@ class PlatformOrbit {
     if(device.is_connected == true){
       irrigationSystemService.setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
     } else {
-      this.log.warn('%s disconnected at %s This will show as non-responding in Homekit until the connection is restored',device.name,device.last_connected_at)
+      this.log.warn('%s disconnected at %s! This will show as non-responding in Homekit until the connection is restored.',device.name,device.last_connected_at)
       irrigationSystemService.setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.GENERAL_FAULT)
     }
     // Create AccessoryInformation Service
@@ -376,7 +382,7 @@ class PlatformOrbit {
     irrigationSystemService 
       .setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
       .setCharacteristic(Characteristic.InUse, Characteristic.InUse.NOT_IN_USE)
-      .setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
+      .setCharacteristic(Characteristic.StatusFault, !device.is_connected)
       .setCharacteristic(Characteristic.RemainingDuration, 0)
     irrigationSystemService
       .getCharacteristic(Characteristic.Active)
@@ -389,34 +395,7 @@ class PlatformOrbit {
       .on('get', this.getDeviceValue.bind(this, irrigationSystemService, "DeviceProgramMode"))
   }
 
-  getDeviceValue(irrigationSystemService, characteristicName, callback){
-    //this.log.debug('%s - Set something %s', irrigationSystemService.getCharacteristic(Characteristic.Name).value) 
-    switch (characteristicName){
-      case "DeviceActive":
-        //this.log.debug("%s=%s %s", irrigationSystemService.getCharacteristic(Characteristic.Name).value, characteristicName,irrigationSystemService.getCharacteristic(Characteristic.Active).value);
-        if(irrigationSystemService.getCharacteristic(Characteristic.StatusFault).value==Characteristic.StatusFault.GENERAL_FAULT){
-          callback('error')
-        }
-        else{
-          callback(null, irrigationSystemService.getCharacteristic(Characteristic.Active).value)
-        }
-      break    
-      case "DeviceInUse":
-        //this.log.debug("%s=%s %s", irrigationSystemService.getCharacteristic(Characteristic.Name).value, characteristicName,irrigationSystemService.getCharacteristic(Characteristic.InUse).value);
-          callback(null, irrigationSystemService.getCharacteristic(Characteristic.InUse).value)
-      break
-      case "DeviceProgramMode":
-        //this.log.debug("%s=%s %s", irrigationSystemService.getCharacteristic(Characteristic.Name).value, characteristicName,irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).value);
-        callback(null, irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).value)
-      break
-      default:
-        this.log.debug("Unknown CharacteristicName called", characteristicName)
-        callback()
-      break
-    }
-  }
-  
-  createValveService(zone,manual_preset_runtime_sec){
+  createValveService(zone,device){
     //Characteristic.ValveType.GENERIC_VALVE=0
     //Characteristic.ValveType.IRRIGATION=1
     //Characteristic.ValveType.SHOWER_HEAD=2
@@ -432,8 +411,8 @@ class PlatformOrbit {
 					defaultRuntime=this.defaultRuntime
 				break
 				case 1:
-					if(manual_preset_runtime_sec>0){
-						defaultRuntime=manual_preset_runtime_sec
+					if(device.manual_preset_runtime_sec>0){
+						defaultRuntime=device.manual_preset_runtime_sec
 					}
 				break
 				case 2:
@@ -458,7 +437,7 @@ class PlatformOrbit {
       .setCharacteristic(Characteristic.RemainingDuration, 0)
       .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
       .setCharacteristic(Characteristic.ServiceLabelIndex, zone.station)
-      .setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
+      .setCharacteristic(Characteristic.StatusFault, !device.is_connected)
       .setCharacteristic(Characteristic.SerialNumber, UUIDGen.generate("zone-" + zone.station))
       .setCharacteristic(Characteristic.Name, zone.name)
       .setCharacteristic(Characteristic.ConfiguredName, zone.name)
@@ -494,6 +473,42 @@ class PlatformOrbit {
       .on('get', this.getValveValue.bind(this, valveService, "ValveRemainingDuration"))
   }
 
+	createScheduleSwitchService(schedule){
+    // Create Valve Service
+    this.log.debug("Created service for %s with id %s and program %s", schedule.name, schedule.id, schedule.program);
+    let switchService=new Service.Switch(schedule.name, schedule.program) 
+    switchService.addCharacteristic(Characteristic.ConfiguredName)
+    switchService.addCharacteristic(Characteristic.SerialNumber)
+    switchService 
+      .setCharacteristic(Characteristic.On, false)
+      .setCharacteristic(Characteristic.Name, schedule)
+      .setCharacteristic(Characteristic.SerialNumber, schedule.id)
+      .setCharacteristic(Characteristic.StatusFault, !device.is_connected)
+    return switchService
+  }
+
+  createSwitchService(device,switchType){
+    // Create Valve Service
+    this.log.debug('adding new switch')
+    let uuid=this.api.hap.uuid.generate(device.id+switchType)
+    let switchService=new Service.Switch(device.name+switchType, uuid) 
+    switchService.addCharacteristic(Characteristic.ConfiguredName)
+    switchService 
+      .setCharacteristic(Characteristic.On, false)
+      .setCharacteristic(Characteristic.Name, device.name+switchType)
+      .setCharacteristic(Characteristic.StatusFault, !device.is_connected)
+    return switchService
+  }
+
+  configureSwitchService(device, switchService){
+    // Configure Valve Service
+    this.log.info("Configured switch for %s" ,switchService.getCharacteristic(Characteristic.Name).value)
+    switchService
+      .getCharacteristic(Characteristic.On)
+      .on('get', this.getSwitchValue.bind(this, switchService))
+      .on('set', this.setSwitchValue.bind(this, device, switchService))
+  }
+
   createBatteryService(device){
     this.log.debug("create battery service for %s",device.name )
     // Create Battery Service
@@ -508,19 +523,8 @@ class PlatformOrbit {
     this.log.debug("configured battery service for %s",batteryStatus.getCharacteristic(Characteristic.Name).value)
     batteryStatus
 			.getCharacteristic(Characteristic.StatusLowBattery)
-			.on('get', this.getStatusLowBattery.bind(this,batteryStatus))
+			.on('get', this.getStatusLowBattery.bind(this, batteryStatus))
   }
-
-  getStatusLowBattery(batteryStatus,callback){
-  let batteryValue=batteryStatus.getCharacteristic(Characteristic.BatteryLevel).value
-	let currentValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL
-  if(batteryValue<=10){
-    this.log.warn('Battery Status Low %s%',batteryValue)
-		batteryStatus.setCharacteristic(Characteristic.StatusLowBattery,Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)
-		currentValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW
-		}
-  callback(null,currentValue)
-	}
 
 	createFloodAccessory(device,uuid){
     this.log.debug('Create flood accessory %s %s',device.id,device.name)
@@ -559,9 +563,10 @@ class PlatformOrbit {
 			}
 		let leakSensor=new Service.LeakSensor(device.name,device.id)
 		leakSensor
-			.setCharacteristic(Characteristic.LeakDetected,currentAlarm)
-			.setCharacteristic(Characteristic.StatusActive,true)
-			.setCharacteristic(Characteristic.StatusTampered,Characteristic.StatusTampered.NOT_TAMPERED)
+			.setCharacteristic(Characteristic.LeakDetected, currentAlarm)
+			.setCharacteristic(Characteristic.StatusActive, true)
+			.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
+			.setCharacteristic(Characteristic.StatusTampered, Characteristic.StatusTampered.NOT_TAMPERED)
 		return leakSensor
 	}
 
@@ -569,28 +574,18 @@ class PlatformOrbit {
 		this.log.debug("configured leak sensor for %s",leakSensor.getCharacteristic(Characteristic.Name).value)
 		leakSensor
 			.getCharacteristic(Characteristic.LeakDetected)
-			.on('get', this.getLeakStatus.bind(this,leakSensor))
-	}
-
-	getLeakStatus(leakSensor,callback){
-	let leak=leakSensor.getCharacteristic(Characteristic.LeakDetected).value
-	let currentValue = Characteristic.LeakDetected.LEAK_NOT_DETECTED
-	if(leak){
-		this.log.warn('%s, Leak Detected',leakSensor.getCharacteristic(Characteristic.Name).value)
-		leakSensor.setCharacteristic(Characteristic.LeakDetected,Characteristic.LeakDetected.LEAK_DETECTED)
-		currentValue = Characteristic.LeakDetected.LEAK_DETECTED
-		}
-	callback(null,currentValue)
+			.on('get', this.getLeakStatus.bind(this, leakSensor))
 	}
 
 	createTempService(device){
 		this.log.debug("create temperature sensor service for %s",device.name )
 		// Create Leak Sensor Service
-		let tempSensor=new Service.TemperatureSensor(device.name,'tempSensor')
+		let tempSensor=new Service.TemperatureSensor(device.name+' Temp','tempSensor')
 		tempSensor
-			.setCharacteristic(Characteristic.CurrentTemperature,(device.status.temp_f-32)*5/9)
-			.setCharacteristic(Characteristic.StatusActive,true)
-			.setCharacteristic(Characteristic.StatusTampered,Characteristic.StatusTampered.NOT_TAMPERED)
+			.setCharacteristic(Characteristic.CurrentTemperature, (device.status.temp_f-32)*5/9)
+			.setCharacteristic(Characteristic.StatusActive, true)
+			.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
+			.setCharacteristic(Characteristic.StatusTampered, Characteristic.StatusTampered.NOT_TAMPERED)
 		return tempSensor
 	}
 
@@ -598,21 +593,18 @@ class PlatformOrbit {
 		this.log.debug("configured temp sensor for %s",tempSensor.getCharacteristic(Characteristic.Name).value)
 		tempSensor
 			.getCharacteristic(Characteristic.CurrentTemperature)
-			.on('get', this.getTempStatus.bind(this,tempSensor))
+			.on('get', this.getTempStatus.bind(this, tempSensor))
 	}
-	getTempStatus(tempSensor,callback){
-		let temp=tempSensor.getCharacteristic(Characteristic.CurrentTemperature).value
-		let currentValue=temp
-		//this.log.warn('Temp Detected',Math.round((temp*9/5)+32))
-		callback(null,currentValue)
-		}
 
 	createOccupancyService(device){
 		this.log.debug("create Occupancy service for %s",device.name )
 		// Create Occupancy Service
-		let occupancyStatus=new Service.OccupancySensor(device.name+' Temp Limits',device.id)
+		let occupancyStatus=new Service.OccupancySensor(device.name+' Limits',device.id)
 		occupancyStatus
-			.setCharacteristic(Characteristic.OccupancyDetected,Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED)
+			.setCharacteristic(Characteristic.OccupancyDetected, Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED)
+			.setCharacteristic(Characteristic.StatusActive, true)
+			.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
+			.setCharacteristic(Characteristic.StatusTampered, Characteristic.StatusTampered.NOT_TAMPERED)
 		return occupancyStatus
 	}
 	
@@ -620,18 +612,7 @@ class PlatformOrbit {
 		this.log.debug("configured Occupancy service")
 		occupancyStatus
 			.getCharacteristic(Characteristic.OccupancyDetected)
-			.on('get', this.getStatusOccupancy.bind(this,occupancyStatus))
-	}
-
-	getStatusOccupancy(OccupancySensor,callback){
-		let alarm=OccupancySensor.getCharacteristic(Characteristic.OccupancyDetected).value
-		let currentValue=Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED
-		if(alarm){
-			this.log.warn('%s, Alarm Detected',OccupancySensor.getCharacteristic(Characteristic.Name).value)
-			this.log.warn('Temperture limits for %s exceeded',OccupancySensor.getCharacteristic(Characteristic.Name).value)
-			currentValue=Characteristic.OccupancyDetected.OCCUPANCY_DETECTED
-		}
-	callback(null,currentValue)
+			.on('get', this.getStatusOccupancy.bind(this, occupancyStatus))
 	}
 
   createBridgeAccessory(device,uuid){
@@ -657,17 +638,17 @@ class PlatformOrbit {
 		let bridgeService=new Service.Tunnel(device.name,device.id)
     if(G2){
 			bridgeService
-			.setCharacteristic(Characteristic.AccessoryIdentifier,network.network_key)
-			.setCharacteristic(Characteristic.TunneledAccessoryAdvertising,true)
-			.setCharacteristic(Characteristic.TunneledAccessoryConnected,true)
-			.setCharacteristic(Characteristic.TunneledAccessoryStateNumber,Object.keys(network.devices).length)
+			.setCharacteristic(Characteristic.AccessoryIdentifier, network.network_key)
+			.setCharacteristic(Characteristic.TunneledAccessoryAdvertising, true)
+			.setCharacteristic(Characteristic.TunneledAccessoryConnected, true)
+			.setCharacteristic(Characteristic.TunneledAccessoryStateNumber, Object.keys(network.devices).length)
 		}
 		else{
-		bridgeService
-		.setCharacteristic(Characteristic.AccessoryIdentifier,network.ble_network_key)
-		.setCharacteristic(Characteristic.TunneledAccessoryAdvertising,true)
-		.setCharacteristic(Characteristic.TunneledAccessoryConnected,true)
-		.setCharacteristic(Characteristic.TunneledAccessoryStateNumber,Object.keys(network.devices).length-1)
+			bridgeService
+			.setCharacteristic(Characteristic.AccessoryIdentifier, network.ble_network_key)
+			.setCharacteristic(Characteristic.TunneledAccessoryAdvertising, true)
+			.setCharacteristic(Characteristic.TunneledAccessoryConnected, true)
+			.setCharacteristic(Characteristic.TunneledAccessoryStateNumber, Object.keys(network.devices).length-1)
 		}
     return bridgeService
   }
@@ -676,6 +657,35 @@ class PlatformOrbit {
     this.log.debug("configured bridge for %s",bridgeService.getCharacteristic(Characteristic.Name).value)
     bridgeService
     .getCharacteristic(Characteristic.TunneledAccessoryConnected)
+  }
+  //**
+  //** accessory routines
+  //**
+  getDeviceValue(irrigationSystemService, characteristicName, callback){
+    //this.log.debug('%s - Set something %s', irrigationSystemService.getCharacteristic(Characteristic.Name).value) 
+    switch (characteristicName){
+      case "DeviceActive":
+        //this.log.debug("%s=%s %s", irrigationSystemService.getCharacteristic(Characteristic.Name).value, characteristicName,irrigationSystemService.getCharacteristic(Characteristic.Active).value);
+        if(irrigationSystemService.getCharacteristic(Characteristic.StatusFault).value==Characteristic.StatusFault.GENERAL_FAULT){
+          callback('error')
+        }
+        else{
+          callback(null, irrigationSystemService.getCharacteristic(Characteristic.Active).value)
+        }
+      break    
+      case "DeviceInUse":
+        //this.log.debug("%s=%s %s", irrigationSystemService.getCharacteristic(Characteristic.Name).value, characteristicName,irrigationSystemService.getCharacteristic(Characteristic.InUse).value);
+          callback(null, irrigationSystemService.getCharacteristic(Characteristic.InUse).value)
+      break
+      case "DeviceProgramMode":
+        //this.log.debug("%s=%s %s", irrigationSystemService.getCharacteristic(Characteristic.Name).value, characteristicName,irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).value);
+        callback(null, irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).value)
+      break
+      default:
+        this.log.debug("Unknown CharacteristicName called", characteristicName)
+        callback()
+      break
+    }
   }
 
   getValveValue(valveService, characteristicName, callback){
@@ -787,42 +797,6 @@ class PlatformOrbit {
     callback()
   }
 
-  createScheduleSwitchService(schedule){
-    // Create Valve Service
-    this.log.debug("Created service for %s with id %s and program %s", schedule.name, schedule.id, schedule.program);
-    let switchService=new Service.Switch(schedule.name, schedule.program) 
-    switchService.addCharacteristic(Characteristic.ConfiguredName)
-    switchService.addCharacteristic(Characteristic.SerialNumber)
-    switchService 
-      .setCharacteristic(Characteristic.On, false)
-      .setCharacteristic(Characteristic.Name, schedule)
-      .setCharacteristic(Characteristic.SerialNumber, schedule.id)
-      .setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
-    return switchService
-  }
-
-  createSwitchService(device,switchType){
-    // Create Valve Service
-    this.log.debug('adding new switch')
-    let uuid=this.api.hap.uuid.generate(device.id+switchType)
-    let switchService=new Service.Switch(device.name+switchType, uuid) 
-    switchService.addCharacteristic(Characteristic.ConfiguredName)
-    switchService 
-      .setCharacteristic(Characteristic.On, false)
-      .setCharacteristic(Characteristic.Name, device.name+switchType)
-      .setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
-    return switchService
-  }
-
-  configureSwitchService(device, switchService){
-    // Configure Valve Service
-    this.log.info("Configured switch for %s" ,switchService.getCharacteristic(Characteristic.Name).value)
-    switchService
-      .getCharacteristic(Characteristic.On)
-      .on('get', this.getSwitchValue.bind(this, switchService))
-      .on('set', this.setSwitchValue.bind(this, device, switchService))
-  }
-
   setSwitchValue(device, switchService, value, callback){
     this.log.debug('toggle switch state %s',switchService.getCharacteristic(Characteristic.Name).value)
     switch(switchService.getCharacteristic(Characteristic.Name).value){
@@ -889,7 +863,78 @@ class PlatformOrbit {
     }
   } 
 
+	getStatusLowBattery(batteryStatus,callback){
+		let batteryValue=batteryStatus.getCharacteristic(Characteristic.BatteryLevel).value
+		let currentValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL
+		if(batteryValue<=10){
+			this.log.warn('Battery Status Low %s%',batteryValue)
+			batteryStatus.setCharacteristic(Characteristic.StatusLowBattery,Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)
+			currentValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW
+			}
+		callback(null,currentValue)
+	}
+	
+	getLeakStatus(leakSensor,callback){
+		if(leakSensor.getCharacteristic(Characteristic.StatusFault).value==Characteristic.StatusFault.GENERAL_FAULT){
+			if(leakSensor.getCharacteristic(Characteristic.StatusActive).value==true){
+			this.log.debug('%s, Fault Detected',leakSensor.getCharacteristic(Characteristic.Name).value)
+			leakSensor.setCharacteristic(Characteristic.StatusActive, false)
+			}
+			callback('error')
+		}
+		else{
+			leakSensor.setCharacteristic(Characteristic.StatusActive, true)
+			let leak=leakSensor.getCharacteristic(Characteristic.LeakDetected).value
+			let currentValue = Characteristic.LeakDetected.LEAK_NOT_DETECTED
+			if(leak){
+				this.log.warn('%s, Leak Detected',leakSensor.getCharacteristic(Characteristic.Name).value)
+				leakSensor.setCharacteristic(Characteristic.LeakDetected,Characteristic.LeakDetected.LEAK_DETECTED)
+				currentValue = Characteristic.LeakDetected.LEAK_DETECTED
+			}
+			callback(null,currentValue)
+		}
+	}
+
+	getTempStatus(tempSensor,callback){
+		if(tempSensor.getCharacteristic(Characteristic.StatusFault).value==Characteristic.StatusFault.GENERAL_FAULT){
+			if(tempSensor.getCharacteristic(Characteristic.StatusActive).value==true){
+				this.log.debug('%s, Fault Detected',tempSensor.getCharacteristic(Characteristic.Name).value)
+				tempSensor.setCharacteristic(Characteristic.StatusActive, false)
+			}
+			callback('error')
+		}
+		else{
+			tempSensor.setCharacteristic(Characteristic.StatusActive, true)
+			let temp=tempSensor.getCharacteristic(Characteristic.CurrentTemperature).value
+			let currentValue=temp
+			//this.log.warn('Temp Detected',Math.round((temp*9/5)+32))
+			callback(null,currentValue)
+		}
+	}
+
+	getStatusOccupancy(OccupancySensor,callback){
+		if(OccupancySensor.getCharacteristic(Characteristic.StatusFault).value==Characteristic.StatusFault.GENERAL_FAULT){
+			if(OccupancySensor.getCharacteristic(Characteristic.StatusActive).value==true){
+			this.log.debug('%s, Fault Detected',OccupancySensor.getCharacteristic(Characteristic.Name).value)
+			OccupancySensor.setCharacteristic(Characteristic.StatusActive, false)
+			}
+			callback('error')
+		}
+		else{
+			OccupancySensor.setCharacteristic(Characteristic.StatusActive, true)
+			let alarm=OccupancySensor.getCharacteristic(Characteristic.OccupancyDetected).value
+			let currentValue=Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED
+			if(alarm){
+				this.log.warn('%s, Alarm Detected',OccupancySensor.getCharacteristic(Characteristic.Name).value)
+				this.log.warn('Temperture limits for %s exceeded',OccupancySensor.getCharacteristic(Characteristic.Name).value)
+				currentValue=Characteristic.OccupancyDetected.OCCUPANCY_DETECTED
+			}
+			callback(null,currentValue)
+		}
+	}
+
   updateService(message){
+		//process incoming messages
     try{
       let jsonBody=JSON.parse(message)
       let deviceName=this.deviceGraph.devices.filter( result=>result.id == jsonBody.device_id)[0].name
@@ -1023,7 +1068,7 @@ class PlatformOrbit {
           })
           break
           case "device_disconnected":
-            this.log.warn('%s disconnected at %s This will show as non-responding in Homekit until the connection is restored',deviceName,jsonBody.timestamp)
+            this.log.warn('%s disconnected at %s! This will show as non-responding in Homekit until the connection is restored.',deviceName,jsonBody.timestamp)
             irrigationAccessory.services.forEach((service)=>{
               if(Service.AccessoryInformation.UUID != service.UUID){
                 if(Service.Battery.UUID != service.UUID){
@@ -1075,7 +1120,7 @@ class PlatformOrbit {
             if(this.showBridge){activeService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.NO_FAULT)}
           break
           case "device_disconnected":
-            this.log.warn('%s disconnected at %s This will show as non-responding in Homekit until the connection is restored',deviceName,jsonBody.timestamp)
+            this.log.warn('%s disconnected at %s! This will show as non-responding in Homekit until the connection is restored.',deviceName,jsonBody.timestamp)
             if(this.showBridge){activeService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)}
           break
           case "device_idle":
@@ -1088,6 +1133,7 @@ class PlatformOrbit {
             this.log.warn('Unknown bridge device message received: %s',jsonBody.event)
 					break	
         }
+			break
       case "flood_sensor":
         let FSAccessory
 				let leakService
@@ -1120,21 +1166,21 @@ class PlatformOrbit {
 							}
 							if(this.showTempSensor){
 								tempService.getCharacteristic(Characteristic.CurrentTemperature).updateValue((jsonBody.temp_f-32)*5/9)
-								if(this.showLimitsSensor){
-									switch (jsonBody.temp_alarm_status){
-										case 'ok':
-											occupancySensor.getCharacteristic(Characteristic.OccupancyDetected).updateValue(Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED)
-										break
-										case 'low_temp_alarm':
-											occupancySensor.getCharacteristic(Characteristic.OccupancyDetected).updateValue(Characteristic.OccupancyDetected.OCCUPANCY_DETECTED)
-										break
-										case 'high_temp_alarm':
-											occupancySensor.getCharacteristic(Characteristic.OccupancyDetected).updateValue(Characteristic.OccupancyDetected.OCCUPANCY_DETECTED)
-										break
-										default:
-											occupancySensor.getCharacteristic(Characteristic.OccupancyDetected).updateValue(Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED)
-										break
-									}
+							}
+							if(this.showLimitsSensor){
+								switch (jsonBody.temp_alarm_status){
+									case 'ok':
+										occupancySensor.getCharacteristic(Characteristic.OccupancyDetected).updateValue(Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED)
+									break
+									case 'low_temp_alarm':
+										occupancySensor.getCharacteristic(Characteristic.OccupancyDetected).updateValue(Characteristic.OccupancyDetected.OCCUPANCY_DETECTED)
+									break
+									case 'high_temp_alarm':
+										occupancySensor.getCharacteristic(Characteristic.OccupancyDetected).updateValue(Characteristic.OccupancyDetected.OCCUPANCY_DETECTED)
+									break
+									default:
+										occupancySensor.getCharacteristic(Characteristic.OccupancyDetected).updateValue(Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED)
+									break
 								}
 							}
 						break
@@ -1142,11 +1188,13 @@ class PlatformOrbit {
 							this.log.info('%s connected at %s',deviceName,new Date(jsonBody.timestamp).toString())
 							if(this.showFloodSensor){leakService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.NO_FAULT)}
 							if(this.showTempSensor){tempService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.NO_FAULT)}
+							if(this.showLimitsSensor){occupancySensor.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.NO_FAULT)}
 						break
 						case "device_disconnected":
-							this.log.warn('%s disconnected at %s This will show as non-responding in Homekit until the connection is restored',deviceName,jsonBody.timestamp)
+							this.log.warn('%s disconnected at %s! This will show as non-responding in Homekit until the connection is restored.',deviceName,jsonBody.timestamp)
 							if(this.showFloodSensor){leakService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)}
 							if(this.showTempSensor){tempService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)}
+							if(this.showLimitsSensor){occupancySensor.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)}
 						break
 						default:
 							this.log.warn('Unknown flood sensor device message received: %s',jsonBody.event)
@@ -1158,7 +1206,7 @@ class PlatformOrbit {
 				this.log.warn('Unknown device message received: %s',jsonBody.event)
 			break	
       }
-    return
+   	return
     }catch(err){this.log.error('Error updating service %s', err)}
   }
 }

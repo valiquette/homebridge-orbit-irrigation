@@ -3,7 +3,9 @@
 ## 1.2.0 beta
 Update
 - Verified support for Gen2 Bridge BH1G2-0001 and Hose Timer HT31-0001.
+-	Location for hub connected devices such as flood sensors will follow the location of the hub's address. 
 -	Inital support for Flood Sensors FS1-0001.
+-	Corrected device online state during start up.  
 -	Bumped dependencies
 
 ## 1.1.4
