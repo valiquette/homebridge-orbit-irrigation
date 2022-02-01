@@ -103,6 +103,7 @@ class PlatformOrbit {
 							}
               else{
                 this.log.info('Offline device %s %s found at the configured location address: %s',device.hardware_version,device.name,device.address.line_1)
+								this.log.warn('%s is disconnected! This will show as non-responding in Homekit until the connection is restored.',device.name)
               }
               this.locationMatch=true
             }
@@ -112,6 +113,7 @@ class PlatformOrbit {
               }
               else{
                 this.log.info('Offline device %s %s found for the location: %s',device.hardware_version,device.name,device.location_name)
+								this.log.warn('%s is disconnected! This will show as non-responding in Homekit until the connection is restored.',device.name)
               }
               this.locationMatch=true
 						}
@@ -172,7 +174,7 @@ class PlatformOrbit {
 									}
 									else {
 										this.log.debug('adding zone %s',zone.name )
-										let valveService=this.createValveService(zone, newDevice.manual_preset_runtime_sec)
+										let valveService=this.createValveService(zone, newDevice)
 										this.configureValveService(newDevice, valveService)
 										if(this.useIrrigationDisplay){
 											this.log.debug('Using Irrigation system')
@@ -358,7 +360,7 @@ class PlatformOrbit {
     if(device.is_connected == true){
       irrigationSystemService.setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
     } else {
-      this.log.warn('%s disconnected at %s This will show as non-responding in Homekit until the connection is restored',device.name,device.last_connected_at)
+      this.log.warn('%s disconnected at %s! This will show as non-responding in Homekit until the connection is restored.',device.name,device.last_connected_at)
       irrigationSystemService.setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.GENERAL_FAULT)
     }
     // Create AccessoryInformation Service
@@ -380,7 +382,7 @@ class PlatformOrbit {
     irrigationSystemService 
       .setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
       .setCharacteristic(Characteristic.InUse, Characteristic.InUse.NOT_IN_USE)
-      .setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
+      .setCharacteristic(Characteristic.StatusFault, !device.is_connected)
       .setCharacteristic(Characteristic.RemainingDuration, 0)
     irrigationSystemService
       .getCharacteristic(Characteristic.Active)
@@ -393,7 +395,7 @@ class PlatformOrbit {
       .on('get', this.getDeviceValue.bind(this, irrigationSystemService, "DeviceProgramMode"))
   }
 
-  createValveService(zone,manual_preset_runtime_sec){
+  createValveService(zone,device){
     //Characteristic.ValveType.GENERIC_VALVE=0
     //Characteristic.ValveType.IRRIGATION=1
     //Characteristic.ValveType.SHOWER_HEAD=2
@@ -409,8 +411,8 @@ class PlatformOrbit {
 					defaultRuntime=this.defaultRuntime
 				break
 				case 1:
-					if(manual_preset_runtime_sec>0){
-						defaultRuntime=manual_preset_runtime_sec
+					if(device.manual_preset_runtime_sec>0){
+						defaultRuntime=device.manual_preset_runtime_sec
 					}
 				break
 				case 2:
@@ -435,7 +437,7 @@ class PlatformOrbit {
       .setCharacteristic(Characteristic.RemainingDuration, 0)
       .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
       .setCharacteristic(Characteristic.ServiceLabelIndex, zone.station)
-      .setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
+      .setCharacteristic(Characteristic.StatusFault, !device.is_connected)
       .setCharacteristic(Characteristic.SerialNumber, UUIDGen.generate("zone-" + zone.station))
       .setCharacteristic(Characteristic.Name, zone.name)
       .setCharacteristic(Characteristic.ConfiguredName, zone.name)
@@ -481,7 +483,7 @@ class PlatformOrbit {
       .setCharacteristic(Characteristic.On, false)
       .setCharacteristic(Characteristic.Name, schedule)
       .setCharacteristic(Characteristic.SerialNumber, schedule.id)
-      .setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
+      .setCharacteristic(Characteristic.StatusFault, !device.is_connected)
     return switchService
   }
 
@@ -494,7 +496,7 @@ class PlatformOrbit {
     switchService 
       .setCharacteristic(Characteristic.On, false)
       .setCharacteristic(Characteristic.Name, device.name+switchType)
-      .setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
+      .setCharacteristic(Characteristic.StatusFault, !device.is_connected)
     return switchService
   }
 
@@ -563,7 +565,7 @@ class PlatformOrbit {
 		leakSensor
 			.setCharacteristic(Characteristic.LeakDetected, currentAlarm)
 			.setCharacteristic(Characteristic.StatusActive, true)
-			.setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
+			.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
 			.setCharacteristic(Characteristic.StatusTampered, Characteristic.StatusTampered.NOT_TAMPERED)
 		return leakSensor
 	}
@@ -582,7 +584,7 @@ class PlatformOrbit {
 		tempSensor
 			.setCharacteristic(Characteristic.CurrentTemperature, (device.status.temp_f-32)*5/9)
 			.setCharacteristic(Characteristic.StatusActive, true)
-			.setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
+			.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
 			.setCharacteristic(Characteristic.StatusTampered, Characteristic.StatusTampered.NOT_TAMPERED)
 		return tempSensor
 	}
@@ -601,7 +603,7 @@ class PlatformOrbit {
 		occupancyStatus
 			.setCharacteristic(Characteristic.OccupancyDetected, Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED)
 			.setCharacteristic(Characteristic.StatusActive, true)
-			.setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
+			.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
 			.setCharacteristic(Characteristic.StatusTampered, Characteristic.StatusTampered.NOT_TAMPERED)
 		return occupancyStatus
 	}
@@ -874,8 +876,8 @@ class PlatformOrbit {
 	
 	getLeakStatus(leakSensor,callback){
 		if(leakSensor.getCharacteristic(Characteristic.StatusFault).value==Characteristic.StatusFault.GENERAL_FAULT){
-			if(leakSensor.getCharacteristic(Characteristic.StatusFault).value==true){
-			this.log.warn('%s, Fault Detected',leakSensor.getCharacteristic(Characteristic.Name).value)
+			if(leakSensor.getCharacteristic(Characteristic.StatusActive).value==true){
+			this.log.debug('%s, Fault Detected',leakSensor.getCharacteristic(Characteristic.Name).value)
 			leakSensor.setCharacteristic(Characteristic.StatusActive, false)
 			}
 			callback('error')
@@ -895,10 +897,14 @@ class PlatformOrbit {
 
 	getTempStatus(tempSensor,callback){
 		if(tempSensor.getCharacteristic(Characteristic.StatusFault).value==Characteristic.StatusFault.GENERAL_FAULT){
-			this.log.warn('%s, Fault Detected',tempSensor.getCharacteristic(Characteristic.Name).value)
+			if(tempSensor.getCharacteristic(Characteristic.StatusActive).value==true){
+				this.log.debug('%s, Fault Detected',tempSensor.getCharacteristic(Characteristic.Name).value)
+				tempSensor.setCharacteristic(Characteristic.StatusActive, false)
+			}
 			callback('error')
 		}
 		else{
+			tempSensor.setCharacteristic(Characteristic.StatusActive, true)
 			let temp=tempSensor.getCharacteristic(Characteristic.CurrentTemperature).value
 			let currentValue=temp
 			//this.log.warn('Temp Detected',Math.round((temp*9/5)+32))
@@ -908,10 +914,14 @@ class PlatformOrbit {
 
 	getStatusOccupancy(OccupancySensor,callback){
 		if(OccupancySensor.getCharacteristic(Characteristic.StatusFault).value==Characteristic.StatusFault.GENERAL_FAULT){
-			this.log.warn('%s, Fault Detected',OccupancySensor.getCharacteristic(Characteristic.Name).value)
+			if(OccupancySensor.getCharacteristic(Characteristic.StatusActive).value==true){
+			this.log.debug('%s, Fault Detected',OccupancySensor.getCharacteristic(Characteristic.Name).value)
+			OccupancySensor.setCharacteristic(Characteristic.StatusActive, false)
+			}
 			callback('error')
 		}
 		else{
+			OccupancySensor.setCharacteristic(Characteristic.StatusActive, true)
 			let alarm=OccupancySensor.getCharacteristic(Characteristic.OccupancyDetected).value
 			let currentValue=Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED
 			if(alarm){
@@ -1058,7 +1068,7 @@ class PlatformOrbit {
           })
           break
           case "device_disconnected":
-            this.log.warn('%s disconnected at %s This will show as non-responding in Homekit until the connection is restored',deviceName,jsonBody.timestamp)
+            this.log.warn('%s disconnected at %s! This will show as non-responding in Homekit until the connection is restored.',deviceName,jsonBody.timestamp)
             irrigationAccessory.services.forEach((service)=>{
               if(Service.AccessoryInformation.UUID != service.UUID){
                 if(Service.Battery.UUID != service.UUID){
@@ -1110,7 +1120,7 @@ class PlatformOrbit {
             if(this.showBridge){activeService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.NO_FAULT)}
           break
           case "device_disconnected":
-            this.log.warn('%s disconnected at %s This will show as non-responding in Homekit until the connection is restored',deviceName,jsonBody.timestamp)
+            this.log.warn('%s disconnected at %s! This will show as non-responding in Homekit until the connection is restored.',deviceName,jsonBody.timestamp)
             if(this.showBridge){activeService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)}
           break
           case "device_idle":
@@ -1181,7 +1191,7 @@ class PlatformOrbit {
 							if(this.showLimitsSensor){occupancySensor.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.NO_FAULT)}
 						break
 						case "device_disconnected":
-							this.log.warn('%s disconnected at %s This will show as non-responding in Homekit until the connection is restored',deviceName,jsonBody.timestamp)
+							this.log.warn('%s disconnected at %s! This will show as non-responding in Homekit until the connection is restored.',deviceName,jsonBody.timestamp)
 							if(this.showFloodSensor){leakService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)}
 							if(this.showTempSensor){tempService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)}
 							if(this.showLimitsSensor){occupancySensor.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)}
