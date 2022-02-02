@@ -28,6 +28,7 @@ class PlatformOrbit {
     this.showSchedules=config.showSchedules
     this.locationAddress=config.locationAddress
     this.locationMatch=true
+		this.showIrrigation=config.showIrrigation
     this.showBridge=config.showBridge
 		this.showFloodSensor=config.showFloodSensor
 		this.showTempSensor=config.showTempSensor
@@ -107,7 +108,7 @@ class PlatformOrbit {
               }
               this.locationMatch=true
             }
-						else if(this.networkTopologyId==device.network_topology_id || this.meshId==device.mesh_id){ 
+						else if(device.address.line_1 =='undefined location' && (this.networkTopologyId==device.network_topology_id || this.meshId==device.mesh_id)){ 
               if(device.is_connected){
                 this.log.info('Online device %s %s found for the location: %s',device.hardware_version,device.name,device.location_name)
               }
@@ -127,6 +128,10 @@ class PlatformOrbit {
             let uuid=UUIDGen.generate(newDevice.id)
             switch (newDevice.type){
               case "sprinkler_timer":
+								if(!this.showIrrigation){
+									this.log.info('Skipping Irrigation System %s %s based on config', newDevice.hardware_version, newDevice.name)
+									return
+								}
                 this.log.debug('Adding Sprinkler Timer Device')
 								if(newDevice.status.run_mode){
 									this.log.debug('Found device %s with status %s',newDevice.name,newDevice.status.run_mode) 
@@ -215,13 +220,17 @@ class PlatformOrbit {
               }
 
               // Register platform accessory
-              this.log.debug('Registering platform accessory');
-              this.api.registerPlatformAccessories(PluginName, PlatformName, [irrigationAccessory])
-              this.accessories[uuid]=irrigationAccessory
+							this.log.debug('Registering platform accessory');
+							this.api.registerPlatformAccessories(PluginName, PlatformName, [irrigationAccessory])
+							this.accessories[uuid]=irrigationAccessory
             break
             case "bridge":
+							if(!this.showBridge){
+								this.log.info('Skipping Bridge %s %s based on config', newDevice.hardware_version, newDevice.name)
+								return
+							}
 							this.log.debug('Adding Bridge Device')
-							this.log.debug('Found device %s',newDevice.name) 				
+							this.log.debug('Found device %s', newDevice.name) 				
               //Remove cached accessory
               this.log.debug('Removed cached device')
               if(this.accessories[uuid]){
@@ -242,16 +251,11 @@ class PlatformOrbit {
 										//set current device status 
 										bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)	
 										
-										if(this.showBridge){
-											bridgeAccessory.addService(bridgeService)
-											this.accessories[uuid]=bridgeAccessory                     
-											this.log.info('Adding Gen-1 Bridge')
-											this.log.debug('Registering platform accessory')
-											this.api.registerPlatformAccessories(PluginName, PlatformName, [bridgeAccessory])
-										}
-										else{
-											this.log.info('Skipping Bridge')
-											}
+										bridgeAccessory.addService(bridgeService)
+										this.accessories[uuid]=bridgeAccessory                     
+										this.log.info('Adding Gen-1 Bridge')
+										this.log.debug('Registering platform accessory')
+										this.api.registerPlatformAccessories(PluginName, PlatformName, [bridgeAccessory])
 									}).catch(err=>{this.log.error('Failed to add bridge %s', err)})
 								break
 								case "BH1G2-0001":
@@ -267,21 +271,20 @@ class PlatformOrbit {
 										//set current device status 
 										bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)	
 										
-										if(this.showBridge){
-											bridgeAccessory.addService(bridgeService)
-											this.accessories[uuid]=bridgeAccessory                     
-											this.log.info('Adding Gen-2 Bridge')
-											this.log.debug('Registering platform accessory')
-											this.api.registerPlatformAccessories(PluginName, PlatformName, [bridgeAccessory])
-										}
-										else{
-											this.log.info('Skipping Bridge')
-											}
+										bridgeAccessory.addService(bridgeService)
+										this.accessories[uuid]=bridgeAccessory                     
+										this.log.info('Adding Gen-2 Bridge')
+										this.log.debug('Registering platform accessory')
+										this.api.registerPlatformAccessories(PluginName, PlatformName, [bridgeAccessory])
 									}).catch(err=>{this.log.error('Failed to add bridge %s', err)})
 										break
 									}
             break
 						case "flood_sensor":
+							if(!this.showFloodSensor && !this.showTempSensor && !this.showLimitsSensor){
+								this.log.info('Skipping Flood Sensor %s %s based on config', newDevice.hardware_version, newDevice.name)
+								return
+							}
 							this.log.debug('Adding Flood Sensor Device')
 							this.log.debug('Found device %s',newDevice.name) 				
 							//Remove cached accessory
@@ -292,8 +295,8 @@ class PlatformOrbit {
 								delete this.accessories[uuid]
 							}
 
-							if(this.showFloodSensor || this.showTempSensor)
-								{FSAccessory=this.createFloodAccessory(newDevice,uuid)
+							if(this.showFloodSensor || this.showTempSensor || this.showLimitsSensor){
+								FSAccessory=this.createFloodAccessory(newDevice,uuid)
 								this.log.info('Adding Battery status for %s %s',newDevice.location_name, newDevice.name)
 								let batteryStatus=this.createBatteryService(newDevice)
 								this.configureBatteryService(batteryStatus)
@@ -338,7 +341,21 @@ class PlatformOrbit {
         })
       }).catch(err=>{this.log.error('Failed to get token', err)})
     }).catch(err=>{this.log.error('Failed to get info for build', err)})
-  }
+
+		// Refresh battery status every so often
+		setInterval(()=>{		
+			try{			
+				this.networkTopology.devices.forEach((sensor)=>{
+					this.orbitapi.getDevice(this.token,sensor.device_id).then(response=>{
+						this.log.debug('check battery status %s %s @ %s',response.data.location_name, response.data.name, response.data.battery.percent)
+						response.data.device_id=response.data.id
+						response.data.event='battery'
+						this.updateService(JSON.stringify(response.data))
+					}).catch(err=>{this.log.error('Failed to get device response %s', err)})
+				})
+			}catch(err){this.log.error('Failed to read each sensor', err)}	
+		}, 4*60*60*1000) //4 hours in ms
+	}
   //**
   //** REQUIRED - Homebridge will call the "configureAccessory" method once for every cached accessory restored
   //**
@@ -954,164 +971,169 @@ class PlatformOrbit {
       this.lastMessage=message
       switch (eventType){
         case "sprinkler_timer":
-          let irrigationAccessory=this.accessories[uuid]
-          let irrigationSystemService=irrigationAccessory.getService(Service.IrrigationSystem)
-          let switchServiceStandby=irrigationAccessory.getServiceById(Service.Switch,UUIDGen.generate(jsonBody.device_id+' Standby'))
-					let switchServiceRunall=irrigationAccessory.getServiceById(Service.Switch,UUIDGen.generate(jsonBody.device_id+' Run All'))   
-        switch (jsonBody.event){        
-          case "watering_in_progress_notification":
-            irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
-            activeService=irrigationAccessory.getServiceById(Service.Valve, jsonBody.current_station)
-            if(activeService){
-              //stop last if program is running
-              if(jsonBody.program!= 'manual'){
-                if(this.showSchedules){
-                  this.log.info('Running Program %s',irrigationAccessory.getServiceById(Service.Switch, jsonBody.program).getCharacteristic(Characteristic.Name).value)
-                }
-                else{
-                  this.log.info('Running Program %s',jsonBody.program)
-                }
-                this.activeProgram=jsonBody.program
-                if(this.activeZone){
-                  activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone)
-                  if(jsonBody.source!='local'){
-                    this.log.info('Device %s, %s zone watering completed',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
-                  }
-                  activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
-                  activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
-                }
-              }
-              //start new
-              activeService=irrigationAccessory.getServiceById(Service.Valve, jsonBody.current_station)
-              if(jsonBody.source!='local'){
-                this.log.info('Device %s, %s zone watering in progress for %s mins',deviceName, activeService.getCharacteristic(Characteristic.Name).value, Math.round(jsonBody.run_time))
-                this.activeZone=jsonBody.current_station
-              }
-              activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.ACTIVE)
-              activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
-              activeService.getCharacteristic(Characteristic.RemainingDuration).updateValue(jsonBody.run_time * 60)
-              let endTime= new Date(Date.now() + parseInt(jsonBody.run_time) * 60 * 1000).toISOString()
-              activeService.getCharacteristic(Characteristic.CurrentTime).updateValue(endTime)        
-            }
-          break
-          case "watering_complete":
-            irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
-            activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone)
-            if(activeService){
-              if(jsonBody.source!='local'){
-                this.log.info('Device %s, %s zone watering completed',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
-                this.activeZone=false
-              }
-              activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
-              activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
-            }
-            
-          break
-          case "device_idle":
-            irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
-            activeService=irrigationAccessory.getServiceById(Service.Switch, this.activeProgram)
-						if(this.showRunall && switchServiceRunall.getCharacteristic(Characteristic.On).value){
-							switchServiceRunall.getCharacteristic(Characteristic.On).updateValue(false)
-							this.log.info('Running all zones completed')
-						}
-            if(activeService){
-              //this.log.info('Device %s, %s zone idle',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
-              this.log.info('Program %s completed',activeService.getCharacteristic(Characteristic.Name).value)
-              activeService.getCharacteristic(Characteristic.On).updateValue(false)
-              this.activeProgram=false
-            }
-            else{
-              if(this.activeProgram){
-                this.log.info('Program %s completed',this.activeProgram)
-                this.activeProgram=false
-              }
-            }
-            activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone)
-            if(activeService){
-              //this.log.info('Device %s, %s zone idle',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
-              this.log.info('Device %s idle',deviceName)
-              activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
-              activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
-            }
-          break
-          case "change_mode":
-            this.log.debug('%s mode changed to %s',deviceName,jsonBody.mode)
-            switch (jsonBody.mode){
-              case "auto":
-                irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).updateValue(Characteristic.ProgramMode.PROGRAM_SCHEDULED)
-                if(this.showStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(false)}
-              break
-              case "manual":
-                irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).updateValue(Characteristic.ProgramMode.PROGRAM_SCHEDULED_MANUAL_MODE_)
-                if(this.showStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(false)}
-              break
-              case "off":
-                irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).updateValue(Characteristic.ProgramMode.NO_PROGRAM_SCHEDULED)
-                if(this.showStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(true)}
-              break
-            }
-          break
-          case "device_connected":
-            this.log.info('%s connected at %s',deviceName,new Date(jsonBody.timestamp).toString())
-            irrigationAccessory.services.forEach((service)=>{
-              if(Service.AccessoryInformation.UUID != service.UUID){
-                if(Service.Battery.UUID != service.UUID){
-                service.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.NO_FAULT)
-                }
-              }
-              if(Service.Valve.UUID == service.UUID){
-                service.getCharacteristic(Characteristic.Active).getValue()
-              }
-              if(Service.Switch.UUID == service.UUID){
-                service.getCharacteristic(Characteristic.On).getValue()
-              }
-          })
-          break
-          case "device_disconnected":
-            this.log.warn('%s disconnected at %s! This will show as non-responding in Homekit until the connection is restored.',deviceName,jsonBody.timestamp)
-            irrigationAccessory.services.forEach((service)=>{
-              if(Service.AccessoryInformation.UUID != service.UUID){
-                if(Service.Battery.UUID != service.UUID){
-                 service.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)
-                }
-              }
-              if(Service.Valve.UUID == service.UUID){
-                service.getCharacteristic(Characteristic.Active).getValue()
-              }
-              if(Service.Switch.UUID == service.UUID){
-                service.getCharacteristic(Characteristic.On).getValue()
-              }
-          })
-          break
-          case "clear_low_battery":
-            this.log.debug('%s low battery cleared',deviceName)
-            activeService=irrigationAccessory.getServiceById(Service.Battery, jsonBody.device_id)
-            if(activeService){
-              activeService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL)
-            }
-          break    
-          case "low_battery":
-            this.log.warn('%s battery low',deviceName)
-            activeService=irrigationAccessory.getServiceById(Service.Battery, jsonBody.device_id)
-            if(activeService){
-              activeService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)
-            }
-          break
-          case "program_changed":
-            this.log.info('%s program change',deviceName)
-          break
-          case "rain_delay":
-            this.log.debug('%s rain delay',deviceName)
-          break
-					default:
-						this.log.warn('Unknown sprinker device message received: %s',jsonBody.event)
-					break	
-        }
+					let irrigationAccessory
+					if(this.showIrrigation){
+						irrigationAccessory=this.accessories[uuid]
+						if(!irrigationAccessory){return}
+						let irrigationSystemService=irrigationAccessory.getService(Service.IrrigationSystem)
+						let switchServiceStandby=irrigationAccessory.getServiceById(Service.Switch,UUIDGen.generate(jsonBody.device_id+' Standby'))
+						let switchServiceRunall=irrigationAccessory.getServiceById(Service.Switch,UUIDGen.generate(jsonBody.device_id+' Run All'))   
+					switch (jsonBody.event){        
+						case "watering_in_progress_notification":
+							irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
+							activeService=irrigationAccessory.getServiceById(Service.Valve, jsonBody.current_station)
+							if(activeService){
+								//stop last if program is running
+								if(jsonBody.program!= 'manual'){
+									if(this.showSchedules){
+										this.log.info('Running Program %s',irrigationAccessory.getServiceById(Service.Switch, jsonBody.program).getCharacteristic(Characteristic.Name).value)
+									}
+									else{
+										this.log.info('Running Program %s',jsonBody.program)
+									}
+									this.activeProgram=jsonBody.program
+									if(this.activeZone){
+										activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone)
+										if(jsonBody.source!='local'){
+											this.log.info('Device %s, %s zone watering completed',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
+										}
+										activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
+										activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
+									}
+								}
+								//start new
+								activeService=irrigationAccessory.getServiceById(Service.Valve, jsonBody.current_station)
+								if(jsonBody.source!='local'){
+									this.log.info('Device %s, %s zone watering in progress for %s mins',deviceName, activeService.getCharacteristic(Characteristic.Name).value, Math.round(jsonBody.run_time))
+									this.activeZone=jsonBody.current_station
+								}
+								activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.ACTIVE)
+								activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
+								activeService.getCharacteristic(Characteristic.RemainingDuration).updateValue(jsonBody.run_time * 60)
+								let endTime= new Date(Date.now() + parseInt(jsonBody.run_time) * 60 * 1000).toISOString()
+								activeService.getCharacteristic(Characteristic.CurrentTime).updateValue(endTime)        
+							}
+						break
+						case "watering_complete":
+							irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
+							activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone)
+							if(activeService){
+								if(jsonBody.source!='local'){
+									this.log.info('Device %s, %s zone watering completed',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
+									this.activeZone=false
+								}
+								activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
+								activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
+							}
+							
+						break
+						case "device_idle":
+							irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
+							activeService=irrigationAccessory.getServiceById(Service.Switch, this.activeProgram)
+							if(this.showRunall && switchServiceRunall.getCharacteristic(Characteristic.On).value){
+								switchServiceRunall.getCharacteristic(Characteristic.On).updateValue(false)
+								this.log.info('Running all zones completed')
+							}
+							if(activeService){
+								//this.log.info('Device %s, %s zone idle',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
+								this.log.info('Program %s completed',activeService.getCharacteristic(Characteristic.Name).value)
+								activeService.getCharacteristic(Characteristic.On).updateValue(false)
+								this.activeProgram=false
+							}
+							else{
+								if(this.activeProgram){
+									this.log.info('Program %s completed',this.activeProgram)
+									this.activeProgram=false
+								}
+							}
+							activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone)
+							if(activeService){
+								//this.log.info('Device %s, %s zone idle',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
+								this.log.info('Device %s idle',deviceName)
+								activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
+								activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
+							}
+						break
+						case "change_mode":
+							this.log.debug('%s mode changed to %s',deviceName,jsonBody.mode)
+							switch (jsonBody.mode){
+								case "auto":
+									irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).updateValue(Characteristic.ProgramMode.PROGRAM_SCHEDULED)
+									if(this.showStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(false)}
+								break
+								case "manual":
+									irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).updateValue(Characteristic.ProgramMode.PROGRAM_SCHEDULED_MANUAL_MODE_)
+									if(this.showStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(false)}
+								break
+								case "off":
+									irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).updateValue(Characteristic.ProgramMode.NO_PROGRAM_SCHEDULED)
+									if(this.showStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(true)}
+								break
+							}
+						break
+						case "device_connected":
+							this.log.info('%s connected at %s',deviceName,new Date(jsonBody.timestamp).toString())
+							irrigationAccessory.services.forEach((service)=>{
+								if(Service.AccessoryInformation.UUID != service.UUID){
+									if(Service.Battery.UUID != service.UUID){
+									service.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.NO_FAULT)
+									}
+								}
+								if(Service.Valve.UUID == service.UUID){
+									service.getCharacteristic(Characteristic.Active).getValue()
+								}
+								if(Service.Switch.UUID == service.UUID){
+									service.getCharacteristic(Characteristic.On).getValue()
+								}
+						})
+						break
+						case "device_disconnected":
+							this.log.warn('%s disconnected at %s! This will show as non-responding in Homekit until the connection is restored.',deviceName,jsonBody.timestamp)
+							irrigationAccessory.services.forEach((service)=>{
+								if(Service.AccessoryInformation.UUID != service.UUID){
+									if(Service.Battery.UUID != service.UUID){
+									service.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)
+									}
+								}
+								if(Service.Valve.UUID == service.UUID){
+									service.getCharacteristic(Characteristic.Active).getValue()
+								}
+								if(Service.Switch.UUID == service.UUID){
+									service.getCharacteristic(Characteristic.On).getValue()
+								}
+						})
+						break
+						case "clear_low_battery":
+							this.log.debug('%s low battery cleared',deviceName)
+							activeService=irrigationAccessory.getServiceById(Service.Battery, jsonBody.device_id)
+							if(activeService){
+								activeService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL)
+							}
+						break    
+						case "low_battery":
+							this.log.warn('%s battery low',deviceName)
+							activeService=irrigationAccessory.getServiceById(Service.Battery, jsonBody.device_id)
+							if(activeService){
+								activeService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)
+							}
+						break
+						case "program_changed":
+							this.log.info('%s program change',deviceName)
+						break
+						case "rain_delay":
+							this.log.debug('%s rain delay',deviceName)
+						break
+						default:
+							this.log.warn('Unknown sprinker device message received: %s',jsonBody.event)
+						break	
+					}
+				}
       break
 			case "bridge":
         let bridgeAccessory
         if(this.showBridge){
-          bridgeAccessory=this.accessories[uuid] 
+          bridgeAccessory=this.accessories[uuid]
+					if(!bridgeAccessory){return} 
 					activeService=bridgeAccessory.getServiceById(Service.Tunnel, jsonBody.device_id)
         }
         switch (jsonBody.event){   
@@ -1140,17 +1162,21 @@ class PlatformOrbit {
 				let tempService
 				let batteryService
 				let occupancySensor
-				//this.log.warn('message received: %s',jsonBody)
         if(this.showFloodSensor || this.showTempSensor){
-          FSAccessory=this.accessories[uuid] 
+          FSAccessory=this.accessories[uuid]
+					if(!FSAccessory){return} 
           leakService=FSAccessory.getService(Service.LeakSensor)
 					tempService=FSAccessory.getService(Service.TemperatureSensor)
 					batteryService=FSAccessory.getService(Service.Battery)
 					occupancySensor=FSAccessory.getService(Service.OccupancySensor)
-					switch (jsonBody.event){   
+					switch (jsonBody.event){
+						case 'battery':
+								this.log.debug('update battery status %s %s @ %s',jsonBody.location_name, jsonBody.name, jsonBody.battery.percent)
+								batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.battery.percent)
+								//batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(Math.floor((Math.random() * 100) + 1))
+						break	   
 						case "fs_status_update":
-							this.log.info('%s status update at %s',deviceName,new Date(jsonBody.timestamp).toString())
-							//batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(10)
+							//this.log.info('%s status update at %s',deviceName,new Date(jsonBody.timestamp).toString())
 							if(this.showFloodSensor){
 								switch (jsonBody.flood_alarm_status){
 								case 'ok':
