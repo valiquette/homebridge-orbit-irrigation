@@ -59,6 +59,25 @@ OrbitAPI.prototype={
         return response
         }catch(err) {this.log.error('Error retrieving devices %s', err)}
     },
+		
+		getDevice: async function(token,device){
+			// Get the device details
+			try {  
+					this.log.debug('Retrieving device')
+					let response = await axios({
+							method: 'get',
+							url: endpoint + 'devices/'+device,
+							headers: {
+							'Content-Type': 'application/json',
+							'orbit-api-key': token, 
+							'orbit-app-id': 'Bhyve Dashboard'
+							},
+							responseType: 'json'
+					}).catch(err=>{this.log.error('Error getting device %s', err)})
+					this.log.debug('get device response',JSON.stringify(response.data,null,2))
+					return response
+					}catch(err) {this.log.error('Error retrieving device %s', err)}
+			},
 
     getMeshes: async function(token,meshId){
         // Get mesh details

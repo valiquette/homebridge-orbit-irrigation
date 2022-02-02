@@ -1,12 +1,16 @@
 # Changes
 
+## *Version 1.2 breaking change will require the plugin config to be open and saved to display irrigation system.*
+
 ## 1.2.0 beta
 Update
 - Verified support for Gen2 Bridge BH1G2-0001 and Hose Timer HT31-0001.
--	Location for hub connected devices such as flood sensors will follow the location of the hub's address. 
+-	Updated location for hub connected devices such as flood sensors to follow the location of the hub's address. 
 -	Inital support for Flood Sensors FS1-0001.
--	Corrected device online state during start up.  
--	Bumped dependencies
+-	Corrected device online state during start up.
+-	Added config option to exclude irrigation system.  
+-	Code cleanup for exclude devices.
+-	Bumped dependencies.
 
 ## 1.1.4
 Fix

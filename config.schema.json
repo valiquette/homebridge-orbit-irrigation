@@ -85,6 +85,12 @@
 					}
 				]
 			},  
+			"showIrrigation": {
+				"title": "Expose Irrigation System in HomeKit",
+				"type": "boolean",
+				"required": true,
+				"default": true
+			},
 			"showBridge": {
 				"title": "Expose WiFi Hub in HomeKit",
 				"type": "boolean",
@@ -146,7 +152,7 @@
 		},
 		{
 			"type": "help",
-			"helpvalue": "<p class='help-block'> <h6>Orbit B-Hyve account login info.</h6></p>"
+			"helpvalue": "<p class='help-block'> <h6><b>Orbit B-Hyve account login info<b></h6></p>"
 		},
 		{
 				"type": "flex",
@@ -168,24 +174,25 @@
 			]
 		},
 		{
+			"type": "help",
+			"helpvalue": "<h6><b>Irrigation System</b></h6><p class='help-block'> Display these accessories in HomeKit, display as a irrigation system with integrated sprinker zones.<br/>If unchecked, the irrigation system zones will displayed as individual tiles with the option in Homekit to show single or separate.</p>"
+		},
+		{
+			"type": "flex",
+			"flex-flow": "row wrap",
+			"items": [
+				"showIrrigation",
+				"useIrrigationDisplay",
+				"showBridge",
+				"displayValveType"
+			]
+		},
+		{
 			"type": "flex",
 			"flex-flow": "row wrap",
 			"items": [
 				"defaultRuntime",
 				"runtimeSource"
-			]
-		},
-		{
-			"type": "help",
-			"helpvalue": "<h6><b>HomeKit Display</b></h6><p class='help-block'> Display these accessories in HomeKit as a irrigation system with integrated sprinker zones.<br/>If unchecked, the irrigation system zones will displayed as individual tiles with the option in Homekit to show single or separate.</p>"
-		},
-		{
-			"type": "flex",
-			"flex-flow": "row wrap",
-			"items": [
-				"useIrrigationDisplay",
-				"showBridge",
-				"displayValveType"
 			]
 		},
 		{
