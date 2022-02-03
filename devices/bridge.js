@@ -1,5 +1,5 @@
-let packageJson=require('homebridge-orbit-irrigation/package.json')
-let OrbitAPI=require('homebridge-orbit-irrigation/orbitapi')
+let packageJson=require('../package.json')
+let OrbitAPI=require('../orbitapi')
 
 function bridge (platform,log){
 	this.log=log
