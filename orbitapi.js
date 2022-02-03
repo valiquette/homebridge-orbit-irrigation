@@ -9,10 +9,10 @@ let maxPingInterval = 25000 // Websocket get's timed out after 30s, will set a r
 let minPingInterval = 20000
 
 function OrbitAPI (platform,log){
-    this.log=log
-    this.platform=platform
-    this.rws=new WebSocketProxy()
-    this.wsp=new WebSocketProxy(log);
+	this.log=log
+	this.platform=platform
+	this.rws=new WebSocketProxy()
+	this.wsp=new WebSocketProxy(log);
 }
 
 OrbitAPI.prototype={
@@ -133,7 +133,7 @@ OrbitAPI.prototype={
                   "query": [
                       "devices",
                       {
-                          "user_id": userId
+                        "user_id": userId
                       },
                       "id",
                       "name",
@@ -395,4 +395,4 @@ class WebSocketProxy {
     }
 }
 
-module.exports = OrbitAPI;
+module.exports = OrbitAPI

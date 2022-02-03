@@ -1,0 +1,42 @@
+let OrbitAPI=require('homebridge-orbit-irrigation/orbitapi')
+
+
+function battery (platform,log){
+	this.log=log
+	this.platform=platform
+	this.orbitapi=new OrbitAPI(this,log)
+}
+
+battery.prototype={
+
+  createBatteryService(device){
+    this.log.debug("create battery service for %s",device.name )
+    // Create Battery Service
+    let batteryStatus=new Service.Battery(device.name,device.id)
+    batteryStatus
+			.setCharacteristic(Characteristic.StatusLowBattery,Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL)
+			.setCharacteristic(Characteristic.BatteryLevel,device.battery.percent)
+    return batteryStatus
+  },
+  
+  configureBatteryService(batteryStatus){
+    this.log.debug("configured battery service for %s",batteryStatus.getCharacteristic(Characteristic.Name).value)
+    batteryStatus
+			.getCharacteristic(Characteristic.StatusLowBattery)
+			.on('get', this.getStatusLowBattery.bind(this, batteryStatus))
+  },
+
+	getStatusLowBattery(batteryStatus,callback){
+		let batteryValue=batteryStatus.getCharacteristic(Characteristic.BatteryLevel).value
+		let currentValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL
+		if(batteryValue<=10){
+			this.log.warn('Battery Status Low %s%',batteryValue)
+			batteryStatus.setCharacteristic(Characteristic.StatusLowBattery,Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)
+			currentValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW
+			}
+		callback(null,currentValue)
+	}
+	
+}
+
+module.exports = battery
