@@ -1,9 +1,9 @@
 'use strict'
-let OrbitAPI=require('homebridge-orbit-irrigation/orbitapi.js')
-let battery=require('homebridge-orbit-irrigation/devices/battery.js')
-let bridge=require('homebridge-orbit-irrigation/devices/bridge.js')
-let irrigation=require('homebridge-orbit-irrigation/devices/irrigation.js')
-let sensor=require('homebridge-orbit-irrigation/devices/sensor')
+let OrbitAPI=require('./orbitapi')
+let battery=require('./devices/battery')
+let bridge=require('./devices/bridge')
+let irrigation=require('./devices/irrigation')
+let sensor=require('./devices/sensor')
 
 class PlatformOrbit {
 

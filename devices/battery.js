@@ -1,5 +1,4 @@
-let OrbitAPI=require('homebridge-orbit-irrigation/orbitapi')
-
+let OrbitAPI=require('../orbitapi')
 
 function battery (platform,log){
 	this.log=log
