@@ -133,7 +133,7 @@ OrbitAPI.prototype={
                   "query": [
                       "devices",
                       {
-                          "user_id": userId
+                        "user_id": userId
                       },
                       "id",
                       "name",
@@ -395,4 +395,4 @@ class WebSocketProxy {
     }
 }
 
-module.exports = OrbitAPI;
+module.exports = OrbitAPI
