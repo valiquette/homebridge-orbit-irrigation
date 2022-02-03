@@ -37,7 +37,6 @@ irrigation.prototype={
 
   configureIrrigationService(device,irrigationSystemService){
     this.log.info('Configure Irrigation system for %s', irrigationSystemService.getCharacteristic(Characteristic.Name).value)
-    // Configure IrrigationSystem Service
     irrigationSystemService 
       .setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
       .setCharacteristic(Characteristic.InUse, Characteristic.InUse.NOT_IN_USE)
@@ -55,12 +54,6 @@ irrigation.prototype={
   },
 
   createValveService(zone,device){
-    //Characteristic.ValveType.GENERIC_VALVE=0
-    //Characteristic.ValveType.IRRIGATION=1
-    //Characteristic.ValveType.SHOWER_HEAD=2
-    //Characteristic.ValveType.WATER_FAUCET=3
-
-    // Create Valve Service
     let valve=new Service.Valve(zone.name, zone.station)
 		let defaultRuntime=this.platform.defaultRuntime
 		zone.enabled=true // need orbit version of enabled
@@ -111,7 +104,6 @@ irrigation.prototype={
 
   configureValveService(device, valveService){
     this.log.info("Configured zone-%s for %s with %s min runtime",valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value, valveService.getCharacteristic(Characteristic.Name).value, valveService.getCharacteristic(Characteristic.SetDuration).value/60)
-		// Configure Valve Service
     valveService
       .getCharacteristic(Characteristic.Active)
       .on('get', this.getValveValue.bind(this, valveService, "ValveActive"))
@@ -133,7 +125,6 @@ irrigation.prototype={
   },
 
 	createScheduleSwitchService(device,schedule){
-    // Create Valve Service
     this.log.debug("Created service for %s with id %s and program %s", schedule.name, schedule.id, schedule.program);
     let switchService=new Service.Switch(schedule.name, schedule.program) 
     switchService.addCharacteristic(Characteristic.ConfiguredName)
@@ -147,7 +138,6 @@ irrigation.prototype={
   },
 
   createSwitchService(device,switchType){
-    // Create Valve Service
     this.log.debug('adding new switch')
     let uuid=UUIDGen.generate(device.id+switchType)
     let switchService=new Service.Switch(device.name+switchType, uuid) 
@@ -160,7 +150,6 @@ irrigation.prototype={
   },
 
   configureSwitchService(device, switchService){
-    // Configure Valve Service
     this.log.info("Configured switch for %s" ,switchService.getCharacteristic(Characteristic.Name).value)
     switchService
       .getCharacteristic(Characteristic.On)

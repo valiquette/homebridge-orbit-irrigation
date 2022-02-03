@@ -11,9 +11,7 @@ sensor.prototype={
 
 	createFloodAccessory(device,uuid){
     this.log.debug('Create flood accessory %s %s',device.id,device.name)
-    // Create new Bridge System Service
     let newPlatformAccessory=new PlatformAccessory(device.name, uuid)
-    // Create AccessoryInformation Service
     newPlatformAccessory.getService(Service.AccessoryInformation)
       .setCharacteristic(Characteristic.Name, device.name)
       .setCharacteristic(Characteristic.Manufacturer, "Orbit")
@@ -31,7 +29,6 @@ sensor.prototype={
 
 	createLeakService(device){
 		this.log.debug("create leak sensor for %s",device.name)
-		// Create Leak Sensor Service
 		let currentAlarm
 		switch (device.status.flood_alarm_status){
 			case 'ok':
@@ -62,7 +59,6 @@ sensor.prototype={
 
 	createTempService(device){
 		this.log.debug("create temperature sensor service for %s",device.name )
-		// Create Leak Sensor Service
 		let tempSensor=new Service.TemperatureSensor(device.name+' Temp','tempSensor')
 		tempSensor
 			.setCharacteristic(Characteristic.CurrentTemperature, (device.status.temp_f-32)*5/9)
@@ -81,8 +77,7 @@ sensor.prototype={
 
 	createOccupancyService(device){
 		this.log.debug("create Occupancy service for %s",device.name )
-		// Create Occupancy Service
-		let occupancyStatus=new Service.OccupancySensor(device.name+' Limits',device.id)
+		let occupancyStatus=new Service.OccupancySensor(device.name+' high/low',device.id)
 		occupancyStatus
 			.setCharacteristic(Characteristic.OccupancyDetected, Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED)
 			.setCharacteristic(Characteristic.StatusActive, true)
@@ -131,7 +126,7 @@ sensor.prototype={
 			tempSensor.setCharacteristic(Characteristic.StatusActive, true)
 			let temp=tempSensor.getCharacteristic(Characteristic.CurrentTemperature).value
 			let currentValue=temp
-			//this.log.warn('Temp Detected',Math.round((temp*9/5)+32))
+			this.log.debug('Temp Detected',Math.round((temp*9/5)+32))
 			callback(null,currentValue)
 		}
 	},
@@ -150,7 +145,7 @@ sensor.prototype={
 			let currentValue=Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED
 			if(alarm){
 				this.log.warn('%s, Alarm Detected',OccupancySensor.getCharacteristic(Characteristic.Name).value)
-				this.log.warn('Temperture limits for %s exceeded',OccupancySensor.getCharacteristic(Characteristic.Name).value)
+				this.log.info('Temperture limits for %s exceeded',OccupancySensor.getCharacteristic(Characteristic.Name).value)
 				currentValue=Characteristic.OccupancyDetected.OCCUPANCY_DETECTED
 			}
 			callback(null,currentValue)

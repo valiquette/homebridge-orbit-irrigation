@@ -11,9 +11,7 @@ bridge.prototype={
 
   createBridgeAccessory(device,uuid){
     this.log.debug('Create Bridge service %s %s',device.id,device.name)
-    // Create new Bridge System Service
     let newPlatformAccessory=new PlatformAccessory(device.name, uuid)
-    // Create AccessoryInformation Service
     newPlatformAccessory.getService(Service.AccessoryInformation)
       .setCharacteristic(Characteristic.Name, device.name)
       .setCharacteristic(Characteristic.Manufacturer, "Orbit")
@@ -28,7 +26,6 @@ bridge.prototype={
 
   createBridgeService(device,network,G2){
     this.log.debug("create bridge service for %s",device.name )
-    // Create Bridge Service
 		let bridgeService=new Service.Tunnel(device.name,device.id)
     if(G2){
 			bridgeService
