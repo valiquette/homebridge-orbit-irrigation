@@ -2,9 +2,9 @@ let packageJson=require('homebridge-orbit-irrigation/package.json')
 let OrbitAPI=require('homebridge-orbit-irrigation/orbitapi')
 
 function sensor (platform,log){
-    this.log=log
-    this.platform=platform
-		this.orbitapi=new OrbitAPI(this,log)
+	this.log=log
+	this.platform=platform
+	this.orbitapi=new OrbitAPI(this,log)
 }
 
 sensor.prototype={

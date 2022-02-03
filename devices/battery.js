@@ -2,9 +2,9 @@ let OrbitAPI=require('homebridge-orbit-irrigation/orbitapi')
 
 
 function battery (platform,log){
-    this.log=log
-    this.platform=platform
-		this.orbitapi=new OrbitAPI(this,log)
+	this.log=log
+	this.platform=platform
+	this.orbitapi=new OrbitAPI(this,log)
 }
 
 battery.prototype={

@@ -197,7 +197,7 @@ class PlatformOrbit {
                 this.orbitapi.getTimerPrograms(this.token,newDevice).then(response=>{
                   response.data.forEach((schedule)=>{
                     this.log.debug('adding schedules %s program %s',schedule.name, schedule.program )
-                    switchService=this.irrigation.createScheduleSwitchService(schedule)
+                    switchService=this.irrigation.createScheduleSwitchService(newDevice, schedule)
                     this.irrigation.configureSwitchService(newDevice, switchService)
                     irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(switchService)
                     irrigationAccessory.addService(switchService)

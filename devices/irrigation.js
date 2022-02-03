@@ -1,12 +1,10 @@
 let packageJson=require('homebridge-orbit-irrigation/package.json')
 let OrbitAPI=require('homebridge-orbit-irrigation/orbitapi')
 
-function irrigation (platform,log,accessories,updateService){
-    this.log=log
-    this.platform=platform
-		this.accessories=accessories
-		this.updateService=updateService
-		this.orbitapi=new OrbitAPI(this,log)
+function irrigation (platform,log){
+	this.log=log
+  this.platform=platform
+	this.orbitapi=new OrbitAPI(this,log)
 }
 
 irrigation.prototype={
@@ -134,7 +132,7 @@ irrigation.prototype={
       .on('get', this.getValveValue.bind(this, valveService, "ValveRemainingDuration"))
   },
 
-	createScheduleSwitchService(schedule){
+	createScheduleSwitchService(device,schedule){
     // Create Valve Service
     this.log.debug("Created service for %s with id %s and program %s", schedule.name, schedule.id, schedule.program);
     let switchService=new Service.Switch(schedule.name, schedule.program) 
@@ -151,7 +149,7 @@ irrigation.prototype={
   createSwitchService(device,switchType){
     // Create Valve Service
     this.log.debug('adding new switch')
-    let uuid=this.api.hap.uuid.generate(device.id+switchType)
+    let uuid=UUIDGen.generate(device.id+switchType)
     let switchService=new Service.Switch(device.name+switchType, uuid) 
     switchService.addCharacteristic(Characteristic.ConfiguredName)
     switchService 
@@ -280,7 +278,7 @@ irrigation.prototype={
     else {
       // Turn off/stopping the valve
       this.log.info("Stopping Zone", valveService.getCharacteristic(Characteristic.Name).value)
-      this.orbitapi.stopZone(this.token, device,)
+      this.orbitapi.stopZone(this.platform.token, device,)
       irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.Active.INACTIVE)
       valveService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
       //json stop stuff
@@ -332,7 +330,7 @@ irrigation.prototype={
           if(value){
             switchService.getCharacteristic(Characteristic.On).updateValue(true)
             this.orbitapi.startMultipleZone (this.platform.token,device,this.platfrom.defaultRuntime/60)
-						this.log.info('Running all zones for %s min each',this.defaultRuntime/60)
+						this.log.info('Running all zones for %s min each',this.platform.defaultRuntime/60)
           } 
           else {
             switchService.getCharacteristic(Characteristic.On).updateValue(false)
