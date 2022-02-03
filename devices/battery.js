@@ -10,7 +10,6 @@ battery.prototype={
 
   createBatteryService(device){
     this.log.debug("create battery service for %s",device.name )
-    // Create Battery Service
     let batteryStatus=new Service.Battery(device.name,device.id)
     batteryStatus
 			.setCharacteristic(Characteristic.StatusLowBattery,Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL)

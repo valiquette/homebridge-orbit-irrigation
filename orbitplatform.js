@@ -76,7 +76,7 @@ class PlatformOrbit {
       }).catch(err=>{this.log.error('Failed to get graph response %s', err)})
         // get an array of the devices
         this.orbitapi.getDevices(this.token).then(response=>{
-					response.data=response.data.sort(function (a, b){ //read bridge info first
+					response.data=response.data.sort(function (a, b){ // read bridge info first
 						return a.type > b.type ? 1
 									:a.type < b.type ? -1
 									:0
@@ -124,7 +124,7 @@ class PlatformOrbit {
             }
             return this.locationMatch 
           }).forEach((newDevice)=>{
-            //adding devices that met filter criteria
+            // adding devices that met filter criteria
             let uuid=UUIDGen.generate(newDevice.id)
             switch (newDevice.type){
               case "sprinkler_timer":
@@ -139,7 +139,7 @@ class PlatformOrbit {
 								else{
 									this.log.warn('Found device %s with an unknown status %s, please check connection status',newDevice.name)
 								}
-                //Remove cached accessory
+                // Remove cached accessory
                 this.log.debug('Removed cached device')
                 let switchService
                 if(this.accessories[uuid]){
@@ -152,7 +152,7 @@ class PlatformOrbit {
 								let irrigationSystemService=irrigationAccessory.getService(Service.IrrigationSystem)
 								this.irrigation.configureIrrigationService(newDevice,irrigationSystemService)
 								
-								//set current device status 
+								// set current device status 
 								irrigationSystemService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
 
 								// Create and configure Battery Service if needed
@@ -231,7 +231,7 @@ class PlatformOrbit {
 							}
 							this.log.debug('Adding Bridge Device')
 							this.log.debug('Found device %s', newDevice.name) 				
-              //Remove cached accessory
+              // Remove cached accessory
               this.log.debug('Removed cached device')
               if(this.accessories[uuid]){
                 this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
@@ -248,7 +248,7 @@ class PlatformOrbit {
 										bridgeService=this.bridge.createBridgeService(newDevice,this.meshNetwork,false)
 										this.bridge.configureBridgeService(bridgeService)
 
-										//set current device status 
+										// set current device status 
 										bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)	
 										
 										bridgeAccessory.addService(bridgeService)
@@ -268,7 +268,7 @@ class PlatformOrbit {
 										bridgeService=this.bridge.createBridgeService(newDevice,this.networkTopology,true)
 										this.bridge.configureBridgeService(bridgeService)
 
-										//set current device status 
+										// set current device status 
 										bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)	
 										
 										bridgeAccessory.addService(bridgeService)
@@ -287,7 +287,7 @@ class PlatformOrbit {
 							}
 							this.log.debug('Adding Flood Sensor Device')
 							this.log.debug('Found device %s',newDevice.name) 				
-							//Remove cached accessory
+							// Remove cached accessory
 							this.log.debug('Removed cached device')
 							let FSAccessory
 							if(this.accessories[uuid]){
@@ -342,17 +342,19 @@ class PlatformOrbit {
       }).catch(err=>{this.log.error('Failed to get token', err)})
     }).catch(err=>{this.log.error('Failed to get info for build', err)})
 
-		// Refresh battery status every so often
+		// Refresh battery status every so often for flood sensors if netowrk exsits
 		setInterval(()=>{		
 			try{			
-				this.networkTopology.devices.forEach((sensor)=>{
-					this.orbitapi.getDevice(this.token,sensor.device_id).then(response=>{
-						this.log.debug('check battery status %s %s @ %s',response.data.location_name, response.data.name, response.data.battery.percent)
-						response.data.device_id=response.data.id
-						response.data.event='battery'
-						this.updateService(JSON.stringify(response.data))
-					}).catch(err=>{this.log.error('Failed to get device response %s', err)})
-				})
+				if(this.networkTopologyId){
+					this.networkTopology.devices.forEach((sensor)=>{
+						this.orbitapi.getDevice(this.token,sensor.device_id).then(response=>{
+							this.log.debug('check battery status %s %s @ %s',response.data.location_name, response.data.name, response.data.battery.percent)
+							response.data.device_id=response.data.id
+							response.data.event='battery'
+							this.updateService(JSON.stringify(response.data))
+						}).catch(err=>{this.log.error('Failed to get device response %s', err)})
+					})
+				}
 			}catch(err){this.log.error('Failed to read each sensor', err)}	
 		}, 4*60*60*1000) //4 hours in ms
 	}
@@ -361,7 +363,7 @@ class PlatformOrbit {
   //**
   configureAccessory(accessory){
     // Added cached devices to the accessories arrary
-    this.log.debug('Found cached accessory, configuring %s', accessory.displayName);
+    this.log.debug('Found cached accessory %s', accessory.displayName);
     this.accessories[accessory.UUID]=accessory;
   }
   
