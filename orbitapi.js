@@ -41,13 +41,13 @@ OrbitAPI.prototype={
         }catch(err) {this.log.error('Error retrieving API key %s', err)}
     },
     
-    getDevices: async function(token){
+    getDevices: async function(token,userId){
     // Get the device details
     try {  
         this.log.debug('Retrieving devices')
         let response = await axios({
             method: 'get',
-            url: endpoint + 'devices',
+            url: endpoint+'devices?user='+ userId,
             headers: {
             'Content-Type': 'application/json',
             'orbit-api-key': token, 
@@ -66,7 +66,7 @@ OrbitAPI.prototype={
 					this.log.debug('Retrieving device')
 					let response = await axios({
 							method: 'get',
-							url: endpoint + 'devices/'+device,
+							url: endpoint+'devices/'+device,
 							headers: {
 							'Content-Type': 'application/json',
 							'orbit-api-key': token, 
@@ -85,7 +85,7 @@ OrbitAPI.prototype={
             this.log.debug('Retrieving mesh info')
             let response = await axios({
                 method: 'get',
-                url: endpoint + 'meshes/'+meshId,
+                url: endpoint+'meshes/'+meshId,
                 headers: {
                 'Content-Type': 'application/json',
                 'orbit-api-key': token, 
@@ -104,7 +104,7 @@ OrbitAPI.prototype={
 					this.log.debug('Retrieving network topology info')
 					let response = await axios({
 							method: 'get',
-							url: endpoint + 'network_topologies/'+networkTopologyId,
+							url: endpoint+'network_topologies/'+networkTopologyId,
 							headers: {
 							'Content-Type': 'application/json',
 							'orbit-api-key': token, 
@@ -123,7 +123,7 @@ OrbitAPI.prototype={
             this.log.debug('Retrieving device graph info')
             let response = await axios({
                 method: 'post',
-                url: endpoint + 'graph2',
+                url: endpoint+'graph2',
                 headers: {
                 'Content-Type': 'application/json',
                 'orbit-api-key': token, 
@@ -137,6 +137,8 @@ OrbitAPI.prototype={
                       },
                       "id",
                       "name",
+											"address.line_1",
+											"location_name",
                       "type",
                       "hardware_version",
                       "firmware_version",
@@ -158,7 +160,7 @@ OrbitAPI.prototype={
               this.log.debug('Retrieving schedules')
               let response = await axios({
                   method: 'get',
-                  url: endpoint + 'sprinkler_timer_programs?device_id='+device.id,
+                  url: endpoint+'sprinkler_timer_programs?device_id='+device.id,
                   headers: {
                   'Content-Type': 'application/json',
                   'orbit-api-key': token, 

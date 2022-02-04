@@ -10,10 +10,10 @@ function sensor (platform,log){
 sensor.prototype={
 
 	createFloodAccessory(device,uuid){
-    this.log.debug('Create flood accessory %s %s',device.id,device.name)
-    let newPlatformAccessory=new PlatformAccessory(device.name, uuid)
+    this.log.debug('Create flood accessory %s %s',device.id, device.location_name+' '+device.name)
+    let newPlatformAccessory=new PlatformAccessory(device.location_name+' '+device.name, uuid)
     newPlatformAccessory.getService(Service.AccessoryInformation)
-      .setCharacteristic(Characteristic.Name, device.name)
+      .setCharacteristic(Characteristic.Name, device.location_name+' '+device.name)
       .setCharacteristic(Characteristic.Manufacturer, "Orbit")
       .setCharacteristic(Characteristic.SerialNumber, device.mac_address)
       .setCharacteristic(Characteristic.Model, device.type)
@@ -28,7 +28,7 @@ sensor.prototype={
   },
 
 	createLeakService(device){
-		this.log.debug("create leak sensor for %s",device.name)
+		this.log.debug("create leak sensor for %s",device.location_name+' '+device.name)
 		let currentAlarm
 		switch (device.status.flood_alarm_status){
 			case 'ok':
@@ -41,7 +41,7 @@ sensor.prototype={
 				currentAlarm=false
 			break
 			}
-		let leakSensor=new Service.LeakSensor(device.name,device.id)
+		let leakSensor=new Service.LeakSensor(device.location_name+' '+device.name,device.id)
 		leakSensor
 			.setCharacteristic(Characteristic.LeakDetected, currentAlarm)
 			.setCharacteristic(Characteristic.StatusActive, true)
@@ -58,8 +58,8 @@ sensor.prototype={
 	},
 
 	createTempService(device){
-		this.log.debug("create temperature sensor service for %s",device.name )
-		let tempSensor=new Service.TemperatureSensor(device.name+' Temp','tempSensor')
+		this.log.debug("create temperature sensor service for %s",device.location_name+' '+device.name )
+		let tempSensor=new Service.TemperatureSensor(device.location_name+' '+device.name+' Temp','tempSensor')
 		tempSensor
 			.setCharacteristic(Characteristic.CurrentTemperature, (device.status.temp_f-32)*5/9)
 			.setCharacteristic(Characteristic.StatusActive, true)
@@ -76,8 +76,8 @@ sensor.prototype={
 	},
 
 	createOccupancyService(device){
-		this.log.debug("create Occupancy service for %s",device.name )
-		let occupancyStatus=new Service.OccupancySensor(device.name+' high/low',device.id)
+		this.log.debug("create Occupancy service for %s",device.location_name+' '+device.name )
+		let occupancyStatus=new Service.OccupancySensor(device.location_name+' '+device.name+' high/low',device.id)
 		occupancyStatus
 			.setCharacteristic(Characteristic.OccupancyDetected, Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED)
 			.setCharacteristic(Characteristic.StatusActive, true)
