@@ -46,6 +46,7 @@ Other hardware models/types may still work with this plugin and any feedback on 
 		"runtimeSource": 0,
 		"useIrrigationDisplay": true,
 		"displayValveType": 1,
+		"showIrrigation": true,
 		"showBridge": false,
 		"showFloodSensor": true,
 		"showTempSensor": true,

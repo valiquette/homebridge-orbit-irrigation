@@ -82,7 +82,7 @@ class PlatformOrbit {
 									:0
 					})				
          	response.data.filter((device)=>{
-						if(device.address==undefined){
+						if(device.address==undefined){ 
 							device.address={
 							"line_1":"undefined location",
 							"line_2":"",
