@@ -47,7 +47,7 @@ class PlatformOrbit {
     if(!config.email || !config.password){
       this.log.error('Valid email and password are required in order to communicate with the b-hyve, please check the plugin config')
     }
-      this.log('Starting Orbit Platform using homebridge API', api.version)
+      this.log.info('Starting Orbit Platform using homebridge API', api.version)
       if(api){
         this.api=api
         this.api.on("didFinishLaunching", function (){
@@ -58,7 +58,7 @@ class PlatformOrbit {
     }
 
   identify (){
-    this.log('Identify the sprinkler!')
+    this.log.info('Identify the sprinkler!')
   }
 
   getDevices(){
@@ -75,14 +75,14 @@ class PlatformOrbit {
         this.deviceGraph=response.data
       }).catch(err=>{this.log.error('Failed to get graph response %s', err)})
         // get an array of the devices
-        this.orbitapi.getDevices(this.token).then(response=>{
+        this.orbitapi.getDevices(this.token, this.userId).then(response=>{
 					response.data=response.data.sort(function (a, b){ // read bridge info first
 						return a.type > b.type ? 1
 									:a.type < b.type ? -1
 									:0
 					})				
          	response.data.filter((device)=>{
-						if(device.address==undefined){
+						if(device.address==undefined){ 
 							device.address={
 							"line_1":"undefined location",
 							"line_2":"",
@@ -97,9 +97,15 @@ class PlatformOrbit {
                 this.log.info('Online device %s %s found at the configured location address: %s',device.hardware_version,device.name,device.address.line_1)
 								if(device.network_topology_id){
 									this.networkTopologyId=device.network_topology_id
+									this.orbitapi.getNetworkTopologies(this.token,device.network_topology_id).then(response=>{
+										this.networkTopology=response.data
+									}).catch(err=>{this.log.error('Failed to get network topology %s', err)})
               	}
 								if(device.mesh_id){
 									this.meshId=device.mesh_id
+									this.orbitapi.getMeshes(this.token,device.mesh_id).then(response=>{
+										this.meshNetwork=response.data
+									}).catch(err=>{this.log.error('Failed to get network mesh %s', err)})
               	}
 							}
               else{
@@ -256,7 +262,7 @@ class PlatformOrbit {
 										this.log.info('Adding Gen-1 Bridge')
 										this.log.debug('Registering platform accessory')
 										this.api.registerPlatformAccessories(PluginName, PlatformName, [bridgeAccessory])
-									}).catch(err=>{this.log.error('Failed to add bridge %s', err)})
+									}).catch(err=>{this.log.error('Failed to add G1 bridge %s', err)})
 								break
 								case "BH1G2-0001":
 									// Create and configure Gen2 Bridge Service
@@ -276,7 +282,7 @@ class PlatformOrbit {
 										this.log.info('Adding Gen-2 Bridge')
 										this.log.debug('Registering platform accessory')
 										this.api.registerPlatformAccessories(PluginName, PlatformName, [bridgeAccessory])
-									}).catch(err=>{this.log.error('Failed to add bridge %s', err)})
+									}).catch(err=>{this.log.error('Failed to add G2 bridge %s', err)})
 										break
 									}
             break
@@ -330,15 +336,14 @@ class PlatformOrbit {
 						break
 						default:
 							// do nothing
-					}
+						}
           this.log.debug('establish connection for %s',newDevice.name)
           this.orbitapi.openConnection(this.token, newDevice)
           this.orbitapi.onMessage(this.token, newDevice, this.updateService.bind(this))
           // Send Sync after 2 sec delay, match state to bhyve state 
-          setTimeout(()=>{ 
-            this.orbitapi.sync(this.token, newDevice)
-          }, 2000)
+          setTimeout(()=>{this.orbitapi.sync(this.token, newDevice)}, 2000)
         })
+				setTimeout(()=>{this.log.info('Orbit Platform finished loading')}, 500)
       }).catch(err=>{this.log.error('Failed to get token', err)})
     }).catch(err=>{this.log.error('Failed to get info for build', err)})
 
@@ -358,6 +363,7 @@ class PlatformOrbit {
 			}catch(err){this.log.error('Failed to read each sensor', err)}	
 		}, 4*60*60*1000) //4 hours in ms
 	}
+
   //**
   //** REQUIRED - Homebridge will call the "configureAccessory" method once for every cached accessory restored
   //**
