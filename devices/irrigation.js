@@ -32,7 +32,7 @@ irrigation.prototype={
       .setCharacteristic(Characteristic.FirmwareRevision, device.firmware_version)
       .setCharacteristic(Characteristic.HardwareRevision, device.hardware_version)
       .setCharacteristic(Characteristic.SoftwareRevision, packageJson.version)
-    return newPlatformAccessory;
+    return newPlatformAccessory
   },
 
   configureIrrigationService(device,irrigationSystemService){

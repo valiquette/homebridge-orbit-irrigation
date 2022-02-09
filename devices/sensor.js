@@ -24,7 +24,7 @@ sensor.prototype={
 		newPlatformAccessory.getService(Service.AccessoryInformation)
 			.getCharacteristic(Characteristic.Identify)
 			.on('set', this.orbitapi.identify.bind(this.platform.token,device))
-    return newPlatformAccessory;
+    return newPlatformAccessory
   },
 
 	createLeakService(device){
