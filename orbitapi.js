@@ -25,8 +25,8 @@ OrbitAPI.prototype={
             method: 'post',
             url: endpoint + 'session',
             headers: {
-            'Content-Type': 'application/json',
-            'orbit-app-id': 'Bhyve Dashboard'
+							'Content-Type': 'application/json',
+							'orbit-app-id': 'Bhyve Dashboard'
             },
             data:{
             'session': {
@@ -49,9 +49,9 @@ OrbitAPI.prototype={
             method: 'get',
             url: endpoint+'devices?user='+ userId,
             headers: {
-            'Content-Type': 'application/json',
-            'orbit-api-key': token, 
-            'orbit-app-id': 'Bhyve Dashboard'
+							'Content-Type': 'application/json',
+							'orbit-api-key': token, 
+							'orbit-app-id': 'Bhyve Dashboard'
             },
             responseType: 'json'
         }).catch(err=>{this.log.error('Error getting devices %s', err)})
@@ -68,9 +68,9 @@ OrbitAPI.prototype={
 							method: 'get',
 							url: endpoint+'devices/'+device,
 							headers: {
-							'Content-Type': 'application/json',
-							'orbit-api-key': token, 
-							'orbit-app-id': 'Bhyve Dashboard'
+								'Content-Type': 'application/json',
+								'orbit-api-key': token, 
+								'orbit-app-id': 'Bhyve Dashboard'
 							},
 							responseType: 'json'
 					}).catch(err=>{this.log.error('Error getting device %s', err)})
@@ -87,9 +87,9 @@ OrbitAPI.prototype={
                 method: 'get',
                 url: endpoint+'meshes/'+meshId,
                 headers: {
-                'Content-Type': 'application/json',
-                'orbit-api-key': token, 
-                'orbit-app-id': 'Bhyve Dashboard'
+									'Content-Type': 'application/json',
+									'orbit-api-key': token, 
+									'orbit-app-id': 'Bhyve Dashboard'
                 },
                 responseType: 'json'
             }).catch(err=>{this.log.error('Error getting mesh info %s', err)})
@@ -106,9 +106,9 @@ OrbitAPI.prototype={
 							method: 'get',
 							url: endpoint+'network_topologies/'+networkTopologyId,
 							headers: {
-							'Content-Type': 'application/json',
-							'orbit-api-key': token, 
-							'orbit-app-id': 'Bhyve Dashboard'
+								'Content-Type': 'application/json',
+								'orbit-api-key': token, 
+								'orbit-app-id': 'Bhyve Dashboard'
 							},
 							responseType: 'json'
 					}).catch(err=>{this.log.error('Error getting network topologies info %s', err)})
@@ -125,9 +125,9 @@ OrbitAPI.prototype={
                 method: 'post',
                 url: endpoint+'graph2',
                 headers: {
-                'Content-Type': 'application/json',
-                'orbit-api-key': token, 
-                'orbit-app-id': 'Bhyve Dashboard'
+									'Content-Type': 'application/json',
+									'orbit-api-key': token, 
+									'orbit-app-id': 'Bhyve Dashboard'
                 },
                 data: {
                   "query": [
@@ -162,9 +162,9 @@ OrbitAPI.prototype={
                   method: 'get',
                   url: endpoint+'sprinkler_timer_programs?device_id='+device.id,
                   headers: {
-                  'Content-Type': 'application/json',
-                  'orbit-api-key': token, 
-                  'orbit-app-id': 'Bhyve Dashboard'
+										'Content-Type': 'application/json',
+										'orbit-api-key': token, 
+										'orbit-app-id': 'Bhyve Dashboard'
                   },
                   responseType: 'json'
               }).catch(err=>{this.log.error('Error getting scheduled %s', err)})

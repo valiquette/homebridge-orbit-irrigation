@@ -494,6 +494,9 @@ class PlatformOrbit {
 								break
 							}
 						break
+						case "device_status":
+							this.log.debug('%s updated at %s',deviceName,new Date(jsonBody.timestamp).toString())
+						break
 						case "device_connected":
 							this.log.info('%s connected at %s',deviceName,new Date(jsonBody.timestamp).toString())
 							irrigationAccessory.services.forEach((service)=>{
