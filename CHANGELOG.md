@@ -1,9 +1,15 @@
 # Changes
 
-## *Version 1.2 breaking change will require the plugin config to be open and saved to display irrigation system.*
+## *Version 1.2.x breaking change will require the plugin config to be open and saved to display irrigation system.*
+
+## 1.2.1
+Update
+- Code Cleanup
+-	Suppressed "Unknown sprinker device message received: device_status" message for XD hose timer
 
 ## 1.2.0
 Update
+*Version 1.2.x upgrade from 1.1.x is a breaking change and will require the plugin config to be open and saved to display irrigation system.*
 - Verified support for Gen2 Bridge BH1G2-0001 and Hose Timer HT31-0001.
 -	Updated location for hub connected devices such as flood sensors to follow the location of the hub's address. 
 -	Inital support for Flood Sensors FS1-0001.

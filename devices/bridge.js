@@ -10,7 +10,7 @@ function bridge (platform,log){
 bridge.prototype={
 
   createBridgeAccessory(device,uuid){
-    this.log.debug('Create Bridge service %s %s',device.id,device.name)
+    this.log.debug('Create Bridge Accessory%s %s',device.id,device.name)
     let newPlatformAccessory=new PlatformAccessory(device.name, uuid)
     newPlatformAccessory.getService(Service.AccessoryInformation)
       .setCharacteristic(Characteristic.Name, device.name)
