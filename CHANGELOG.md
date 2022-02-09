@@ -4,6 +4,10 @@
 
 ## 1.2.1
 Update
+- Updated Readme with location info for flood sensors
+
+## 1.2.1
+Update
 - Code Cleanup
 -	Suppressed "Unknown sprinker device message received: device_status" message for XD hose timer
 
