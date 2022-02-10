@@ -35,7 +35,7 @@ class PlatformOrbit {
 		this.showLimitsSensor=config.showLimitsSensor
     this.showIncomingMessages=false
     this.showOutgoingMessages=false
-    this.lastMessage
+    this.lastMessage={}
     this.activeZone
     this.activeProgram
     this.meshNetwork
@@ -390,8 +390,9 @@ class PlatformOrbit {
       False	  True	  Stopping
       ******************************/
       if(this.showIncomingMessages){this.log.warn('incoming message',jsonBody)} //additional debug info
-      if(this.lastMessage==message){return} //suppress duplicate websocket messages
-      this.lastMessage=message
+			this.lastMessage.timestamp=jsonBody.timestamp //ignore timestamp deltas
+      if(JSON.stringify(this.lastMessage)==JSON.stringify(jsonBody)){return} //suppress duplicate websocket messages
+      this.lastMessage=jsonBody
       switch (eventType){
         case "sprinkler_timer":
 					let irrigationAccessory
@@ -494,9 +495,6 @@ class PlatformOrbit {
 								break
 							}
 						break
-						case "device_status":
-							this.log.debug('%s updated at %s',deviceName,new Date(jsonBody.timestamp).toString())
-						break
 						case "device_connected":
 							this.log.info('%s connected at %s',deviceName,new Date(jsonBody.timestamp).toString())
 							irrigationAccessory.services.forEach((service)=>{
@@ -542,6 +540,9 @@ class PlatformOrbit {
 							if(activeService){
 								activeService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)
 							}
+						break
+						case "device_status":
+							this.log.debug('%s updated at %s',deviceName,new Date(jsonBody.timestamp).toString())
 						break
 						case "program_changed":
 							this.log.info('%s program change',deviceName)

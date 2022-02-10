@@ -151,7 +151,6 @@ sensor.prototype={
 			callback(null,currentValue)
 		}
 	}
-	
 }
 
 module.exports = sensor
