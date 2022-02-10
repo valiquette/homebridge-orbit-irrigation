@@ -14,15 +14,14 @@ This plugin provides 3 options for use in HomeKit<br>Both option have additional
 3.	Irrigation System Accessory with separate zones shown as a separate tiles (option in HomeKit)
 
 <br> There are plus and minus to each, so why not have options.
-<br> if you have more than one home on your B-Hyve account you may filter devices for a home based on the street address for the location you want to display in HomeKit. BLE devices such as Flood Sensors will follow the location of the Hub's address.
+<br> if you have more than one home on your B-Hyve account you may filter devices for a home based on the street address for the location you want to display in HomeKit. BLE devices such as Flood Sensors will follow the location of the Hub's address. (Did not work as expected). Addresses for flood sensors can be assigned [here](https://techsupport.orbitbhyve.com)
 <br> If you have set manual preset runtimes for you controller or set zone flow rates in the B-Hyve app you can use these values for inital runtimes seen in HomeKit
 
 ## Notes on testing
 
 This plugin has been tested or verified against hardware model/types
 - Bridges BH1-0001 and BH1G2-0001 
-- Hose Timers HT25-0000 and HT31-0001
-- Water Timers WG25-0001 and WG25G2-0001
+- Hose Timers HT25-0000, HT31-0001, HT32-0001 and HT34-0001
 - Flood Sensors FS1-0001
 
 Other hardware models/types may still work with this plugin and any feedback on devices not listed is welcome.

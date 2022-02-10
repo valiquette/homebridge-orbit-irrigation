@@ -2,10 +2,21 @@
 
 ## *Version 1.2.x breaking change will require the plugin config to be open and saved to display irrigation system.*
 
+## 1.2.3
+Fix
+- Fixed bug with enabling standby.
+
+## 1.2.2
+Update
+- Updated Readme with location info for flood sensors.
+- Fixed low battery notifications for hose timers.
+-	Improved supression of duplicate messaging in log.
+-	Code Cleanup
+
 ## 1.2.1
 Update
 - Code Cleanup
--	Suppressed "Unknown sprinker device message received: device_status" message for XD hose timer
+-	Suppressed "Unknown sprinker device message received: device_status" message for XD hose timer.
 
 ## 1.2.0
 Update

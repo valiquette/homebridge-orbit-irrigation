@@ -32,7 +32,7 @@ irrigation.prototype={
       .setCharacteristic(Characteristic.FirmwareRevision, device.firmware_version)
       .setCharacteristic(Characteristic.HardwareRevision, device.hardware_version)
       .setCharacteristic(Characteristic.SoftwareRevision, packageJson.version)
-    return newPlatformAccessory;
+    return newPlatformAccessory
   },
 
   configureIrrigationService(device,irrigationSystemService){
@@ -306,7 +306,7 @@ irrigation.prototype={
           } 
           else {
             switchService.getCharacteristic(Characteristic.On).updateValue(false)
-            this.orbitapi.deviceStandby(this.platfrom.token,device,'off')
+            this.orbitapi.deviceStandby(this.platform.token,device,'off')
           }
           callback()
         } 
