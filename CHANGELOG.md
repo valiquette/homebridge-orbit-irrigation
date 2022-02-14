@@ -5,7 +5,9 @@
 
 ## 1.2.4
 Update
-- Bumped dependancy.
+- Bumped Dependancy.
+-	Updated XD timer battery status
+-	code Cleanup
 
 ## 1.2.2
 Update

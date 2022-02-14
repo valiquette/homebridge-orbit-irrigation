@@ -61,17 +61,17 @@ irrigation.prototype={
 			switch (this.platform.runtimeSource) {
 				case 0:
 					defaultRuntime=this.platform.defaultRuntime
-				break
+					break
 				case 1:
 					if(device.manual_preset_runtime_sec>0){
 						defaultRuntime=device.manual_preset_runtime_sec
 					}
-				break
+					break
 				case 2:
 					if(zone.flow_data.cycle_run_time_sec>0){
 						defaultRuntime=zone.flow_data.cycle_run_time_sec
 					}
-				break
+					break
 			}
 		}catch(err){
 			this.log.debug('error setting runtime, using default runtime')
@@ -168,19 +168,19 @@ irrigation.prototype={
         else{
           callback(null, irrigationSystemService.getCharacteristic(Characteristic.Active).value)
         }
-      break    
+      	break    
       case "DeviceInUse":
         //this.log.debug("%s=%s %s", irrigationSystemService.getCharacteristic(Characteristic.Name).value, characteristicName,irrigationSystemService.getCharacteristic(Characteristic.InUse).value);
           callback(null, irrigationSystemService.getCharacteristic(Characteristic.InUse).value)
-      break
+      	break
       case "DeviceProgramMode":
         //this.log.debug("%s=%s %s", irrigationSystemService.getCharacteristic(Characteristic.Name).value, characteristicName,irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).value);
         callback(null, irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).value)
-      break
+      	break
       default:
         this.log.debug("Unknown Device Characteristic Name called", characteristicName)
         callback()
-      break
+      	break
     }
   },
 
@@ -195,15 +195,15 @@ irrigation.prototype={
         else{
           callback(null, valveService.getCharacteristic(Characteristic.Active).value)
         }
-      break
+      	break
       case "ValveInUse":
       //this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName,valveService.getCharacteristic(Characteristic.Active).value)
         callback(null, valveService.getCharacteristic(Characteristic.InUse).value);
-      break
+      	break
       case "ValveSetDuration":
       //this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName,valveService.getCharacteristic(Characteristic.Active).value)
         callback(null, valveService.getCharacteristic(Characteristic.SetDuration).value)
-      break
+      	break
       case "ValveRemainingDuration":
         // Calc remain duration
         let timeEnding=Date.parse(valveService.getCharacteristic(Characteristic.CurrentTime).value)
@@ -215,11 +215,11 @@ irrigation.prototype={
         valveService.getCharacteristic(Characteristic.RemainingDuration).updateValue(timeRemaining)
         //this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName,timeRemaining)
         callback(null, timeRemaining)
-      break
+      	break
       default:
         this.log.debug("Unknown Valve Characteristic Name called", characteristicName);
         callback()
-      break
+      	break
     }
   },
 
@@ -310,7 +310,7 @@ irrigation.prototype={
           }
           callback()
         } 
-      break
+      	break
       case device.name+' Run All': 
         if(switchService.getCharacteristic(Characteristic.StatusFault).value==Characteristic.StatusFault.GENERAL_FAULT){
           callback('error')
@@ -327,7 +327,7 @@ irrigation.prototype={
           }
           callback()
         }
-			break
+				break
 			default:
 			if(switchService.getCharacteristic(Characteristic.StatusFault).value==Characteristic.StatusFault.GENERAL_FAULT){
 				callback('error')
@@ -344,7 +344,7 @@ irrigation.prototype={
 				}
 				callback()
 			}
-			break
+				break
     }
   },
 

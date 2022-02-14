@@ -437,7 +437,7 @@ class PlatformOrbit {
 								let endTime= new Date(Date.now() + parseInt(jsonBody.run_time) * 60 * 1000).toISOString()
 								activeService.getCharacteristic(Characteristic.CurrentTime).updateValue(endTime)        
 							}
-						break
+							break
 						case "watering_complete":
 							irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
 							activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone)
@@ -448,9 +448,8 @@ class PlatformOrbit {
 								}
 								activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
 								activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
-							}
-							
-						break
+							}		
+							break
 						case "device_idle":
 							irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
 							activeService=irrigationAccessory.getServiceById(Service.Switch, this.activeProgram)
@@ -477,24 +476,24 @@ class PlatformOrbit {
 								activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
 								activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
 							}
-						break
+							break
 						case "change_mode":
 							this.log.debug('%s mode changed to %s',deviceName,jsonBody.mode)
 							switch (jsonBody.mode){
 								case "auto":
 									irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).updateValue(Characteristic.ProgramMode.PROGRAM_SCHEDULED)
 									if(this.showStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(false)}
-								break
+									break
 								case "manual":
 									irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).updateValue(Characteristic.ProgramMode.PROGRAM_SCHEDULED_MANUAL_MODE_)
 									if(this.showStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(false)}
-								break
+									break
 								case "off":
 									irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).updateValue(Characteristic.ProgramMode.NO_PROGRAM_SCHEDULED)
 									if(this.showStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(true)}
-								break
-							}
-						break
+									break
+								}
+							break
 						case "device_connected":
 							this.log.info('%s connected at %s',deviceName,new Date(jsonBody.timestamp).toString())
 							irrigationAccessory.services.forEach((service)=>{
@@ -509,8 +508,8 @@ class PlatformOrbit {
 								if(Service.Switch.UUID == service.UUID){
 									service.getCharacteristic(Characteristic.On).getValue()
 								}
-						})
-						break
+							})
+							break
 						case "device_disconnected":
 							this.log.warn('%s disconnected at %s! This will show as non-responding in Homekit until the connection is restored.',deviceName,jsonBody.timestamp)
 							irrigationAccessory.services.forEach((service)=>{
@@ -525,37 +524,41 @@ class PlatformOrbit {
 								if(Service.Switch.UUID == service.UUID){
 									service.getCharacteristic(Characteristic.On).getValue()
 								}
-						})
-						break
+							})
+							break
+						case 'battery':
+							this.log.debug('update battery status %s @ %s', jsonBody.name, jsonBody.battery.percent)
+							batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.battery.percent)
+							break	 
 						case "clear_low_battery":
 							this.log.debug('%s low battery cleared',deviceName)
 							activeService=irrigationAccessory.getServiceById(Service.Battery, jsonBody.device_id)
 							if(activeService){
 								activeService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL)
 							}
-						break    
+							break    
 						case "low_battery":
 							this.log.warn('%s battery low',deviceName)
 							activeService=irrigationAccessory.getServiceById(Service.Battery, jsonBody.device_id)
 							if(activeService){
 								activeService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)
 							}
-						break
+							break
 						case "device_status":
 							this.log.debug('%s updated at %s',deviceName,new Date(jsonBody.timestamp).toString())
-						break
+							break
 						case "program_changed":
 							this.log.info('%s program change',deviceName)
-						break
+							break
 						case "rain_delay":
 							this.log.debug('%s rain delay',deviceName)
-						break
+							break
 						default:
 							this.log.warn('Unknown sprinker device message received: %s',jsonBody.event)
 						break	
 					}
 				}
-      break
+      	break
 			case "bridge":
         let bridgeAccessory
         if(this.showBridge){
@@ -567,22 +570,22 @@ class PlatformOrbit {
           case "device_connected":
             this.log.info('%s connected at %s',deviceName,new Date(jsonBody.timestamp).toString())
             if(this.showBridge){activeService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.NO_FAULT)}
-          break
+          	break
           case "device_disconnected":
             this.log.warn('%s disconnected at %s! This will show as non-responding in Homekit until the connection is restored.',deviceName,jsonBody.timestamp)
             if(this.showBridge){activeService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)}
-          break
+          	break
           case "device_idle":
             //do nothing
-          break
+          	break
           case "change_mode":
             //do nothing
-          break 
+          	break 
 					default:
             this.log.warn('Unknown bridge device message received: %s',jsonBody.event)
-					break	
+						break	
         }
-			break
+				break
       case "flood_sensor":
         let FSAccessory
 				let leakService
@@ -601,20 +604,20 @@ class PlatformOrbit {
 								this.log.debug('update battery status %s %s @ %s',jsonBody.location_name, jsonBody.name, jsonBody.battery.percent)
 								batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.battery.percent)
 								//batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(Math.floor((Math.random() * 100) + 1))
-						break	   
+							break	   
 						case "fs_status_update":
 							//this.log.info('%s status update at %s',deviceName,new Date(jsonBody.timestamp).toString())
 							if(this.showFloodSensor){
 								switch (jsonBody.flood_alarm_status){
 								case 'ok':
 									leakService.getCharacteristic(Characteristic.LeakDetected).updateValue(Characteristic.LeakDetected.LEAK_NOT_DETECTED)
-								break
+									break
 								case 'alarm':
 									leakService.getCharacteristic(Characteristic.LeakDetected).updateValue(Characteristic.LeakDetected.LEAK_DETECTED)
-								break
+									break
 								default:
 									leakService.getCharacteristic(Characteristic.LeakDetected).updateValue(Characteristic.LeakDetected.LEAK_NOT_DETECTED)
-								break
+									break
 								}
 							}
 							if(this.showTempSensor){
@@ -624,40 +627,40 @@ class PlatformOrbit {
 								switch (jsonBody.temp_alarm_status){
 									case 'ok':
 										occupancySensor.getCharacteristic(Characteristic.OccupancyDetected).updateValue(Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED)
-									break
+										break
 									case 'low_temp_alarm':
 										occupancySensor.getCharacteristic(Characteristic.OccupancyDetected).updateValue(Characteristic.OccupancyDetected.OCCUPANCY_DETECTED)
-									break
+										break
 									case 'high_temp_alarm':
 										occupancySensor.getCharacteristic(Characteristic.OccupancyDetected).updateValue(Characteristic.OccupancyDetected.OCCUPANCY_DETECTED)
-									break
+										break
 									default:
 										occupancySensor.getCharacteristic(Characteristic.OccupancyDetected).updateValue(Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED)
-									break
+										break
 								}
 							}
-						break
+							break
 						case "device_connected":
 							this.log.info('%s connected at %s',deviceName,new Date(jsonBody.timestamp).toString())
 							if(this.showFloodSensor){leakService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.NO_FAULT)}
 							if(this.showTempSensor){tempService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.NO_FAULT)}
 							if(this.showLimitsSensor){occupancySensor.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.NO_FAULT)}
-						break
+							break
 						case "device_disconnected":
 							this.log.warn('%s disconnected at %s! This will show as non-responding in Homekit until the connection is restored.',deviceName,jsonBody.timestamp)
 							if(this.showFloodSensor){leakService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)}
 							if(this.showTempSensor){tempService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)}
 							if(this.showLimitsSensor){occupancySensor.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)}
-						break
+							break
 						default:
 							this.log.warn('Unknown flood sensor device message received: %s',jsonBody.event)
-						break	
+							break	
 					}
 				}
-			break	
+				break	
 			default:
 				this.log.warn('Unknown device message received: %s',jsonBody.event)
-			break	
+				break	
       }
    	return
     }catch(err){this.log.error('Error updating service %s', err)}
