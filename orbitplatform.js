@@ -400,6 +400,7 @@ class PlatformOrbit {
 						irrigationAccessory=this.accessories[uuid]
 						if(!irrigationAccessory){return}
 						let irrigationSystemService=irrigationAccessory.getService(Service.IrrigationSystem)
+						let batteryService=irrigationAccessory.getService(Service.Battery)
 						let switchServiceStandby=irrigationAccessory.getServiceById(Service.Switch,UUIDGen.generate(jsonBody.device_id+' Standby'))
 						let switchServiceRunall=irrigationAccessory.getServiceById(Service.Switch,UUIDGen.generate(jsonBody.device_id+' Run All'))   
 					switch (jsonBody.event){        
