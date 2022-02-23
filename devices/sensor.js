@@ -126,7 +126,9 @@ sensor.prototype={
 			tempSensor.setCharacteristic(Characteristic.StatusActive, true)
 			let temp=tempSensor.getCharacteristic(Characteristic.CurrentTemperature).value
 			let currentValue=temp
-			this.log.debug('Temp Detected',Math.round((temp*9/5)+32))
+			if(this.platform.showExtraDebugMessages){
+				this.log.debug('Temp Detected',Math.round((temp*9/5)+32))
+			}
 			callback(null,currentValue)
 		}
 	},

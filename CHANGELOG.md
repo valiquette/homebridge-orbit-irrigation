@@ -2,6 +2,13 @@
 
 ## *Version 1.2.x breaking change will require the plugin config to be open and saved to display irrigation system.*
 
+## 1.2.6
+Update
+-	Suppressed additional debug logging.
+- Improved error messaging.
+-	Fixed sensor and XD Timer low battery notifications.
+- Code Cleanup  
+
 ## 1.2.5
 Update
 -	fixed XD timer battery status error.

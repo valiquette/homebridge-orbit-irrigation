@@ -37,7 +37,7 @@ OrbitAPI.prototype={
                 }
             }, 
             responseType: 'json'
-        }).catch(err=>{this.log.error('Error getting API key %s', err)})
+        }).catch(err=>{this.log.error('Error getting API key %s', JSON.stringify(err.config,null,2))})
         this.log.debug('get token response',JSON.stringify(response.data,null,2))
         return  response
         }catch(err) {this.log.error('Error retrieving API key %s', err)}
@@ -56,7 +56,7 @@ OrbitAPI.prototype={
 							'orbit-app-id': 'Bhyve Dashboard'
             },
             responseType: 'json'
-        }).catch(err=>{this.log.error('Error getting devices %s', err)})
+        }).catch(err=>{this.log.error('Error getting devices %s', JSON.stringify(err.config,null,2))})
         this.log.debug('get devices response',JSON.stringify(response.data,null,2))
         return response
         }catch(err) {this.log.error('Error retrieving devices %s', err)}
@@ -75,7 +75,7 @@ OrbitAPI.prototype={
 								'orbit-app-id': 'Bhyve Dashboard'
 							},
 							responseType: 'json'
-					}).catch(err=>{this.log.error('Error getting device %s', err)})
+					}).catch(err=>{this.log.error('Error getting device %s', JSON.stringify(err.config,null,2))})
 					this.log.debug('get device response',JSON.stringify(response.data,null,2))
 					return response
 					}catch(err) {this.log.error('Error retrieving device %s', err)}
@@ -94,7 +94,7 @@ OrbitAPI.prototype={
 									'orbit-app-id': 'Bhyve Dashboard'
                 },
                 responseType: 'json'
-            }).catch(err=>{this.log.error('Error getting mesh info %s', err)})
+            }).catch(err=>{this.log.error('Error getting mesh info %s', JSON.stringify(err.config,null,2))})
             this.log.debug('get mesh info response',JSON.stringify(response.data,null,2))
             return response
             }catch(err) {this.log.error('Error retrieving mesh info %s', err)}
@@ -113,7 +113,7 @@ OrbitAPI.prototype={
 								'orbit-app-id': 'Bhyve Dashboard'
 							},
 							responseType: 'json'
-					}).catch(err=>{this.log.error('Error getting network topologies info %s', err)})
+					}).catch(err=>{this.log.error('Error getting network topologies info %s', JSON.stringify(err.config,null,2))})
 					this.log.debug('get network topology info response',JSON.stringify(response.data,null,2))
 					return response
 					}catch(err) {this.log.error('Error retrieving network topologies info %s', err)}
@@ -150,7 +150,7 @@ OrbitAPI.prototype={
                     ]
                   },
                 responseType: 'json'
-            }).catch(err=>{this.log.error('Error getting graph %s', err)})
+            }).catch(err=>{this.log.error('Error getting graph %s', JSON.stringify(err.config,null,2))})
             this.log.debug('get device graph response',JSON.stringify(response.data,null,2))
             return response
             }catch(err) {this.log.error('Error retrieving graph %s', err)}
@@ -169,7 +169,7 @@ OrbitAPI.prototype={
 										'orbit-app-id': 'Bhyve Dashboard'
                   },
                   responseType: 'json'
-              }).catch(err=>{this.log.error('Error getting scheduled %s', err)})
+              }).catch(err=>{this.log.error('Error getting scheduled %s', JSON.stringify(err.config,null,2))})
               this.log.debug('get timer programs response',JSON.stringify(response.data,null,2))
               return response
               }catch(err) {this.log.error('Error retrieving schedules %s', err)}
@@ -362,28 +362,30 @@ class WebSocketProxy {
           // Open
           this.rws.addEventListener('open', ()=>{
               this.rws.send({
-                  event: 'app_connection',
-                  orbit_session_token: token,
-                  subscribe_device_id: deviceId
+								event: 'app_connection',
+								orbit_session_token: token,
+								subscribe_device_id: deviceId
               })
               resolve(this.rws)
           })
 
           // close
           this.rws.addEventListener('close', msg=>{
-              this.log.debug('connection closed', msg)
+						this.log.debug('connection closed', msg)
           })
 
           // Message
           this.rws.addEventListener('message', msg=>{
+						if(this.showExtraDebugMessages){
               this.log.debug('recieved message', JSON.parse(msg.data))
+						}
           })
 
           // Error
           this.rws.addEventListener('error', msg=>{
-              this.log.error('WebSocket Error', msg)
-              this.rws.close()
-              reject(msg)
+						this.log.error('WebSocket Error', msg)
+						this.rws.close()
+						reject(msg)
           })
 
           // Ping

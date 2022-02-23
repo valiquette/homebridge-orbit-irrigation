@@ -32,10 +32,11 @@ battery.prototype={
   },
 
 	getStatusLowBattery(batteryStatus,callback){
+		let name=batteryStatus.getCharacteristic(Characteristic.Name).value
 		let batteryValue=batteryStatus.getCharacteristic(Characteristic.BatteryLevel).value
 		let currentValue = batteryStatus.getCharacteristic(Characteristic.StatusLowBattery).value
-		if(batteryValue<=10){
-			this.log.warn('Battery Status Low %s%',batteryValue)
+		if(batteryValue<=this.platform.lowBattery){
+			this.log.warn('%s Battery Status Low %s% Remaining',name, batteryValue)
 			batteryStatus.setCharacteristic(Characteristic.StatusLowBattery,Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)
 			currentValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW
 			}

@@ -4,6 +4,7 @@ let battery=require('./devices/battery')
 let bridge=require('./devices/bridge')
 let irrigation=require('./devices/irrigation')
 let sensor=require('./devices/sensor')
+let basicSwitch=require('./devices/switch')
 
 class PlatformOrbit {
 
@@ -13,6 +14,7 @@ class PlatformOrbit {
 		this.bridge=new bridge(this,log)
 		this.irrigation=new irrigation(this,log)
 		this.sensor=new sensor(this,log)
+		this.basicSwitch=new basicSwitch(this,log)
     this.log=log
     this.config=config
     this.email=config.email
@@ -35,6 +37,8 @@ class PlatformOrbit {
 		this.showLimitsSensor=config.showLimitsSensor
     this.showIncomingMessages=false
     this.showOutgoingMessages=false
+		this.showExtraDebugMessages=false
+		this.lowBattery=config.lowBattery||20
     this.lastMessage={}
     this.activeZone
     this.activeProgram
@@ -203,8 +207,8 @@ class PlatformOrbit {
                 this.orbitapi.getTimerPrograms(this.token,newDevice).then(response=>{
                   response.data.forEach((schedule)=>{
                     this.log.debug('adding schedules %s program %s',schedule.name, schedule.program )
-                    switchService=this.irrigation.createScheduleSwitchService(newDevice, schedule)
-                    this.irrigation.configureSwitchService(newDevice, switchService)
+                    switchService=this.basicSwitch.createScheduleSwitchService(newDevice, schedule)
+                    this.basicSwitch.configureSwitchService(newDevice, switchService)
                     irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(switchService)
                     irrigationAccessory.addService(switchService)
                   })
@@ -212,15 +216,15 @@ class PlatformOrbit {
               }       
               if(this.showRunall){
                 this.log.debug('adding new run all switch')
-                switchService=this.irrigation.createSwitchService(newDevice,' Run All')
-                this.irrigation.configureSwitchService(newDevice, switchService)
+                switchService=this.basicSwitch.createSwitchService(newDevice,' Run All')
+                this.basicSwitch.configureSwitchService(newDevice, switchService)
                 irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(switchService)
                 irrigationAccessory.addService(switchService)
                 }
               if(this.showStandby){
                 this.log.debug('adding new standby switch')
-                switchService=this.irrigation.createSwitchService(newDevice,' Standby')
-                this.irrigation.configureSwitchService(newDevice, switchService)
+                switchService=this.basicSwitch.createSwitchService(newDevice,' Standby')
+                this.basicSwitch.configureSwitchService(newDevice, switchService)
                 irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(switchService) 
                 irrigationAccessory.addService(switchService)
               }
@@ -546,7 +550,9 @@ class PlatformOrbit {
 							}
 							break
 						case "device_status":
-							this.log.debug('%s updated at %s',deviceName,new Date(jsonBody.timestamp).toString())
+							if(this.showExtraDebugMessages){
+								this.log.debug('%s updated at %s',deviceName,new Date(jsonBody.timestamp).toString())
+							}
 							break
 						case "program_changed":
 							this.log.info('%s program change',deviceName)
@@ -604,6 +610,12 @@ class PlatformOrbit {
 						case 'battery':
 								this.log.debug('update battery status %s %s @ %s',jsonBody.location_name, jsonBody.name, jsonBody.battery.percent)
 								batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.battery.percent)
+								if(jsonBody.battery.percent<=this.lowBattery){
+									batteryService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)
+								}
+								else{
+									batteryService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL)
+								}
 								//batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(Math.floor((Math.random() * 100) + 1))
 							break	   
 						case "fs_status_update":
