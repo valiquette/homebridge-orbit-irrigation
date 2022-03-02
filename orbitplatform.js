@@ -230,7 +230,7 @@ class PlatformOrbit {
               }
 
               // Register platform accessory
-							this.log.debug('Registering platform accessory');
+							this.log.debug('Registering platform accessory')
 							this.api.registerPlatformAccessories(PluginName, PlatformName, [irrigationAccessory])
 							this.accessories[uuid]=irrigationAccessory
             break
@@ -374,7 +374,7 @@ class PlatformOrbit {
   configureAccessory(accessory){
     // Added cached devices to the accessories arrary
     this.log.debug('Found cached accessory %s', accessory.displayName);
-    this.accessories[accessory.UUID]=accessory;
+    this.accessories[accessory.UUID]=accessory
   }
   
   updateService(message){

@@ -14,7 +14,7 @@ function OrbitAPI (platform,log){
 	this.log=log
 	this.platform=platform
 	this.rws=new WebSocketProxy()
-	this.wsp=new WebSocketProxy(log);
+	this.wsp=new WebSocketProxy(log)
 }
 
 OrbitAPI.prototype={
@@ -177,7 +177,7 @@ OrbitAPI.prototype={
     
     startZone: function(token, device, station, runTime){
         try { 
-            this.log.debug('startZone', device.id, station, runTime);
+            this.log.debug('startZone', device.id, station, runTime)
             this.wsp.connect(token, device.id)
                 .then(ws=>ws.send({
                     event: "change_mode",
@@ -195,7 +195,7 @@ OrbitAPI.prototype={
 
     startSchedule: function(token, device, program){
       try { 
-          this.log.debug('startZone', device.id, program);
+          this.log.debug('startZone', device.id, program)
           this.wsp.connect(token, device.id)
               .then(ws=>ws.send({
                   event: "change_mode",
@@ -395,7 +395,7 @@ class WebSocketProxy {
         
           }catch (error) {
             // Will not execute
-            this.log.error('caught', error.message);
+            this.log.error('caught', error.message)
           }
       })
     }

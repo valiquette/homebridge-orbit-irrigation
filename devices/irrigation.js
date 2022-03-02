@@ -14,7 +14,7 @@ irrigation.prototype={
     // Create new Irrigation System Service
     let newPlatformAccessory=new PlatformAccessory(device.name, uuid)
     newPlatformAccessory.addService(Service.IrrigationSystem, device.name)
-    let irrigationSystemService=newPlatformAccessory.getService(Service.IrrigationSystem);
+    let irrigationSystemService=newPlatformAccessory.getService(Service.IrrigationSystem)
     // Check if the device is connected
     if(device.is_connected == true){
       irrigationSystemService.setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
@@ -107,7 +107,7 @@ irrigation.prototype={
     valveService
       .getCharacteristic(Characteristic.Active)
       .on('get', this.getValveValue.bind(this, valveService, "ValveActive"))
-      .on('set', this.setValveValue.bind(this, device, valveService));
+      .on('set', this.setValveValue.bind(this, device, valveService))
 
     valveService
       .getCharacteristic(Characteristic.InUse)
@@ -128,7 +128,7 @@ irrigation.prototype={
     //this.log.debug('%s - Set something %s', irrigationSystemService.getCharacteristic(Characteristic.Name).value) 
     switch (characteristicName){
       case "DeviceActive":
-        //this.log.debug("%s=%s %s", irrigationSystemService.getCharacteristic(Characteristic.Name).value, characteristicName,irrigationSystemService.getCharacteristic(Characteristic.Active).value);
+        //this.log.debug("%s=%s %s", irrigationSystemService.getCharacteristic(Characteristic.Name).value, characteristicName,irrigationSystemService.getCharacteristic(Characteristic.Active).value)
         if(irrigationSystemService.getCharacteristic(Characteristic.StatusFault).value==Characteristic.StatusFault.GENERAL_FAULT){
           callback('error')
         }
@@ -137,11 +137,11 @@ irrigation.prototype={
         }
       	break    
       case "DeviceInUse":
-        //this.log.debug("%s=%s %s", irrigationSystemService.getCharacteristic(Characteristic.Name).value, characteristicName,irrigationSystemService.getCharacteristic(Characteristic.InUse).value);
+        //this.log.debug("%s=%s %s", irrigationSystemService.getCharacteristic(Characteristic.Name).value, characteristicName,irrigationSystemService.getCharacteristic(Characteristic.InUse).value)
           callback(null, irrigationSystemService.getCharacteristic(Characteristic.InUse).value)
       	break
       case "DeviceProgramMode":
-        //this.log.debug("%s=%s %s", irrigationSystemService.getCharacteristic(Characteristic.Name).value, characteristicName,irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).value);
+        //this.log.debug("%s=%s %s", irrigationSystemService.getCharacteristic(Characteristic.Name).value, characteristicName,irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).value)
         callback(null, irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).value)
       	break
       default:
@@ -152,7 +152,7 @@ irrigation.prototype={
   },
 
   getValveValue(valveService, characteristicName, callback){
-    //this.log.debug("getValue", valveService.getCharacteristic(Characteristic.Name).value, characteristicName);
+    //this.log.debug("getValue", valveService.getCharacteristic(Characteristic.Name).value, characteristicName)
     switch (characteristicName){
       case "ValveActive":
         //this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName,valveService.getCharacteristic(Characteristic.Active).value)
@@ -165,7 +165,7 @@ irrigation.prototype={
       	break
       case "ValveInUse":
       //this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName,valveService.getCharacteristic(Characteristic.Active).value)
-        callback(null, valveService.getCharacteristic(Characteristic.InUse).value);
+        callback(null, valveService.getCharacteristic(Characteristic.InUse).value)
       	break
       case "ValveSetDuration":
       //this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName,valveService.getCharacteristic(Characteristic.Active).value)
@@ -174,7 +174,7 @@ irrigation.prototype={
       case "ValveRemainingDuration":
         // Calc remain duration
         let timeEnding=Date.parse(valveService.getCharacteristic(Characteristic.CurrentTime).value)
-        let timeNow=Date.now();
+        let timeNow=Date.now()
         let timeRemaining=Math.max(Math.round((timeEnding - timeNow) / 1000), 0)
         if(isNaN(timeRemaining)){
           timeRemaining=0
@@ -184,7 +184,7 @@ irrigation.prototype={
         callback(null, timeRemaining)
       	break
       default:
-        this.log.debug("Unknown Valve Characteristic Name called", characteristicName);
+        this.log.debug("Unknown Valve Characteristic Name called", characteristicName)
         callback()
       	break
     }

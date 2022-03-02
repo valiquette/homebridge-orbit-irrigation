@@ -10,7 +10,7 @@ function basicSwitch (platform,log){
 basicSwitch.prototype={
 
 	createScheduleSwitchService(device,schedule){
-    this.log.debug("Created service for %s with id %s and program %s", schedule.name, schedule.id, schedule.program);
+    this.log.debug("Created service for %s with id %s and program %s", schedule.name, schedule.id, schedule.program)
     let switchService=new Service.Switch(schedule.name, schedule.program) 
     switchService.addCharacteristic(Characteristic.ConfiguredName)
     switchService.addCharacteristic(Characteristic.SerialNumber)
