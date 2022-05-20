@@ -25,9 +25,9 @@ irrigation.prototype={
     // Create AccessoryInformation Service
     newPlatformAccessory.getService(Service.AccessoryInformation)
       .setCharacteristic(Characteristic.Name, device.name)
-      .setCharacteristic(Characteristic.Manufacturer, "Orbit")
+      .setCharacteristic(Characteristic.Manufacturer, "Orbit Irrigation")
       .setCharacteristic(Characteristic.SerialNumber, device.mac_address)
-      .setCharacteristic(Characteristic.Model, device.type)
+      .setCharacteristic(Characteristic.Model, device.hardware_version)
       .setCharacteristic(Characteristic.Identify, true)
       .setCharacteristic(Characteristic.FirmwareRevision, device.firmware_version)
       .setCharacteristic(Characteristic.HardwareRevision, device.hardware_version)

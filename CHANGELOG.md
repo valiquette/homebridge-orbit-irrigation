@@ -2,6 +2,12 @@
 
 ## *Version 1.2.x breaking change will require the plugin config to be open and saved to display irrigation system.*
 
+## 1.2.7
+Update
+- Changed configuration default to false for use irrigation display, due to IOS bug intoduced with 15.4 and still not fixed in 15.5
+- Initial support for node.js 18
+- Bumped dependencies. 
+
 ## 1.2.6
 Update
 -	Suppressed additional debug logging.

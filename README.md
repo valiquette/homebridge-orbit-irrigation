@@ -7,6 +7,7 @@
 <br>Orbit B-Hyve Irrigation System platform plugin for [Homebridge](https://github.com/nfarina/homebridge).
 
 ## About
+NOTE: Option 1 is not working correctly with a bug in IOS 15.4 and 15.5. The bug will cause zone switches to be displayed randomly or not at all.
 
 This plugin provides 3 options for use in HomeKit<br>Both option have additional switches as options for Standby/Off mode and a Run All across all devices along with any B-Hyve Program Schedules
 1.	Irrigation System Accessory with zones that are linked (default in configuration)
@@ -29,7 +30,7 @@ Other hardware models/types may still work with this plugin and any feedback on 
 ## Installation
 1. Install this plugin using: npm install -g homebridge-orbit-irrigation
 2. Suggest running as a child bridge	
-3. Use plugin settings to edit ``config.json`` and add your account detail.
+3. Use plugin settings to edit ``config.json`` and add your account detail. (HOOBS is not parsing the config completely and may omit key items, you must manually configure.)
 4. Run Homebridge
 5. Pair to HomeKit
 
