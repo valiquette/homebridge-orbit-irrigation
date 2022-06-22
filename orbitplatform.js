@@ -174,7 +174,7 @@ class PlatformOrbit {
 									//irrigationAccessory.getService(Service.IrrigationSystem)
 									irrigationAccessory.addService(batteryStatus)
 								}
-								else {
+								else{
 									this.log.debug('%s has no battery found, skipping add battery service', newDevice.name)
 								}
 
@@ -187,7 +187,7 @@ class PlatformOrbit {
 									if(!this.useIrrigationDisplay && !zone.enabled){ 
 										this.log.info('Skipping disabled zone %s',zone.name )
 									}
-									else {
+									else{
 										this.log.debug('adding zone %s',zone.name )
 										let valveService=this.irrigation.createValveService(zone, newDevice)
 										this.irrigation.configureValveService(newDevice, valveService)

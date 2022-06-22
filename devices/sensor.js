@@ -77,7 +77,7 @@ sensor.prototype={
 
 	createOccupancyService(device){
 		this.log.debug("create Occupancy service for %s",device.location_name+' '+device.name )
-		let occupancyStatus=new Service.OccupancySensor(device.location_name+' '+device.name+' high/low',device.id)
+		let occupancyStatus=new Service.OccupancySensor(device.location_name+' '+device.name+' high-low',device.id)
 		occupancyStatus
 			.setCharacteristic(Characteristic.OccupancyDetected, Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED)
 			.setCharacteristic(Characteristic.StatusActive, true)

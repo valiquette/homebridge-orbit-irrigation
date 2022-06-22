@@ -73,7 +73,7 @@
 				"type": "integer",
 				"required": true,
 				"default": 1,
-				"description": "Select valve type to display when display as irrigation system is unchecked.",
+				"description": "Select valve type to display when not displaying as irrigation system",
 				"oneOf": [
 					{
 						"title": "Generic Valve",

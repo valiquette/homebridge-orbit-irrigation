@@ -18,7 +18,7 @@ irrigation.prototype={
     // Check if the device is connected
     if(device.is_connected == true){
       irrigationSystemService.setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
-    } else {
+    } else{
       this.log.warn('%s disconnected at %s! This will show as non-responding in Homekit until the connection is restored.',device.name,device.last_connected_at)
       irrigationSystemService.setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.GENERAL_FAULT)
     }
@@ -231,7 +231,7 @@ irrigation.prototype={
         this.platform.updateService(JSON.stringify(myJsonStop))
         }, runTime*1000) 
     } 
-    else {
+    else{
       // Turn off/stopping the valve
       this.log.info("Stopping Zone", valveService.getCharacteristic(Characteristic.Name).value)
       this.orbitapi.stopZone(this.platform.token, device,)
