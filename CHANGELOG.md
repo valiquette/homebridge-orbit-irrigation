@@ -5,7 +5,8 @@
 ## 1.2.8
 Update
 - Changed default naming for flood sensor limits to avoid unsupported characters.
-- Code Cleanup  
+- Code Cleanup.  
+- Bumped Dependancies.
 
 ## 1.2.7
 Update
