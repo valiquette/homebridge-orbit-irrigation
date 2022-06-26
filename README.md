@@ -10,7 +10,7 @@
 NOTE: Option 1 is not working correctly with a bug in IOS 15.4 and 15.5. The bug will cause zone switches to be displayed randomly or not at all.
 
 This plugin provides 3 options for use in HomeKit<br>Both option have additional switches as options for Standby/Off mode and a Run All across all devices along with any B-Hyve Program Schedules
-1.	Irrigation System Accessory with zones that are linked (default in configuration)
+1.	Irrigation System Accessory with zones that are linked (default configuration)
 2.	Irrigation System Accessory with separate zones shown as a single tile 
 3.	Irrigation System Accessory with separate zones shown as a separate tiles (option in HomeKit)
 

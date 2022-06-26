@@ -2,6 +2,11 @@
 
 ## *Version 1.2.x breaking change will require the plugin config to be open and saved to display irrigation system.*
 
+## 1.2.8
+Update
+- Changed default naming for flood sensor limits to avoid unsupported characters.
+- Code Cleanup  
+
 ## 1.2.7
 Update
 - Changed configuration default to false for use irrigation display, due to IOS bug intoduced with 15.4 and still not fixed in 15.5
