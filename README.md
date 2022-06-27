@@ -27,7 +27,7 @@ This plugin provides 3 options for use in HomeKit<br>Both option have additional
 This plugin has been tested or verified against hardware model/types
 - Bridges BH1-0001 and BH1G2-0001 
 - Hose Timers HT25-0000, HT31-0001, HT32-0001 and HT34-0001
-- Water Timers WT25-0001, WT25G2-0001
+- Water Timers WT24-0001, WT25-0001, WT25G2-0001
 - Flood Sensors FS1-0001
 
 Other hardware models/types are expected work with this plugin and any feedback on devices not listed is welcome.
