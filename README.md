@@ -4,7 +4,11 @@
 
 # homebridge-platform-orbit
 [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
-<br>Orbit B-Hyve Irrigation System platform plugin for [Homebridge](https://github.com/nfarina/homebridge).
+<br>Orbit B-Hyve platform plugin for [Homebridge](https://github.com/nfarina/homebridge). 
+<br>Supporting 
+- B-Hyve Hose Timers.
+- B-Hyve Underground Timers.
+- B-Hyve Flood Sensor.
 
 ## About
 NOTE: Option 1 is not working correctly with a bug in IOS 15.4 and 15.5. The bug will cause zone switches to be displayed randomly or not at all.
@@ -23,9 +27,10 @@ This plugin provides 3 options for use in HomeKit<br>Both option have additional
 This plugin has been tested or verified against hardware model/types
 - Bridges BH1-0001 and BH1G2-0001 
 - Hose Timers HT25-0000, HT31-0001, HT32-0001 and HT34-0001
+- Water Timers WT25-0001, WT25G2-0001
 - Flood Sensors FS1-0001
 
-Other hardware models/types may still work with this plugin and any feedback on devices not listed is welcome.
+Other hardware models/types are expected work with this plugin and any feedback on devices not listed is welcome.
 
 ## Installation
 1. Install this plugin using: npm install -g homebridge-orbit-irrigation
