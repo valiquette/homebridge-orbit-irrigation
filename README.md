@@ -41,29 +41,27 @@ Other hardware models/types are expected work with this plugin and any feedback 
 
 ## Config.json example with child bridge
 ```
-"platforms": [
-	{
-		"name": "B-Hyve",
-		"email": "username@mail.com",
-		"password": "password",
-		"locationAddress": "123 Easy St",
-		"defaultRuntime": 1,
-		"runtimeSource": 0,
-		"useIrrigationDisplay": true,
-		"displayValveType": 1,
-		"showIrrigation": true,
-		"showBridge": false,
-		"showFloodSensor": true,
-		"showTempSensor": true,
-		"showLimitsSensor": true,
-		"showStandby": false,
-		"showRunall": false,
-		"showSchedules": false,
-		"_bridge": {
-			"username": "0E:76:36:78:EC:92",
-			"port": 30395
-		},
-		"platform": "bhyve"
-	}
-]
+{
+	"name": "B-Hyve",
+	"email": "username@mail.com",
+	"password": "password",
+	"locationAddress": "123 Easy St",
+	"defaultRuntime": 1,
+	"runtimeSource": 0,
+	"useIrrigationDisplay": true,
+	"displayValveType": 1,
+	"showIrrigation": true,
+	"showBridge": false,
+	"showFloodSensor": true,
+	"showTempSensor": true,
+	"showLimitsSensor": true,
+	"showStandby": false,
+	"showRunall": false,
+	"showSchedules": false,
+	"_bridge": {
+		"username": "0E:76:36:78:EC:92",
+		"port": 30395
+	},
+	"platform": "bhyve"
+}
 ```

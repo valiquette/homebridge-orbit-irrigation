@@ -4,8 +4,8 @@ let axios = require('axios')
 let ws = require('ws')
 let reconnectingwebsocket = require('reconnecting-websocket')
 
-let endpoint = 'https://api.orbitbhyve.com/v1/'
-let WS_endpoint = 'wss://api.orbitbhyve.com/v1/'
+let endpoint = 'https://api.orbitbhyve.com/v1'
+let WS_endpoint = 'wss://api.orbitbhyve.com/v1'
 
 let maxPingInterval = 25000 // Websocket get's timed out after 30s, will set a random value between 20 and 25
 let minPingInterval = 20000
@@ -25,7 +25,8 @@ OrbitAPI.prototype={
         this.log.debug('Retrieving API key')
         let response = await axios({
             method: 'post',
-            url: endpoint + 'session',
+						baseURL: endpoint,
+            url: '/session',
             headers: {
 							'Content-Type': 'application/json',
 							'orbit-app-id': 'Bhyve Dashboard'
@@ -37,7 +38,11 @@ OrbitAPI.prototype={
                 }
             }, 
             responseType: 'json'
-        }).catch(err=>{this.log.error('Error getting API key %s', JSON.stringify(err.config,null,2))})
+        }).catch(err=>{
+					this.log.error('Error getting API key %s', err.message)
+					this.log.warn( JSON.stringify(err.response.data,null,2))
+					this.log.debug(JSON.stringify(err,null,2))
+				})
         this.log.debug('get token response',JSON.stringify(response.data,null,2))
         return  response
         }catch(err) {this.log.error('Error retrieving API key %s', err)}
@@ -49,14 +54,19 @@ OrbitAPI.prototype={
         this.log.debug('Retrieving devices')
         let response = await axios({
             method: 'get',
-            url: endpoint+'devices?user='+ userId,
+						baseURL: endpoint,
+            url: '/devices?user='+ userId,
             headers: {
 							'Content-Type': 'application/json',
 							'orbit-api-key': token, 
 							'orbit-app-id': 'Bhyve Dashboard'
             },
             responseType: 'json'
-        }).catch(err=>{this.log.error('Error getting devices %s', JSON.stringify(err.config,null,2))})
+        }).catch(err=>{
+					this.log.error('Error getting devices %s', err.message)
+					this.log.warn( JSON.stringify(err.response.data,null,2))
+					this.log.debug(JSON.stringify(err,null,2))
+				})
         this.log.debug('get devices response',JSON.stringify(response.data,null,2))
         return response
         }catch(err) {this.log.error('Error retrieving devices %s', err)}
@@ -68,14 +78,19 @@ OrbitAPI.prototype={
 					this.log.debug('Retrieving device')
 					let response = await axios({
 							method: 'get',
-							url: endpoint+'devices/'+device,
+							baseURL: endpoint,
+							url: '/devices/'+device,
 							headers: {
 								'Content-Type': 'application/json',
 								'orbit-api-key': token, 
 								'orbit-app-id': 'Bhyve Dashboard'
 							},
 							responseType: 'json'
-					}).catch(err=>{this.log.error('Error getting device %s', JSON.stringify(err.config,null,2))})
+					}).catch(err=>{
+						this.log.error('Error getting device %s', err.message)
+						this.log.warn( JSON.stringify(err.response.data,null,2))
+						this.log.debug(JSON.stringify(err,null,2))
+					})
 					this.log.debug('get device response',JSON.stringify(response.data,null,2))
 					return response
 					}catch(err) {this.log.error('Error retrieving device %s', err)}
@@ -87,14 +102,19 @@ OrbitAPI.prototype={
             this.log.debug('Retrieving mesh info')
             let response = await axios({
                 method: 'get',
-                url: endpoint+'meshes/'+meshId,
+								baseURL: endpoint,
+                url: '/meshes/'+meshId,
                 headers: {
 									'Content-Type': 'application/json',
 									'orbit-api-key': token, 
 									'orbit-app-id': 'Bhyve Dashboard'
                 },
                 responseType: 'json'
-            }).catch(err=>{this.log.error('Error getting mesh info %s', JSON.stringify(err.config,null,2))})
+            }).catch(err=>{
+							this.log.error('Error getting mesh info %s', err.message)
+							this.log.warn( JSON.stringify(err.response.data,null,2))
+							this.log.debug(JSON.stringify(err,null,2))
+						})
             this.log.debug('get mesh info response',JSON.stringify(response.data,null,2))
             return response
             }catch(err) {this.log.error('Error retrieving mesh info %s', err)}
@@ -106,75 +126,93 @@ OrbitAPI.prototype={
 					this.log.debug('Retrieving network topology info')
 					let response = await axios({
 							method: 'get',
-							url: endpoint+'network_topologies/'+networkTopologyId,
+							baseURL: endpoint,
+							url: '/network_topologies/'+networkTopologyId,
 							headers: {
 								'Content-Type': 'application/json',
 								'orbit-api-key': token, 
 								'orbit-app-id': 'Bhyve Dashboard'
 							},
 							responseType: 'json'
-					}).catch(err=>{this.log.error('Error getting network topologies info %s', JSON.stringify(err.config,null,2))})
+					}).catch(err=>{
+						this.log.error('Error getting network topologies info %s', err.message)
+						this.log.warn( JSON.stringify(err.response.data,null,2))
+						this.log.debug(JSON.stringify(err,null,2))
+					})
 					this.log.debug('get network topology info response',JSON.stringify(response.data,null,2))
 					return response
 					}catch(err) {this.log.error('Error retrieving network topologies info %s', err)}
 			},
 
-      getDeviceGraph: async function(token,userId){
-        // Get device graph details
-        try {  
-            this.log.debug('Retrieving device graph info')
-            let response = await axios({
-                method: 'post',
-                url: endpoint+'graph2',
-                headers: {
-									'Content-Type': 'application/json',
-									'orbit-api-key': token, 
-									'orbit-app-id': 'Bhyve Dashboard'
-                },
-                data: {
-                  "query": [
-                      "devices",
-                      {
-                        "user_id": userId
-                      },
-                      "id",
-                      "name",
-											"address.line_1",
-											"location_name",
-                      "type",
-                      "hardware_version",
-                      "firmware_version",
-                      "mac_address",
-                      "is_connected",
-                      "mesh_id"
-                    ]
-                  },
-                responseType: 'json'
-            }).catch(err=>{this.log.error('Error getting graph %s', JSON.stringify(err.config,null,2))})
-            this.log.debug('get device graph response',JSON.stringify(response.data,null,2))
-            return response
-            }catch(err) {this.log.error('Error retrieving graph %s', err)}
-        }, 
+		getDeviceGraph: async function(token,userId){
+			// Get device graph details
+			try {  
+					this.log.debug('Retrieving device graph info')
+					let response = await axios({
+							method: 'post',
+							baseURL: endpoint,
+							url: '/graph2',
+							headers: {
+								'Content-Type': 'application/json',
+								'orbit-api-key': token, 
+								'orbit-app-id': 'Bhyve Dashboard'
+							},
+							data: {
+								"query": [
+										"devices",
+										{
+											"user_id": userId
+										},
+										"id",
+										"name",
+										"address.line_1",
+										"location_name",
+										"type",
+										"hardware_version",
+										"firmware_version",
+										"mac_address",
+										"is_connected",
+										"mesh_id"
+									]
+								},
+							responseType: 'json'
+					}).catch(err=>{
+						this.log.error('Error getting graph %s', err.message)
+						this.log.warn( JSON.stringify(err.response.data,null,2))
+						this.log.debug(JSON.stringify(err,null,2))
+					})
+					this.log.debug('get device graph response',JSON.stringify(response.data,null,2))
+					return response
+					}catch(err) {this.log.error('Error retrieving graph %s', err)}
+			}, 
 
-        getTimerPrograms: async function(token,device){
-          // Get mesh details
-          try {  
-              this.log.debug('Retrieving schedules')
-              let response = await axios({
-                  method: 'get',
-                  url: endpoint+'sprinkler_timer_programs?device_id='+device.id,
-                  headers: {
-										'Content-Type': 'application/json',
-										'orbit-api-key': token, 
-										'orbit-app-id': 'Bhyve Dashboard'
-                  },
-                  responseType: 'json'
-              }).catch(err=>{this.log.error('Error getting scheduled %s', JSON.stringify(err.config,null,2))})
-              this.log.debug('get timer programs response',JSON.stringify(response.data,null,2))
-              return response
-              }catch(err) {this.log.error('Error retrieving schedules %s', err)}
-          },
-    
+		getTimerPrograms: async function(token,device){
+			// Get mesh details
+			try {  
+					this.log.debug('Retrieving schedules')
+					let response = await axios({
+							method: 'get',
+							baseURL: endpoint,
+							url:'/sprinkler_timer_programs',
+							headers: {
+								'Content-Type': 'application/json',
+								'orbit-api-key': token, 
+								'orbit-app-id': 'Bhyve Dashboard'
+							},
+							params: {
+								device_id: device.id
+							},
+							responseType: 'json'
+					}).catch(err=>{
+						this.log.error('Error getting scheduled %s', err.message)
+						this.log.warn( JSON.stringify(err.response.data,null,2))
+						this.log.debug(JSON.stringify(err,null,2))
+					})
+					this.log.debug('get timer programs response',JSON.stringify(response.data,null,2))
+					return response
+					}catch(err) {this.log.error('Error retrieving schedules %s', err)}
+			},
+	
     startZone: function(token, device, station, runTime){
         try { 
             this.log.debug('startZone', device.id, station, runTime)
@@ -333,7 +371,7 @@ class WebSocketProxy {
 
       return new Promise((resolve, reject)=>{
         try {
-          this.rws = new reconnectingwebsocket(WS_endpoint+'events', [], {
+          this.rws = new reconnectingwebsocket(WS_endpoint+'/events', [], {
             WebSocket: ws,
             maxReconnectionDelay: 10000, //64000
             minReconnectionDelay: 1000 + Math.random() * 4000, //2000
