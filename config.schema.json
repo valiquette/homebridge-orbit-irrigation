@@ -66,7 +66,7 @@
 				"title": "Display as Irrigation System in HomeKit",
 				"type": "boolean",
 				"required": true,
-				"default": false
+				"default": true
 				}, 
 			"displayValveType": {
 				"title": "Display Valves as",

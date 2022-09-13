@@ -2,6 +2,14 @@
 
 ## *Version 1.2.x breaking change will require the plugin config to be open and saved to display irrigation system.*
 
+## 1.2.9
+Update
+- Updated readme.
+-	Corrected error handeling during startup.
+- Changed configuration default to true for use irrigation display.
+-	API updates
+- Code Cleanup
+
 ## 1.2.8
 Update
 - Changed default naming for flood sensor limits to avoid unsupported characters.
