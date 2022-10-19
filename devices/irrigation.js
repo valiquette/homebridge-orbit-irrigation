@@ -135,7 +135,7 @@ irrigation.prototype={
         else{
           callback(null, irrigationSystemService.getCharacteristic(Characteristic.Active).value)
         }
-      	break    
+      	break
       case "DeviceInUse":
         //this.log.debug("%s=%s %s", irrigationSystemService.getCharacteristic(Characteristic.Name).value, characteristicName,irrigationSystemService.getCharacteristic(Characteristic.InUse).value)
           callback(null, irrigationSystemService.getCharacteristic(Characteristic.InUse).value)

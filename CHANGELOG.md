@@ -2,6 +2,11 @@
 
 ## *Version 1.2.x breaking change will require the plugin config to be open and saved to display irrigation system.*
 
+## 1.2.10
+Update
+- Added explict user-agent info to API calls.
+- Bumped dependencies.
+
 ## 1.2.9
 Update
 - Updated readme.
@@ -13,21 +18,21 @@ Update
 ## 1.2.8
 Update
 - Changed default naming for flood sensor limits to avoid unsupported characters.
-- Code Cleanup.  
+- Code Cleanup.
 - Bumped Dependancies.
 
 ## 1.2.7
 Update
 - Changed configuration default to false for use irrigation display, due to IOS bug intoduced with 15.4 and still not fixed in 15.5
 - Initial support for node.js 18
-- Bumped dependencies. 
+- Bumped dependencies.
 
 ## 1.2.6
 Update
 -	Suppressed additional debug logging.
 - Improved error messaging.
 -	Fixed sensor and XD Timer low battery notifications.
-- Code Cleanup  
+- Code Cleanup
 
 ## 1.2.5
 Update
@@ -55,10 +60,10 @@ Update
 Update
 *Version 1.2.x upgrade from 1.1.x is a breaking change and will require the plugin config to be open and saved to display irrigation system.*
 - Verified support for Gen2 Bridge BH1G2-0001 and Hose Timer HT31-0001.
--	Updated location for hub connected devices such as flood sensors to follow the location of the hub's address. 
+-	Updated location for hub connected devices such as flood sensors to follow the location of the hub's address.
 -	Inital support for Flood Sensors FS1-0001.
 -	Corrected device online state during start up.
--	Added config option to exclude irrigation system.  
+-	Added config option to exclude irrigation system.
 -	Code cleanup for excluded devices.
 -	Bumped dependencies.
 
@@ -130,7 +135,7 @@ Fix
 - Bumped dependancy revs.
 
 ## 1.0.1
-Initial 
+Initial
 - Support of irrigation system or valves.
 - Battery supported.
 - Bridge supported.

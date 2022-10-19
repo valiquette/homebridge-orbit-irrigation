@@ -21,7 +21,7 @@ OrbitAPI.prototype={
 
     getToken: async function(email,password){
     // Get token
-    try {  
+    try {
         this.log.debug('Retrieving API key')
         let response = await axios({
             method: 'post',
@@ -29,14 +29,15 @@ OrbitAPI.prototype={
             url: '/session',
             headers: {
 							'Content-Type': 'application/json',
+							'User-Agent': `${PluginName}/${PluginVersion}`,
 							'orbit-app-id': 'Bhyve Dashboard'
             },
             data:{
-            'session': {
-                'email': email,
-                'password': password
-                }
-            }, 
+							'session': {
+								'email': email,
+								'password': password
+							}
+            },
             responseType: 'json'
         }).catch(err=>{
 					this.log.error('Error getting API key %s', err.message)
@@ -47,10 +48,10 @@ OrbitAPI.prototype={
         return  response
         }catch(err) {this.log.error('Error retrieving API key %s', err)}
     },
-    
+
     getDevices: async function(token,userId){
     // Get the device details
-    try {  
+    try {
         this.log.debug('Retrieving devices')
         let response = await axios({
             method: 'get',
@@ -58,7 +59,8 @@ OrbitAPI.prototype={
             url: '/devices?user='+ userId,
             headers: {
 							'Content-Type': 'application/json',
-							'orbit-api-key': token, 
+							'User-Agent': `${PluginName}/${PluginVersion}`,
+							'orbit-api-key': token,
 							'orbit-app-id': 'Bhyve Dashboard'
             },
             responseType: 'json'
@@ -71,10 +73,10 @@ OrbitAPI.prototype={
         return response
         }catch(err) {this.log.error('Error retrieving devices %s', err)}
     },
-		
+
 		getDevice: async function(token,device){
 			// Get the device details
-			try {  
+			try {
 					this.log.debug('Retrieving device')
 					let response = await axios({
 							method: 'get',
@@ -82,7 +84,8 @@ OrbitAPI.prototype={
 							url: '/devices/'+device,
 							headers: {
 								'Content-Type': 'application/json',
-								'orbit-api-key': token, 
+								'User-Agent': `${PluginName}/${PluginVersion}`,
+								'orbit-api-key': token,
 								'orbit-app-id': 'Bhyve Dashboard'
 							},
 							responseType: 'json'
@@ -98,7 +101,7 @@ OrbitAPI.prototype={
 
     getMeshes: async function(token,meshId){
         // Get mesh details
-        try {  
+        try {
             this.log.debug('Retrieving mesh info')
             let response = await axios({
                 method: 'get',
@@ -106,7 +109,8 @@ OrbitAPI.prototype={
                 url: '/meshes/'+meshId,
                 headers: {
 									'Content-Type': 'application/json',
-									'orbit-api-key': token, 
+									'User-Agent': `${PluginName}/${PluginVersion}`,
+									'orbit-api-key': token,
 									'orbit-app-id': 'Bhyve Dashboard'
                 },
                 responseType: 'json'
@@ -122,7 +126,7 @@ OrbitAPI.prototype={
 
 		getNetworkTopologies: async function(token,networkTopologyId){
 			// Get mesh details
-			try {  
+			try {
 					this.log.debug('Retrieving network topology info')
 					let response = await axios({
 							method: 'get',
@@ -130,7 +134,8 @@ OrbitAPI.prototype={
 							url: '/network_topologies/'+networkTopologyId,
 							headers: {
 								'Content-Type': 'application/json',
-								'orbit-api-key': token, 
+								'User-Agent': `${PluginName}/${PluginVersion}`,
+								'orbit-api-key': token,
 								'orbit-app-id': 'Bhyve Dashboard'
 							},
 							responseType: 'json'
@@ -146,7 +151,7 @@ OrbitAPI.prototype={
 
 		getDeviceGraph: async function(token,userId){
 			// Get device graph details
-			try {  
+			try {
 					this.log.debug('Retrieving device graph info')
 					let response = await axios({
 							method: 'post',
@@ -154,7 +159,8 @@ OrbitAPI.prototype={
 							url: '/graph2',
 							headers: {
 								'Content-Type': 'application/json',
-								'orbit-api-key': token, 
+								'User-Agent': `${PluginName}/${PluginVersion}`,
+								'orbit-api-key': token,
 								'orbit-app-id': 'Bhyve Dashboard'
 							},
 							data: {
@@ -184,11 +190,11 @@ OrbitAPI.prototype={
 					this.log.debug('get device graph response',JSON.stringify(response.data,null,2))
 					return response
 					}catch(err) {this.log.error('Error retrieving graph %s', err)}
-			}, 
+			},
 
 		getTimerPrograms: async function(token,device){
 			// Get mesh details
-			try {  
+			try {
 					this.log.debug('Retrieving schedules')
 					let response = await axios({
 							method: 'get',
@@ -196,7 +202,8 @@ OrbitAPI.prototype={
 							url:'/sprinkler_timer_programs',
 							headers: {
 								'Content-Type': 'application/json',
-								'orbit-api-key': token, 
+								'User-Agent': `${PluginName}/${PluginVersion}`,
+								'orbit-api-key': token,
 								'orbit-app-id': 'Bhyve Dashboard'
 							},
 							params: {
@@ -212,19 +219,19 @@ OrbitAPI.prototype={
 					return response
 					}catch(err) {this.log.error('Error retrieving schedules %s', err)}
 			},
-	
+
     startZone: function(token, device, station, runTime){
-        try { 
+        try {
             this.log.debug('startZone', device.id, station, runTime)
             this.wsp.connect(token, device.id)
                 .then(ws=>ws.send({
                     event: "change_mode",
                     mode: "manual",
-                    device_id: device.id, 
+                    device_id: device.id,
                     stations: [
-                        { 
-                        "station": station,
-                        "run_time": runTime
+                        {
+													"station": station,
+													"run_time": runTime
                         }
                     ]
                 }))
@@ -232,20 +239,20 @@ OrbitAPI.prototype={
     },
 
     startSchedule: function(token, device, program){
-      try { 
+      try {
           this.log.debug('startZone', device.id, program)
           this.wsp.connect(token, device.id)
               .then(ws=>ws.send({
                   event: "change_mode",
                   mode: "manual",
-                  device_id: device.id, 
+                  device_id: device.id,
                   program: program
               }))
       }catch(err) {this.log.error('Error starting zone %s', err)}
   },
 
     stopZone: function(token, device) {
-        try { 
+        try {
             this.log.debug('stopZone')
             this.wsp.connect(token, device.id)
                 .then(ws=>ws.send({
@@ -258,7 +265,7 @@ OrbitAPI.prototype={
     },
 
     startMultipleZone: function(token, device, runTime){
-          try { 
+          try {
             let body=[]
                     device.zones.forEach((zone)=>{
 											zone.enabled=true // need orbit version of enabled
@@ -283,7 +290,7 @@ OrbitAPI.prototype={
     },
 
     stopDevice: function(token, device){
-      try { 
+      try {
           this.log.debug('stopZone')
           this.wsp.connect(token, device.id)
               .then(ws=>ws.send({
@@ -297,7 +304,7 @@ OrbitAPI.prototype={
   },
 
     deviceStandby: function(token, device, mode){
-        try { 
+        try {
             this.log.debug('standby')
             this.wsp.connect(token, device.id)
                 .then(ws=>ws.send({
@@ -310,7 +317,7 @@ OrbitAPI.prototype={
     },
 
     openConnection:function(token, device){
-        try { 
+        try {
         this.log.debug('Opening WebSocket Connection for %s',device.name)
         this.wsp.connect(token, device.id)
             .then(ws=>ws.send({
@@ -323,7 +330,7 @@ OrbitAPI.prototype={
     },
 
     onMessage: function(token, device, listner){
-        try { 
+        try {
         this.log.debug('Adding Event Listener for %s',device.name)
         this.wsp.connect(token, device.id)
             .then(ws=>ws.addEventListener('message', msg=>{
@@ -333,7 +340,7 @@ OrbitAPI.prototype={
     },
 
     sync: function(token, device){
-        try { 
+        try {
         this.log.debug('Syncing device %s info', device.name)
         this.wsp.connect(token, device.id)
             .then(ws=>ws.send({
@@ -344,7 +351,7 @@ OrbitAPI.prototype={
     },
 
 		identify: function(token, device){
-			try { 
+			try {
 			this.log.debug('Identify device %s info', device.name)
 			this.wsp.connect(token, device.id)
 					.then(ws=>ws.send({
@@ -390,9 +397,9 @@ class WebSocketProxy {
             if (typeof data === 'object') {
                   data = JSON.stringify(data,null,2)
               }
-              //this.log.debug(JSON.parse(data).event) //comment line to supress ping info from filling debug log 
-              if (JSON.parse(data).event!= 'ping'){ 
-                this.log.debug('%s sending %s', deviceId, data) 
+              //this.log.debug(JSON.parse(data).event) //comment line to supress ping info from filling debug log
+              if (JSON.parse(data).event!= 'ping'){
+                this.log.debug('%s sending %s', deviceId, data)
               }
               origSend(data, options, callback)
           }
@@ -430,7 +437,7 @@ class WebSocketProxy {
           this.ping = setInterval(()=>{
             this.rws.send({ event: 'ping' })
             }, Math.floor(Math.random()*(maxPingInterval-minPingInterval))+minPingInterval)
-        
+
           }catch (error) {
             // Will not execute
             this.log.error('caught', error.message)
