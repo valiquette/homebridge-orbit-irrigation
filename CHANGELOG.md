@@ -2,6 +2,10 @@
 
 ## *Version 1.2.x breaking change will require the plugin config to be open and saved to display irrigation system.*
 
+## 1.2.11
+Update
+- Bumped dependencies.
+
 ## 1.2.10
 Update
 - Added explict user-agent info to API calls.
