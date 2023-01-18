@@ -41,6 +41,7 @@ class PlatformOrbit {
 		this.lowBattery=config.lowBattery || 20
 		this.retryWait=config.retryWait || 60
     this.lastMessage={}
+		this.endTime=[]
     this.activeZone
     this.activeProgram
     this.meshNetwork
@@ -71,23 +72,22 @@ class PlatformOrbit {
 			this.log.debug('Fetching Build info...')
 			this.log.info('Getting Account info...')
 			// login to the API and get the token
-			let signinResponse=await this.orbitapi.getToken(this.email,this.password).catch(err=>{this.log.error('Failed to get token for build', err)})
-			this.log.info('Found account for',signinResponse.data.user_name)
-			this.log.debug('Found token',signinResponse.data.orbit_api_key)
-			this.token=signinResponse.data.orbit_api_key
-			this.userId=signinResponse.data.user_id
+			let signinResponse=(await this.orbitapi.getToken(this.email,this.password).catch(err=>{this.log.error('Failed to get token for build', err)})).data
+			this.log.info('Found account for',signinResponse.user_name)
+			this.log.debug('Found token',signinResponse.orbit_api_key)
+			this.token=signinResponse.orbit_api_key
+			this.userId=signinResponse.user_id
 			//get device graph
-			let graphResponse=await this.orbitapi.getDeviceGraph(this.token,this.userId).catch(err=>{this.log.error('Failed to get graph info %s', err)})
-			this.log.debug('Found device graph for user id %s, %s',this.userId,graphResponse.data)
-			this.deviceGraph=graphResponse.data
+			this.deviceGraph=(await this.orbitapi.getDeviceGraph(this.token,this.userId).catch(err=>{this.log.error('Failed to get graph info %s', err)})).data
+			this.log.debug('Found device graph for user id %s, %s',this.userId,this.deviceGraph)
 			// get an array of the devices
-			let deviceResponse=await this.orbitapi.getDevices(this.token, this.userId).catch(err=>{this.log.error('Failed to get devices for build %s', err)})
-			deviceResponse.data=deviceResponse.data.sort(function (a, b){ // read bridge info first
+			let deviceResponse=(await this.orbitapi.getDevices(this.token, this.userId).catch(err=>{this.log.error('Failed to get devices for build %s', err)})).data
+			deviceResponse=deviceResponse.sort(function (a, b){ // read bridge info first
 				return a.type > b.type ? 1
 							:a.type < b.type ? -1
 							:0
 			})
-			deviceResponse.data.filter(async(device)=>{
+			deviceResponse.filter(async(device)=>{
 				if(device.address==undefined){
 					device.address={
 						"line_1":"undefined location",
@@ -103,14 +103,11 @@ class PlatformOrbit {
 						this.log.info('Online device %s %s found at the configured location address: %s',device.hardware_version,device.name,device.address.line_1)
 						if(device.network_topology_id){
 							this.networkTopologyId=device.network_topology_id
-							let networkTopologyResponse= await this.orbitapi.getNetworkTopologies(this.token,device.network_topology_id).catch(err=>{this.log.error('Failed to get network topology %s', err)})
-							this.networkTopology=networkTopologyResponse.data
-
+							this.networkTopology=(await this.orbitapi.getNetworkTopologies(this.token,device.network_topology_id).catch(err=>{this.log.error('Failed to get network topology %s', err)})).data
 						}
 						if(device.mesh_id){
 							this.meshId=device.mesh_id
-							let meshNetworkResponse=await this.orbitapi.getMeshes(this.token,device.mesh_id).catch(err=>{this.log.error('Failed to get network mesh %s', err)})
-							this.meshNetwork=meshNetworkResponse.data
+							this.meshNetwork=(await this.orbitapi.getMeshes(this.token,device.mesh_id).catch(err=>{this.log.error('Failed to get network mesh %s', err)})).data
 						}
 					}
 					else{
@@ -205,8 +202,8 @@ class PlatformOrbit {
 							}
 						})
 					if(this.showSchedules){
-						let scheduleResponse=await this.orbitapi.getTimerPrograms(this.token,newDevice).catch(err=>{this.log.error('Failed to get schedule for device', err)})
-						scheduleResponse.data.forEach((schedule)=>{
+						let scheduleResponse=(await this.orbitapi.getTimerPrograms(this.token,newDevice).catch(err=>{this.log.error('Failed to get schedule for device', err)})).data
+						scheduleResponse.forEach((schedule)=>{
 							this.log.debug('adding schedules %s program %s',schedule.name, schedule.program )
 							switchService=this.basicSwitch.createScheduleSwitchService(newDevice, schedule)
 							this.basicSwitch.configureSwitchService(newDevice, switchService)
@@ -253,9 +250,8 @@ class PlatformOrbit {
 						case "BH1-0001":
 							// Create and configure Gen 1Bridge Service
 							this.log.warn(this.token,newDevice.mesh_id)
-							let meshNetworkResponse=await this.orbitapi.getMeshes(this.token,newDevice.mesh_id).catch(err=>{this.log.error('Failed to add G1 bridge %s', err)})
-							let meshNetwork=meshNetworkResponse.data
-							this.log.warn(meshNetwork.data)
+							let meshNetwork=(await this.orbitapi.getMeshes(this.token,newDevice.mesh_id).catch(err=>{this.log.error('Failed to add G1 bridge %s', err)})).data
+							this.log.warn(meshNetwork)
 							this.log.debug('Creating and configuring new bridge')
 							bridgeAccessory=this.bridge.createBridgeAccessory(newDevice,uuid)
 							bridgeService=bridgeAccessory.getService(Service.Tunnel)
@@ -273,8 +269,7 @@ class PlatformOrbit {
 							break
 						case "BH1G2-0001":
 							// Create and configure Gen2 Bridge Service
-							let networkTopologyResponse=await this.orbitapi.getNetworkTopologies(this.token,newDevice.network_topology_id).catch(err=>{this.log.error('Failed to add G2 bridge %s', err)})
-							let networkTopology=networkTopologyResponse.data
+							let networkTopology=(await this.orbitapi.getNetworkTopologies(this.token,newDevice.network_topology_id).catch(err=>{this.log.error('Failed to add G2 bridge %s', err)})).data
 							this.log.debug('Creating and configuring new bridge')
 							bridgeAccessory=this.bridge.createBridgeAccessory(newDevice,uuid)
 							bridgeService=bridgeAccessory.getService(Service.Tunnel)
@@ -362,11 +357,11 @@ class PlatformOrbit {
 			try{
 				if(this.networkTopologyId){
 					this.networkTopology.devices.forEach(async(sensor)=>{
-						let sensorResponse=await this.orbitapi.getDevice(this.token,sensor.device_id).catch(err=>{this.log.error('Failed to get device response %s', err)})
-						this.log.debug('check battery status %s %s @ %s',sensorResponse.data.location_name, sensorResponse.data.name, sensorResponse.data.battery.percent)
-						sensorResponse.data.device_id=sensorResponse.data.id
+						let sensorResponse=(await this.orbitapi.getDevice(this.token,sensor.device_id).catch(err=>{this.log.error('Failed to get device response %s', err)})).data
+						this.log.debug('check battery status %s %s @ %s',sensorResponse.location_name, sensorResponse.name, sensorResponse.battery.percent)
+						sensorResponse.device_id=sensorResponse.id
 						sensorResponse.data.event='battery'
-						this.updateService(JSON.stringify(sensorResponse.data))
+						this.updateService(JSON.stringify(sensorResponse))
 					})
 				}
 			}catch(err){this.log.error('Failed to read each sensor', err)}
@@ -444,8 +439,7 @@ class PlatformOrbit {
 								activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.ACTIVE)
 								activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
 								activeService.getCharacteristic(Characteristic.RemainingDuration).updateValue(jsonBody.run_time * 60)
-								let endTime= new Date(Date.now() + parseInt(jsonBody.run_time) * 60 * 1000).toISOString()
-								activeService.getCharacteristic(Characteristic.CurrentTime).updateValue(endTime)
+								this.endTime[activeService.subtype]= new Date(Date.now() + parseInt(jsonBody.run_time) * 60 * 1000).toISOString()
 							}
 							break
 						case "watering_complete":

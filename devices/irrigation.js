@@ -37,7 +37,7 @@ irrigation.prototype={
 
   configureIrrigationService(device,irrigationSystemService){
     this.log.info('Configure Irrigation system for %s', irrigationSystemService.getCharacteristic(Characteristic.Name).value)
-    irrigationSystemService 
+    irrigationSystemService
       .setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
       .setCharacteristic(Characteristic.InUse, Characteristic.InUse.NOT_IN_USE)
       .setCharacteristic(Characteristic.StatusFault, !device.is_connected)
@@ -77,7 +77,6 @@ irrigation.prototype={
 			this.log.debug('error setting runtime, using default runtime')
 			}
 		this.log.debug("Created valve service for %s with id %s with %s min runtime", zone.name, zone.station, Math.round(defaultRuntime/60))
-    valve.addCharacteristic(Characteristic.CurrentTime) // Use CurrentTime to store the run time ending
     valve.addCharacteristic(Characteristic.SerialNumber) //Use Serial Number to store the zone id
     valve.addCharacteristic(Characteristic.Model)
     valve.addCharacteristic(Characteristic.ConfiguredName)
@@ -98,7 +97,7 @@ irrigation.prototype={
         valve.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)}
       else{
         valve.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.NOT_CONFIGURED)
-      }  
+      }
     return valve
   },
 
@@ -123,9 +122,9 @@ irrigation.prototype={
       .getCharacteristic(Characteristic.RemainingDuration)
       .on('get', this.getValveValue.bind(this, valveService, "ValveRemainingDuration"))
   },
-	
+
   getDeviceValue(irrigationSystemService, characteristicName, callback){
-    //this.log.debug('%s - Set something %s', irrigationSystemService.getCharacteristic(Characteristic.Name).value) 
+    //this.log.debug('%s - Set something %s', irrigationSystemService.getCharacteristic(Characteristic.Name).value)
     switch (characteristicName){
       case "DeviceActive":
         //this.log.debug("%s=%s %s", irrigationSystemService.getCharacteristic(Characteristic.Name).value, characteristicName,irrigationSystemService.getCharacteristic(Characteristic.Active).value)
@@ -173,7 +172,7 @@ irrigation.prototype={
       	break
       case "ValveRemainingDuration":
         // Calc remain duration
-        let timeEnding=Date.parse(valveService.getCharacteristic(Characteristic.CurrentTime).value)
+				let timeEnding=Date.parse(this.platform.endTime[valveService.subtype])
         let timeNow=Date.now()
         let timeRemaining=Math.max(Math.round((timeEnding - timeNow) / 1000), 0)
         if(isNaN(timeRemaining)){
@@ -191,7 +190,7 @@ irrigation.prototype={
   },
 
   setValveValue(device, valveService, value, callback){
-   //this.log.debug('%s - Set Active state to %s', valveService.getCharacteristic(Characteristic.Name).value, value) 
+   //this.log.debug('%s - Set Active state to %s', valveService.getCharacteristic(Characteristic.Name).value, value)
    let uuid=UUIDGen.generate(device.id)
    let irrigationAccessory=this.platform.accessories[uuid]
    let irrigationSystemService=irrigationAccessory.getService(Service.IrrigationSystem)
@@ -216,21 +215,21 @@ irrigation.prototype={
         device_id: device.id,
         timestamp: new Date().toISOString()
         }
-      let myJsonStop={ 
+      let myJsonStop={
         source: "local",
         timestamp: new Date().toISOString(),
         event: 'watering_complete',
         device_id: device.id
-        } 
+        }
       this.log.debug(myJsonStart)
       this.log.debug('Simulating websocket event for %s will update services',myJsonStart.device_id)
       this.platform.updateService(JSON.stringify(myJsonStart))
       this.fakeWebsocket=setTimeout(()=>{
-        this.log.debug('Simulating websocket event for %s will update services',myJsonStop.device_id) 
+        this.log.debug('Simulating websocket event for %s will update services',myJsonStop.device_id)
         this.log.debug(myJsonStop)
         this.platform.updateService(JSON.stringify(myJsonStop))
-        }, runTime*1000) 
-    } 
+        }, runTime*1000)
+    }
     else{
       // Turn off/stopping the valve
       this.log.info("Stopping Zone", valveService.getCharacteristic(Characteristic.Name).value)
@@ -238,12 +237,12 @@ irrigation.prototype={
       irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.Active.INACTIVE)
       valveService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
       //json stop stuff
-      let myJsonStop={ 
+      let myJsonStop={
         source: "local",
         timestamp: new Date().toISOString(),
         event: 'watering_complete',
         device_id: device.id
-        } 
+        }
       this.log.debug(myJsonStop)
       this.log.debug('Simulating websocket event for %s will update services',myJsonStop.device_id)
       this.platform.updateService(JSON.stringify(myJsonStop))
@@ -253,8 +252,8 @@ irrigation.prototype={
   },
 
   setValveSetDuration(valveService, CharacteristicName, value, callback){
-    // Set default duration from Homekit value 
-    valveService.getCharacteristic(Characteristic.SetDuration).updateValue(value) 
+    // Set default duration from Homekit value
+    valveService.getCharacteristic(Characteristic.SetDuration).updateValue(value)
     this.log.info("Set %s duration for %s mins", valveService.getCharacteristic(Characteristic.Name).value,value/60)
     callback()
   }
