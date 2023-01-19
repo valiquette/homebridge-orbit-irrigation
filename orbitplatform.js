@@ -360,7 +360,7 @@ class PlatformOrbit {
 						let sensorResponse=(await this.orbitapi.getDevice(this.token,sensor.device_id).catch(err=>{this.log.error('Failed to get device response %s', err)})).data
 						this.log.debug('check battery status %s %s @ %s',sensorResponse.location_name, sensorResponse.name, sensorResponse.battery.percent)
 						sensorResponse.device_id=sensorResponse.id
-						sensorResponse.data.event='battery'
+						sensorResponse.event='battery'
 						this.updateService(JSON.stringify(sensorResponse))
 					})
 				}

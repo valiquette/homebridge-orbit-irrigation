@@ -3,6 +3,10 @@
 ## *Version 1.2.x breaking change will require the plugin config to be open and saved to display irrigation system.*
 
 ## 1.2.12
+Fix
+- Bug Fix
+
+## 1.2.12
 Update
 - Bumped dependencies.
 - Inital support for Homebridge v2.0.0
