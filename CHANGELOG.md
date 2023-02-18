@@ -2,7 +2,12 @@
 
 ## *Version 1.2.x breaking change will require the plugin config to be open and saved to display irrigation system.*
 
-## 1.2.12
+## 1.2.14
+Fix
+- Bumped dependencies.
+- Code Cleanup
+
+## 1.2.13
 Fix
 - Bug Fix
 
@@ -10,7 +15,7 @@ Fix
 Update
 - Bumped dependencies.
 - Inital support for Homebridge v2.0.0
--	Removed dependency on depratacted Homekit characteristic.
+- Removed dependency on depratacted Homekit characteristic.
 - Code Cleanup
 
 ## 1.2.11

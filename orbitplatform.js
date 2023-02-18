@@ -8,66 +8,67 @@ let basicSwitch=require('./devices/switch')
 
 class PlatformOrbit {
 
-  constructor(log, config, api){
-    this.orbitapi=new OrbitAPI(this,log)
+	constructor(log, config, api){
+		this.orbitapi=new OrbitAPI(this,log)
 		this.battery=new battery(this,log)
 		this.bridge=new bridge(this,log)
 		this.irrigation=new irrigation(this,log)
 		this.sensor=new sensor(this,log)
 		this.basicSwitch=new basicSwitch(this,log)
-    this.log=log
-    this.config=config
-    this.email=config.email
-    this.password=config.password
-    this.token
-    this.userId
-    this.useIrrigationDisplay=config.useIrrigationDisplay
-    this.displayValveType=config.displayValveType
-    this.defaultRuntime=config.defaultRuntime*60
+		this.log=log
+		this.config=config
+		this.email=config.email
+		this.password=config.password
+		this.token
+		this.userId
+		this.useIrrigationDisplay=config.useIrrigationDisplay
+		this.displayValveType=config.displayValveType
+		this.defaultRuntime=config.defaultRuntime*60
 		this.runtimeSource=config.runtimeSource
-    this.showStandby=config.showStandby
-    this.showRunall=config.showRunall
-    this.showSchedules=config.showSchedules
-    this.locationAddress=config.locationAddress
-    this.locationMatch=true
+		this.showStandby=config.showStandby
+		this.showRunall=config.showRunall
+		this.showSchedules=config.showSchedules
+		this.locationAddress=config.locationAddress
+		this.locationMatch=true
 		this.showIrrigation=config.showIrrigation
-    this.showBridge=config.showBridge
+		this.showBridge=config.showBridge
 		this.showFloodSensor=config.showFloodSensor
 		this.showTempSensor=config.showTempSensor
 		this.showLimitsSensor=config.showLimitsSensor
-    this.showIncomingMessages=false
-    this.showOutgoingMessages=false
+		this.showAPIMessages=config.showAPIMessages ? config.showAPIMessages : false
+		this.showIncomingMessages=false
+		this.showOutgoingMessages=false
 		this.showExtraDebugMessages=false
 		this.lowBattery=config.lowBattery || 20
 		this.retryWait=config.retryWait || 60
-    this.lastMessage={}
+		this.lastMessage={}
 		this.endTime=[]
-    this.activeZone
-    this.activeProgram
-    this.meshNetwork
+		this.activeZone
+		this.activeProgram
+		this.meshNetwork
 		this.meshId
 		this.networkTopology
 		this.networkTopologyId
-    this.deviceGraph
+		this.deviceGraph
 		this.accessories=[]
-    if(!config.email || !config.password){
-      this.log.error('Valid email and password are required in order to communicate with the b-hyve, please check the plugin config')
-    }
-      this.log.info('Starting Orbit Platform using homebridge API', api.version)
-      if(api){
-        this.api=api
-        this.api.on("didFinishLaunching", function (){
-          // Get devices
-          this.getDevices()
-        }.bind(this))
-      }
-    }
+		if(!config.email || !config.password){
+			this.log.error('Valid email and password are required in order to communicate with the b-hyve, please check the plugin config')
+		}
+		this.log.info('Starting Orbit Platform using homebridge API', api.version)
+		if(api){
+			this.api=api
+			this.api.on("didFinishLaunching", function (){
+				// Get devices
+				this.getDevices()
+			}.bind(this))
+		}
+	}
 
-  identify (){
-    this.log.info('Identify the sprinkler!')
-  }
+	identify(){
+		this.log.info('Identify the sprinkler!')
+	}
 
-  async getDevices(){
+	async getDevices(){
 		try{
 			this.log.debug('Fetching Build info...')
 			this.log.info('Getting Account info...')
@@ -368,37 +369,37 @@ class PlatformOrbit {
 		}, 4*60*60*1000) //4 hours in ms
 	}
 
-  //**
-  //** REQUIRED - Homebridge will call the "configureAccessory" method once for every cached accessory restored
-  //**
-  configureAccessory(accessory){
-    // Added cached devices to the accessories arrary
-    this.log.debug('Found cached accessory %s', accessory.displayName);
-    this.accessories[accessory.UUID]=accessory
-  }
+	//**
+	//** REQUIRED - Homebridge will call the "configureAccessory" method once for every cached accessory restored
+	//**
+	configureAccessory(accessory){
+		// Added cached devices to the accessories arrary
+		this.log.debug('Found cached accessory %s', accessory.displayName);
+		this.accessories[accessory.UUID]=accessory
+	}
 
-  updateService(message){
+	updateService(message){
 		//process incoming messages
-    try{
-      let jsonBody=JSON.parse(message)
-      let deviceName=this.deviceGraph.devices.filter(result=>result.id == jsonBody.device_id)[0].name
-      let eventType=this.deviceGraph.devices.filter(result=>result.id == jsonBody.device_id)[0].type
-      let activeService
-      let uuid=UUIDGen.generate(jsonBody.device_id)
-      /*****************************
-           Possible states
-      Active	InUse	  HomeKit Shows
-      False	  False	  Off
-      True  	False	  Idle
-      True	  True	  Running
-      False	  True	  Stopping
-      ******************************/
-      if(this.showIncomingMessages){this.log.warn('incoming message',jsonBody)} //additional debug info
+		try{
+		let jsonBody=JSON.parse(message)
+		let deviceName=this.deviceGraph.devices.filter(result=>result.id == jsonBody.device_id)[0].name
+		let eventType=this.deviceGraph.devices.filter(result=>result.id == jsonBody.device_id)[0].type
+		let activeService
+		let uuid=UUIDGen.generate(jsonBody.device_id)
+		/*****************************
+				 Possible states
+		Active	InUse	  HomeKit Shows
+		False	  False	  Off
+		True  	False	  Idle
+		True	  True	  Running
+		False	  True	  Stopping
+		******************************/
+		if(this.showIncomingMessages){this.log.warn('incoming message',jsonBody)} //additional debug info
 			this.lastMessage.timestamp=jsonBody.timestamp //ignore timestamp deltas
-      if(JSON.stringify(this.lastMessage)==JSON.stringify(jsonBody)){return} //suppress duplicate websocket messages
-      this.lastMessage=jsonBody
-      switch (eventType){
-        case "sprinkler_timer":
+		if(JSON.stringify(this.lastMessage)==JSON.stringify(jsonBody)){return} //suppress duplicate websocket messages
+		this.lastMessage=jsonBody
+		switch (eventType){
+			case "sprinkler_timer":
 					let irrigationAccessory
 					if(this.showIrrigation){
 						irrigationAccessory=this.accessories[uuid]
@@ -564,58 +565,58 @@ class PlatformOrbit {
 						break
 					}
 				}
-      	break
-			case "bridge":
-        let bridgeAccessory
-        if(this.showBridge){
-          bridgeAccessory=this.accessories[uuid]
+			break
+		case "bridge":
+			let bridgeAccessory
+			if(this.showBridge){
+				bridgeAccessory=this.accessories[uuid]
 					if(!bridgeAccessory){return}
 					activeService=bridgeAccessory.getServiceById(Service.Tunnel, jsonBody.device_id)
-        }
-        switch (jsonBody.event){
-          case "device_connected":
-            this.log.info('%s connected at %s',deviceName,new Date(jsonBody.timestamp).toString())
-            if(this.showBridge){activeService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.NO_FAULT)}
-          	break
-          case "device_disconnected":
-            this.log.warn('%s disconnected at %s! This will show as non-responding in Homekit until the connection is restored.',deviceName,jsonBody.timestamp)
-            if(this.showBridge){activeService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)}
-          	break
-          case "device_idle":
-            //do nothing
-          	break
-          case "change_mode":
-            //do nothing
-          	break
-					default:
-            this.log.warn('Unknown bridge device message received: %s',jsonBody.event)
-						break
-        }
+			}
+			switch (jsonBody.event){
+				case "device_connected":
+				this.log.info('%s connected at %s',deviceName,new Date(jsonBody.timestamp).toString())
+				if(this.showBridge){activeService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.NO_FAULT)}
+					break
+				case "device_disconnected":
+				this.log.warn('%s disconnected at %s! This will show as non-responding in Homekit until the connection is restored.',deviceName,jsonBody.timestamp)
+				if(this.showBridge){activeService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)}
+					break
+				case "device_idle":
+				//do nothing
+					break
+				case "change_mode":
+				//do nothing
+					break
+				default:
+				this.log.warn('Unknown bridge device message received: %s',jsonBody.event)
 				break
-      case "flood_sensor":
-        let FSAccessory
-				let leakService
-				let tempService
-				let batteryService
-				let occupancySensor
-        if(this.showFloodSensor || this.showTempSensor){
-          FSAccessory=this.accessories[uuid]
-					if(!FSAccessory){return}
-          leakService=FSAccessory.getService(Service.LeakSensor)
-					tempService=FSAccessory.getService(Service.TemperatureSensor)
-					batteryService=FSAccessory.getService(Service.Battery)
-					occupancySensor=FSAccessory.getService(Service.OccupancySensor)
+			}
+			break
+		case "flood_sensor":
+			let FSAccessory
+			let leakService
+			let tempService
+			let batteryService
+			let occupancySensor
+			if(this.showFloodSensor || this.showTempSensor){
+				FSAccessory=this.accessories[uuid]
+				if(!FSAccessory){return}
+				leakService=FSAccessory.getService(Service.LeakSensor)
+				tempService=FSAccessory.getService(Service.TemperatureSensor)
+				batteryService=FSAccessory.getService(Service.Battery)
+				occupancySensor=FSAccessory.getService(Service.OccupancySensor)
 					switch (jsonBody.event){
 						case 'battery':
-								this.log.debug('update battery status %s %s @ %s',jsonBody.location_name, jsonBody.name, jsonBody.battery.percent)
-								batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.battery.percent)
-								if(jsonBody.battery.percent<=this.lowBattery){
-									batteryService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)
-								}
-								else{
-									batteryService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL)
-								}
-								//batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(Math.floor((Math.random() * 100) + 1))
+							this.log.debug('update battery status %s %s @ %s',jsonBody.location_name, jsonBody.name, jsonBody.battery.percent)
+							batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.battery.percent)
+							if(jsonBody.battery.percent<=this.lowBattery){
+								batteryService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)
+							}
+							else{
+								batteryService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL)
+							}
+							//batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(Math.floor((Math.random() * 100) + 1))
 							break
 						case "fs_status_update":
 							//this.log.info('%s status update at %s',deviceName,new Date(jsonBody.timestamp).toString())
@@ -666,17 +667,17 @@ class PlatformOrbit {
 							break
 						default:
 							this.log.warn('Unknown flood sensor device message received: %s',jsonBody.event)
-							break
+						break
+						}
 					}
-				}
-				break
-			default:
+					break
+				default:
 				this.log.warn('Unknown device message received: %s',jsonBody.event)
 				break
-      }
-   	return
-    }catch(err){this.log.error('Error updating service %s', err)}
-  }
+			}
+			return
+		}catch(err){this.log.error('Error updating service %s', err)}
+	}
 }
 
 module.exports=PlatformOrbit

@@ -61,13 +61,13 @@
 						"enum": [2]
 					}
 				]
-			}, 	
+			},
 			"useIrrigationDisplay": {
 				"title": "Display as Irrigation System in HomeKit",
 				"type": "boolean",
 				"required": true,
 				"default": true
-				}, 
+				},
 			"displayValveType": {
 				"title": "Display Valves as",
 				"type": "integer",
@@ -84,7 +84,7 @@
 						"enum": [1]
 					}
 				]
-			},  
+			},
 			"showIrrigation": {
 				"title": "Expose Irrigation System in HomeKit",
 				"type": "boolean",
@@ -135,6 +135,13 @@
 				"type": "boolean",
 				"required": true,
 				"default": false
+			},
+			"showAPIMessages": {
+				"title": "Show API responses",
+				"type": "boolean",
+				"required": false,
+				"default": false,
+				"description": "Do you want to log API response messages?"
 			}
 		}
 	},
@@ -218,6 +225,16 @@
 				"showSchedules",
 				"showRunall"
 			]
-		}  
+		},
+		{
+			"type": "fieldset",
+			"title": "Debug logging",
+			"description": "Expand to enable additional debug logging",
+			"expandable": true,
+			"flex-flow": "row wrap",
+			"items": [
+				"showAPIMessages"
+			]
+		}
 	]
 }

@@ -10,22 +10,22 @@ function sensor (platform,log){
 sensor.prototype={
 
 	createFloodAccessory(device,uuid){
-    this.log.debug('Create flood accessory %s %s',device.id, device.location_name+' '+device.name)
-    let newPlatformAccessory=new PlatformAccessory(device.location_name+' '+device.name, uuid)
-    newPlatformAccessory.getService(Service.AccessoryInformation)
-      .setCharacteristic(Characteristic.Name, device.location_name+' '+device.name)
-      .setCharacteristic(Characteristic.Manufacturer, "Orbit Irrigation")
-      .setCharacteristic(Characteristic.SerialNumber, device.mac_address)
-      .setCharacteristic(Characteristic.Model, device.hardware_version)
-      .setCharacteristic(Characteristic.Identify, true)
-      .setCharacteristic(Characteristic.FirmwareRevision, device.firmware_version)
-      .setCharacteristic(Characteristic.HardwareRevision, device.hardware_version)
-      .setCharacteristic(Characteristic.SoftwareRevision, packageJson.version)
+		this.log.debug('Create flood accessory %s %s',device.id, device.location_name+' '+device.name)
+		let newPlatformAccessory=new PlatformAccessory(device.location_name+' '+device.name, uuid)
+		newPlatformAccessory.getService(Service.AccessoryInformation)
+		.setCharacteristic(Characteristic.Name, device.location_name+' '+device.name)
+		.setCharacteristic(Characteristic.Manufacturer, "Orbit Irrigation")
+		.setCharacteristic(Characteristic.SerialNumber, device.mac_address)
+		.setCharacteristic(Characteristic.Model, device.hardware_version)
+		.setCharacteristic(Characteristic.Identify, true)
+		.setCharacteristic(Characteristic.FirmwareRevision, device.firmware_version)
+		.setCharacteristic(Characteristic.HardwareRevision, device.hardware_version)
+		.setCharacteristic(Characteristic.SoftwareRevision, packageJson.version)
 		newPlatformAccessory.getService(Service.AccessoryInformation)
 			.getCharacteristic(Characteristic.Identify)
 			.on('set', this.orbitapi.identify.bind(this.platform.token,device))
-    return newPlatformAccessory
-  },
+		return newPlatformAccessory
+	},
 
 	createLeakService(device){
 		this.log.debug("create leak sensor for %s",device.location_name+' '+device.name)
