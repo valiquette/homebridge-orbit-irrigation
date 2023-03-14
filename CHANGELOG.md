@@ -1,11 +1,19 @@
 # Changes
 
-## *Version 1.2.x breaking change will require the plugin config to be open and saved to display irrigation system.*
+## 1.2.15
+Update
+- Improved startup routine.
+- Improved error logging.
+- Cleaned whitespace.
+- Added option to suppress API responses in debug log.
+- Bumped dependencies.
+- Code Cleanup.
 
 ## 1.2.14
-Fix
+
+Update
 - Bumped dependencies.
-- Code Cleanup
+- Code Cleanup.
 
 ## 1.2.13
 Fix

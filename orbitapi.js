@@ -42,14 +42,14 @@ OrbitAPI.prototype={
 			}).catch(err=>{
 				this.log.error('Error getting API key %s', err.message)
 				this.log.debug(JSON.stringify(err,null,2))
-				if(err.response){this.log.warn( JSON.stringify(err.response.data,null,2))}
-				return
+				if(err.response){this.log.warn(JSON.stringify(err.response.data,null,2))}
+				return err.response
 			})
 			if(response.status==200){
 				if(this.platform.showAPIMessages){this.log.debug('get token response',JSON.stringify(response.data,null,2))}
 			return response
 			}
-		}catch(err) {this.log.error('Error retrieving API key %s', err)}
+		}catch(err) {this.log.error('Error retrieving API key \n%s', err)}
 	},
 
 		getDevices: async function(token,userId){
@@ -70,14 +70,14 @@ OrbitAPI.prototype={
 			}).catch(err=>{
 					this.log.error('Error getting devices %s', err.message)
 					this.log.debug(JSON.stringify(err,null,2))
-					if(err.response){this.log.warn( JSON.stringify(err.response.data,null,2))}
-					return
+					if(err.response){this.log.warn(JSON.stringify(err.response.data,null,2))}
+					return err.response
 				})
 				if(response.status==200){
 					if(this.platform.showAPIMessages){this.log.debug('get devices response',JSON.stringify(response.data,null,2))}
 				return response
 				}
-			}catch(err) {this.log.error('Error retrieving devices %s', err)}
+			}catch(err) {this.log.error('Error retrieving devices \n%s', err)}
 		},
 
 		getDevice: async function(token,device){
@@ -98,14 +98,14 @@ OrbitAPI.prototype={
 				}).catch(err=>{
 					this.log.error('Error getting device %s', err.message)
 					this.log.debug(JSON.stringify(err,null,2))
-					if(err.response){this.log.warn( JSON.stringify(err.response.data,null,2))}
-					return
+					if(err.response){this.log.warn(JSON.stringify(err.response.data,null,2))}
+					return err.response
 				})
 				if(response.status==200){
 					if(this.platform.showAPIMessages){this.log.debug('get device response',JSON.stringify(response.data,null,2))}
 				return response
 				}
-			}catch(err) {this.log.error('Error retrieving device %s', err)}
+			}catch(err) {this.log.error('Error retrieving device \n%s', err)}
 		},
 
 		getMeshes: async function(token,meshId){
@@ -126,14 +126,14 @@ OrbitAPI.prototype={
 				}).catch(err=>{
 					this.log.error('Error getting mesh info %s', err.message)
 					this.log.debug(JSON.stringify(err,null,2))
-					if(err.response){this.log.warn( JSON.stringify(err.response.data,null,2))}
-					return
+					if(err.response){this.log.warn(JSON.stringify(err.response.data,null,2))}
+					return err.response
 				})
 				if(response.status==200){
 					if(this.platform.showAPIMessages){this.log.debug('get mesh info response',JSON.stringify(response.data,null,2))}
 				return response
 				}
-			}catch(err) {this.log.error('Error retrieving mesh info %s', err)}
+			}catch(err) {this.log.error('Error retrieving mesh info \n%s', err)}
 		},
 
 		getNetworkTopologies: async function(token,networkTopologyId){
@@ -154,14 +154,14 @@ OrbitAPI.prototype={
 				}).catch(err=>{
 					this.log.error('Error getting network topologies info %s', err.message)
 					this.log.debug(JSON.stringify(err,null,2))
-					if(err.response){this.log.warn( JSON.stringify(err.response.data,null,2))}
-					return
+					if(err.response){this.log.warn(JSON.stringify(err.response.data,null,2))}
+					return err.response
 				})
 				if(response.status==200){
 					if(this.platform.showAPIMessages){this.log.debug('get network topology info response',JSON.stringify(response.data,null,2))}
 				return response
 				}
-				}catch(err) {this.log.error('Error retrieving network topologies info %s', err)}
+				}catch(err) {this.log.error('Error retrieving network topologies info \n%s', err)}
 			},
 
 		getDeviceGraph: async function(token,userId){
@@ -200,14 +200,14 @@ OrbitAPI.prototype={
 				}).catch(err=>{
 					this.log.error('Error getting graph %s', err.message)
 					this.log.debug(JSON.stringify(err,null,2))
-					if(err.response){this.log.warn( JSON.stringify(err.response.data,null,2))}
-					return
+					if(err.response){this.log.warn(JSON.stringify(err.response.data,null,2))}
+					return err.response
 				})
 				if(response.status==200){
 					if(this.platform.showAPIMessages){this.log.debug('get device graph response',JSON.stringify(response.data,null,2))}
 				return response
 				}
-			}catch(err) {this.log.error('Error retrieving graph %s', err)}
+			}catch(err) {this.log.error('Error retrieving graph \n%s', err)}
 		},
 
 		getTimerPrograms: async function(token,device){
@@ -231,14 +231,14 @@ OrbitAPI.prototype={
 				}).catch(err=>{
 					this.log.error('Error getting scheduled %s', err.message)
 					this.log.debug(JSON.stringify(err,null,2))
-					if(err.response){this.log.warn( JSON.stringify(err.response.data,null,2))}
-					return
+					if(err.response){this.log.warn(JSON.stringify(err.response.data,null,2))}
+				return err.response
 				})
 				if(response.status==200){
 					if(this.platform.showAPIMessages){this.log.debug('get timer programs response',JSON.stringify(response.data,null,2))}
 				return response
 				}
-			}catch(err) {this.log.error('Error retrieving schedules %s', err)}
+			}catch(err) {this.log.error('Error retrieving schedules \n%s', err)}
 		},
 
 		startZone: function(token, device, station, runTime){
@@ -256,7 +256,7 @@ OrbitAPI.prototype={
 							}
 						]
 					}))
-			}catch(err) {this.log.error('Error starting zone %s', err)}
+			}catch(err) {this.log.error('Error starting zone \n%s', err)}
 		},
 
 		startSchedule: function(token, device, program){
@@ -269,21 +269,21 @@ OrbitAPI.prototype={
 						device_id: device.id,
 						program: program
 					}))
-			}catch(err) {this.log.error('Error starting zone %s', err)}
+			}catch(err) {this.log.error('Error starting zone \n%s', err)}
 		},
 
-    stopZone: function(token, device) {
-        try {
-            this.log.debug('stopZone')
-            this.wsp.connect(token, device.id)
-                .then(ws=>ws.send({
-                    event: "change_mode",
-                    mode: "manual",
-                    device_id: device.id,
-                    timestamp: new Date().toISOString()
-                }))
-        }catch(err) {this.log.error('Error starting zone %s', err)}
-    },
+		stopZone: function(token, device) {
+			try {
+				this.log.debug('stopZone')
+				this.wsp.connect(token, device.id)
+					.then(ws=>ws.send({
+						event: "change_mode",
+						mode: "manual",
+						device_id: device.id,
+						timestamp: new Date().toISOString()
+					}))
+			}catch(err) {this.log.error('Error starting zone \n%s', err)}
+		},
 
 		startMultipleZone: function(token, device, runTime){
 			try {
@@ -307,7 +307,7 @@ OrbitAPI.prototype={
 						device_id: device.id,
 						stations: body
 					}))
-			}catch(err) {this.log.error('Error starting multiple zone %s', err)}
+			}catch(err) {this.log.error('Error starting multiple zone \n%s', err)}
 		},
 
 		stopDevice: function(token, device){
@@ -321,7 +321,7 @@ OrbitAPI.prototype={
 						//stations: [],
 						timestamp: new Date().toISOString()
 					}))
-			}catch(err) {this.log.error('Error stopping device %s', err)}
+			}catch(err) {this.log.error('Error stopping device \n%s', err)}
 		},
 
 		deviceStandby: function(token, device, mode){
@@ -334,7 +334,7 @@ OrbitAPI.prototype={
 						device_id: device.id,
 						timestamp: new Date().toISOString()
 					}))
-			}catch(err) {this.log.error('Error setting standby %s', err)}
+			}catch(err) {this.log.error('Error setting standby \n%s', err)}
 		},
 
 		openConnection:function(token, device){
@@ -347,7 +347,7 @@ OrbitAPI.prototype={
 						event: "app_connection",
 						orbit_session_token: token
 					}))
-			}catch(err) {this.log.error('Error opening connection %s', err)}
+			}catch(err) {this.log.error('Error opening connection \n%s', err)}
 		},
 
 		onMessage: function(token, device, listner){
@@ -357,18 +357,18 @@ OrbitAPI.prototype={
 					.then(ws=>ws.addEventListener('message', msg=>{
 						listner(msg.data, device.id)
 					}))
-			}catch(err) {this.log.error('Error configuring listener %s', err)}
+			}catch(err) {this.log.error('Error configuring listener \n%s', err)}
 		},
 
 		sync: function(token, device){
 			try {
-			this.log.debug('Syncing device %s info', device.name)
-			this.wsp.connect(token, device.id)
-				.then(ws=>ws.send({
-					event: "sync",
-					device_id: device.id
-				}))
-			}catch(err) {this.log.error('Error syncing data %s', err)}
+				this.log.debug('Syncing device %s info', device.name)
+				this.wsp.connect(token, device.id)
+					.then(ws=>ws.send({
+						event: "sync",
+						device_id: device.id
+					}))
+			}catch(err) {this.log.error('Error syncing data \n%s', err)}
 		},
 
 		identify: function(token, device){
@@ -380,7 +380,7 @@ OrbitAPI.prototype={
 					device_id: device.id,
 					identify_time_ms:5000
 				}))
-			}catch(err) {this.log.error('Error syncing data %s', err)}
+			}catch(err) {this.log.error('Error syncing data \n%s', err)}
 	}
 
 }
@@ -437,13 +437,14 @@ class WebSocketProxy {
 
 			// close
 			this.rws.addEventListener('close', msg=>{
-					this.log.debug('connection closed', msg)
+					//this.log.debug('connection closed', msg)
+					this.log.debug('connection closed', JSON.stringify(msg,null,2))
 			})
 
 			// Message
 			this.rws.addEventListener('message', msg=>{
 					if(this.showExtraDebugMessages){
-				this.log.debug('recieved message', JSON.parse(msg.data))
+						this.log.debug('recieved message', JSON.parse(msg.data))
 					}
 			})
 

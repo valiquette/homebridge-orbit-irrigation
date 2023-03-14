@@ -15,11 +15,11 @@ basicSwitch.prototype={
 		switchService.addCharacteristic(Characteristic.ConfiguredName)
 		switchService.addCharacteristic(Characteristic.SerialNumber)
 		switchService
-		.setCharacteristic(Characteristic.On, false)
-		.setCharacteristic(Characteristic.Name, schedule)
-		.setCharacteristic(Characteristic.SerialNumber, schedule.id)
-		.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
-		return switchService
+			.setCharacteristic(Characteristic.On, false)
+			.setCharacteristic(Characteristic.Name, schedule)
+			.setCharacteristic(Characteristic.SerialNumber, schedule.id)
+			.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
+			return switchService
 	},
 
 	createSwitchService(device,switchType){
@@ -28,18 +28,18 @@ basicSwitch.prototype={
 		let switchService=new Service.Switch(device.name+switchType, uuid)
 		switchService.addCharacteristic(Characteristic.ConfiguredName)
 		switchService
-		.setCharacteristic(Characteristic.On, false)
-		.setCharacteristic(Characteristic.Name, device.name+switchType)
-		.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
+			.setCharacteristic(Characteristic.On, false)
+			.setCharacteristic(Characteristic.Name, device.name+switchType)
+			.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
 		return switchService
 	},
 
 	configureSwitchService(device, switchService){
 		this.log.info("Configured switch for %s" ,switchService.getCharacteristic(Characteristic.Name).value)
 		switchService
-		.getCharacteristic(Characteristic.On)
-		.on('get', this.getSwitchValue.bind(this, switchService))
-		.on('set', this.setSwitchValue.bind(this, device, switchService))
+			.getCharacteristic(Characteristic.On)
+			.on('get', this.getSwitchValue.bind(this, switchService))
+			.on('set', this.setSwitchValue.bind(this, device, switchService))
 	},
 
 	setSwitchValue(device, switchService, value, callback){

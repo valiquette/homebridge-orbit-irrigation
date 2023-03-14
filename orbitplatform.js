@@ -20,6 +20,9 @@ class PlatformOrbit {
 		this.email=config.email
 		this.password=config.password
 		this.token
+		this.retryWait=config.retryWait || 60 //sec
+		this.retryMax=config.retryMax || 3 //attempts
+		this.retryAttempt=0
 		this.userId
 		this.useIrrigationDisplay=config.useIrrigationDisplay
 		this.displayValveType=config.displayValveType
@@ -40,7 +43,6 @@ class PlatformOrbit {
 		this.showOutgoingMessages=false
 		this.showExtraDebugMessages=false
 		this.lowBattery=config.lowBattery || 20
-		this.retryWait=config.retryWait || 60
 		this.lastMessage={}
 		this.endTime=[]
 		this.activeZone
@@ -75,7 +77,8 @@ class PlatformOrbit {
 			// login to the API and get the token
 			let signinResponse=(await this.orbitapi.getToken(this.email,this.password).catch(err=>{this.log.error('Failed to get token for build', err)})).data
 			this.log.info('Found account for',signinResponse.user_name)
-			this.log.debug('Found token',signinResponse.orbit_api_key)
+			//this.log.debug('Found api key',signinResponse.orbit_api_key)
+			this.log.debug('Found api key %s********************%s', signinResponse.orbit_api_key.substring(0,35),signinResponse.orbit_api_key.substring((signinResponse.orbit_api_key).length-35))
 			this.token=signinResponse.orbit_api_key
 			this.userId=signinResponse.user_id
 			//get device graph
@@ -347,10 +350,16 @@ class PlatformOrbit {
 		})
 		setTimeout(()=>{this.log.info('Orbit Platform finished loading')}, 500)
 	}catch(err){
-		this.log.error('Failed to get devices...%s \nRetrying in %s seconds...', err,this.retryWait)
-		setTimeout(async()=>{
-			this.getDevices()
-		},this.retryWait*1000)
+		if(this.retryAttempt<this.retryMax){
+			this.retryAttempt++
+			this.log.error('Failed to get devices. Retry attempt %s of %s in %s seconds...',this.retryAttempt, this.retryMax, this.retryWait)
+			setTimeout(async()=>{
+				this.getDevices()
+			},this.retryWait*1000)
+		}
+		else{
+			this.log.error('Failed to get devices...\n%s', err)
+		}
 	}
 
 		// Refresh battery status every so often for flood sensors if netowrk exsits
@@ -579,7 +588,7 @@ class PlatformOrbit {
 				if(this.showBridge){activeService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.NO_FAULT)}
 					break
 				case "device_disconnected":
-				this.log.warn('%s disconnected at %s! This will show as non-responding in Homekit until the connection is restored.',deviceName,jsonBody.timestamp)
+				this.log.warn('%s disconnected at %s! This will show as non-responding in Homekit until the connection is restored.',deviceName,new Date(jsonBody.timestamp).toString())
 				if(this.showBridge){activeService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)}
 					break
 				case "device_idle":
@@ -660,7 +669,7 @@ class PlatformOrbit {
 							if(this.showLimitsSensor){occupancySensor.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.NO_FAULT)}
 							break
 						case "device_disconnected":
-							this.log.warn('%s disconnected at %s! This will show as non-responding in Homekit until the connection is restored.',deviceName,jsonBody.timestamp)
+							this.log.warn('%s disconnected at %s! This will show as non-responding in Homekit until the connection is restored.',deviceName,new Date(jsonBody.timestamp).toString())
 							if(this.showFloodSensor){leakService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)}
 							if(this.showTempSensor){tempService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)}
 							if(this.showLimitsSensor){occupancySensor.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)}

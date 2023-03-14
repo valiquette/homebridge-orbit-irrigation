@@ -24,33 +24,33 @@ irrigation.prototype={
 		}
 		// Create AccessoryInformation Service
 		newPlatformAccessory.getService(Service.AccessoryInformation)
-		.setCharacteristic(Characteristic.Name, device.name)
-		.setCharacteristic(Characteristic.Manufacturer, "Orbit Irrigation")
-		.setCharacteristic(Characteristic.SerialNumber, device.mac_address)
-		.setCharacteristic(Characteristic.Model, device.hardware_version)
-		.setCharacteristic(Characteristic.Identify, true)
-		.setCharacteristic(Characteristic.FirmwareRevision, device.firmware_version)
-		.setCharacteristic(Characteristic.HardwareRevision, device.hardware_version)
-		.setCharacteristic(Characteristic.SoftwareRevision, packageJson.version)
+			.setCharacteristic(Characteristic.Name, device.name)
+			.setCharacteristic(Characteristic.Manufacturer, "Orbit Irrigation")
+			.setCharacteristic(Characteristic.SerialNumber, device.mac_address)
+			.setCharacteristic(Characteristic.Model, device.hardware_version)
+			.setCharacteristic(Characteristic.Identify, true)
+			.setCharacteristic(Characteristic.FirmwareRevision, device.firmware_version)
+			.setCharacteristic(Characteristic.HardwareRevision, device.hardware_version)
+			.setCharacteristic(Characteristic.SoftwareRevision, packageJson.version)
 		return newPlatformAccessory
 	},
 
 	configureIrrigationService(device,irrigationSystemService){
 		this.log.info('Configure Irrigation system for %s', irrigationSystemService.getCharacteristic(Characteristic.Name).value)
 		irrigationSystemService
-		.setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
-		.setCharacteristic(Characteristic.InUse, Characteristic.InUse.NOT_IN_USE)
-		.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
-		.setCharacteristic(Characteristic.RemainingDuration, 0)
+			.setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
+			.setCharacteristic(Characteristic.InUse, Characteristic.InUse.NOT_IN_USE)
+			.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
+			.setCharacteristic(Characteristic.RemainingDuration, 0)
 		irrigationSystemService
-		.getCharacteristic(Characteristic.Active)
-		.on('get',this.getDeviceValue.bind(this, irrigationSystemService, "DeviceActive"))
+			.getCharacteristic(Characteristic.Active)
+			.on('get',this.getDeviceValue.bind(this, irrigationSystemService, "DeviceActive"))
 		irrigationSystemService
-		.getCharacteristic(Characteristic.InUse)
-		.on('get', this.getDeviceValue.bind(this, irrigationSystemService, "DeviceInUse"))
+			.getCharacteristic(Characteristic.InUse)
+			.on('get', this.getDeviceValue.bind(this, irrigationSystemService, "DeviceInUse"))
 		irrigationSystemService
-		.getCharacteristic(Characteristic.ProgramMode)
-		.on('get', this.getDeviceValue.bind(this, irrigationSystemService, "DeviceProgramMode"))
+			.getCharacteristic(Characteristic.ProgramMode)
+			.on('get', this.getDeviceValue.bind(this, irrigationSystemService, "DeviceProgramMode"))
 	},
 
 	createValveService(zone,device){
@@ -81,18 +81,18 @@ irrigation.prototype={
 		valve.addCharacteristic(Characteristic.Model)
 		valve.addCharacteristic(Characteristic.ConfiguredName)
 		valve
-		.setCharacteristic(Characteristic.Active, Characteristic.Active.INACTIVE)
-		.setCharacteristic(Characteristic.InUse, Characteristic.InUse.NOT_IN_USE)
-		.setCharacteristic(Characteristic.ValveType, this.platform.displayValveType)
-		.setCharacteristic(Characteristic.SetDuration, Math.ceil(defaultRuntime/60)*60)
-		.setCharacteristic(Characteristic.RemainingDuration, 0)
-		.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
-		.setCharacteristic(Characteristic.ServiceLabelIndex, zone.station)
-		.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
-		.setCharacteristic(Characteristic.SerialNumber, UUIDGen.generate("zone-" + zone.station))
-		.setCharacteristic(Characteristic.Name, zone.name)
-		.setCharacteristic(Characteristic.ConfiguredName, zone.name)
-		.setCharacteristic(Characteristic.Model, zone.sprinkler_type)
+			.setCharacteristic(Characteristic.Active, Characteristic.Active.INACTIVE)
+			.setCharacteristic(Characteristic.InUse, Characteristic.InUse.NOT_IN_USE)
+			.setCharacteristic(Characteristic.ValveType, this.platform.displayValveType)
+			.setCharacteristic(Characteristic.SetDuration, Math.ceil(defaultRuntime/60)*60)
+			.setCharacteristic(Characteristic.RemainingDuration, 0)
+			.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
+			.setCharacteristic(Characteristic.ServiceLabelIndex, zone.station)
+			.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
+			.setCharacteristic(Characteristic.SerialNumber, UUIDGen.generate("zone-" + zone.station))
+			.setCharacteristic(Characteristic.Name, zone.name)
+			.setCharacteristic(Characteristic.ConfiguredName, zone.name)
+			.setCharacteristic(Characteristic.Model, zone.sprinkler_type)
 		if (zone.enabled){
 			valve.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)}
 		else{
@@ -104,23 +104,23 @@ irrigation.prototype={
 	configureValveService(device, valveService){
 		this.log.info("Configured zone-%s for %s with %s min runtime",valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value, valveService.getCharacteristic(Characteristic.Name).value, valveService.getCharacteristic(Characteristic.SetDuration).value/60)
 		valveService
-		.getCharacteristic(Characteristic.Active)
-		.on('get', this.getValveValue.bind(this, valveService, "ValveActive"))
-		.on('set', this.setValveValue.bind(this, device, valveService))
+			.getCharacteristic(Characteristic.Active)
+			.on('get', this.getValveValue.bind(this, valveService, "ValveActive"))
+			.on('set', this.setValveValue.bind(this, device, valveService))
 
 		valveService
-		.getCharacteristic(Characteristic.InUse)
-		.on('get', this.getValveValue.bind(this, valveService, "ValveInUse"))
-		.on('set', this.setValveValue.bind(this, device, valveService))
+			.getCharacteristic(Characteristic.InUse)
+			.on('get', this.getValveValue.bind(this, valveService, "ValveInUse"))
+			.on('set', this.setValveValue.bind(this, device, valveService))
 
 		valveService
-		.getCharacteristic(Characteristic.SetDuration)
-		.on('get', this.getValveValue.bind(this, valveService, "ValveSetDuration"))
-		.on('set', this.setValveSetDuration.bind(this, valveService, "ValveSetDuration"))
+			.getCharacteristic(Characteristic.SetDuration)
+			.on('get', this.getValveValue.bind(this, valveService, "ValveSetDuration"))
+			.on('set', this.setValveSetDuration.bind(this, valveService, "ValveSetDuration"))
 
 		valveService
-		.getCharacteristic(Characteristic.RemainingDuration)
-		.on('get', this.getValveValue.bind(this, valveService, "ValveRemainingDuration"))
+			.getCharacteristic(Characteristic.RemainingDuration)
+			.on('get', this.getValveValue.bind(this, valveService, "ValveRemainingDuration"))
 	},
 
 	getDeviceValue(irrigationSystemService, characteristicName, callback){
