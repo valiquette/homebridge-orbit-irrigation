@@ -68,6 +68,12 @@
 				"required": true,
 				"default": true
 				},
+			"showSimpleValve": {
+				"title": "Display as Valve in HomeKit",
+				"type": "boolean",
+				"required": true,
+				"default": false
+			},
 			"displayValveType": {
 				"title": "Display Valves as",
 				"type": "integer",
@@ -137,11 +143,22 @@
 				"default": false
 			},
 			"showAPIMessages": {
-				"title": "Show API responses",
+				"title": "Log API responses",
 				"type": "boolean",
 				"required": false,
-				"default": false,
-				"description": "Do you want to log API response messages?"
+				"default": false
+			},
+			"showIncomingMessages": {
+				"title": "Log incoming Websocket messages",
+				"type": "boolean",
+				"required": false,
+				"default": false
+			},
+			"showOutgoingMessages": {
+				"title": "Log outgoing Websocket messages",
+				"type": "boolean",
+				"required": false,
+				"default": false
 			}
 		}
 	},
@@ -190,7 +207,17 @@
 			"items": [
 				"showIrrigation",
 				"useIrrigationDisplay",
-				"showBridge",
+				"showBridge"
+			]
+		},
+		{
+			"type": "help",
+			"helpvalue": "<h6><b>Hose Timer</b></h6><p class='help-block'> Display Hose Timers HT25 as a simple valve.<br/></p>"
+		},
+		{
+			"type": "flex",
+			"items": [
+				"showSimpleValve",
 				"displayValveType"
 			]
 		},
@@ -233,7 +260,9 @@
 			"expandable": true,
 			"flex-flow": "row wrap",
 			"items": [
-				"showAPIMessages"
+				"showAPIMessages",
+				"showIncomingMessages",
+				"showOutgoingMessages"
 			]
 		}
 	]

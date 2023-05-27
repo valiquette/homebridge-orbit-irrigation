@@ -1,30 +1,30 @@
 let packageJson=require('../package.json')
 let OrbitAPI=require('../orbitapi')
 
-function irrigation (platform,log){
+function valve (platform,log){
 	this.log=log
 	this.platform=platform
 	this.orbitapi=new OrbitAPI(this,log)
 }
 
-irrigation.prototype={
+valve.prototype={
 
-	createIrrigationAccessory(device,uuid){
-		this.log.debug('Create Irrigation service %s %s',device.id,device.name)
-		// Create new Irrigation System Service
-		let newPlatformAccessory=new PlatformAccessory(device.name, uuid)
-		newPlatformAccessory.addService(Service.IrrigationSystem, device.name)
-		let irrigationSystemService=newPlatformAccessory.getService(Service.IrrigationSystem)
+	createValveAccessory(device,zone,uuid){
+		this.log.debug('Create valve service %s station-%s %s',device.id,zone.station,device.name)
+		// Create new valve System Service
+		let newPlatformAccessory=new PlatformAccessory(zone.name, uuid)
+		newPlatformAccessory.addService(Service.Valve, zone.name)
+		let valveService=newPlatformAccessory.getService(Service.Valve)
 		// Check if the device is connected
 		if(device.is_connected == true){
-		irrigationSystemService.setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
+			valveService.setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
 		} else{
 		this.log.warn('%s disconnected at %s! This will show as non-responding in Homekit until the connection is restored.',device.name,device.last_connected_at)
-		irrigationSystemService.setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.GENERAL_FAULT)
+		valveService.setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.GENERAL_FAULT)
 		}
 		// Create AccessoryInformation Service
 		newPlatformAccessory.getService(Service.AccessoryInformation)
-			.setCharacteristic(Characteristic.Name, device.name)
+			.setCharacteristic(Characteristic.Name, zone.name)
 			.setCharacteristic(Characteristic.Manufacturer, "Orbit Irrigation")
 			.setCharacteristic(Characteristic.SerialNumber, device.mac_address)
 			.setCharacteristic(Characteristic.Model, device.hardware_version)
@@ -35,26 +35,25 @@ irrigation.prototype={
 		return newPlatformAccessory
 	},
 
-	configureIrrigationService(device,irrigationSystemService){
-		this.log.info('Configure Irrigation system for %s', irrigationSystemService.getCharacteristic(Characteristic.Name).value)
-		irrigationSystemService
+	configureValveService(device,zone,valveService){
+		this.log.info('Configure Valve system for %s', valveService.getCharacteristic(Characteristic.Name).value)
+		valveService
 			.setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
 			.setCharacteristic(Characteristic.InUse, Characteristic.InUse.NOT_IN_USE)
 			.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
 			.setCharacteristic(Characteristic.RemainingDuration, 0)
-		irrigationSystemService
+		valveService
 			.getCharacteristic(Characteristic.Active)
-			.on('get',this.getDeviceValue.bind(this, irrigationSystemService, "DeviceActive"))
-		irrigationSystemService
+			.on('get',this.getDeviceValue.bind(this, valveService, "DeviceActive"))
+		valveService
 			.getCharacteristic(Characteristic.InUse)
-			.on('get', this.getDeviceValue.bind(this, irrigationSystemService, "DeviceInUse"))
-		irrigationSystemService
+			.on('get', this.getDeviceValue.bind(this, valveService, "DeviceInUse"))
+		valveService
 			.getCharacteristic(Characteristic.ProgramMode)
-			.on('get', this.getDeviceValue.bind(this, irrigationSystemService, "DeviceProgramMode"))
+			.on('get', this.getDeviceValue.bind(this, valveService, "DeviceProgramMode"))
 	},
 
-	createValveService(zone,device){
-		let valve=new Service.Valve(zone.name, zone.station)
+	updateValveService(device,zone,valve){
 		let defaultRuntime=this.platform.defaultRuntime
 		zone.enabled=true // need orbit version of enabled
 		this.log.debug(zone)
@@ -77,14 +76,15 @@ irrigation.prototype={
 		}catch(err){
 			this.log.debug('error setting runtime, using default runtime')
 			}
-		this.log.debug("Created valve service for %s with zone-id %s with %s sec runtime (%s min)", zone.name, zone.station, defaultRuntime, Math.round(defaultRuntime/60))
+		this.log.debug("Created valve service for %s with zone-id %s with %s sec runtime (%s min)", zone.name, zone.station,defaultRuntime, Math.round(defaultRuntime/60))
 		valve.addCharacteristic(Characteristic.SerialNumber) //Use Serial Number to store the zone id
 		valve.addCharacteristic(Characteristic.Model)
 		valve.addCharacteristic(Characteristic.ConfiguredName)
+		valve.addCharacteristic(Characteristic.ProgramMode)
 		valve
 			.setCharacteristic(Characteristic.Active, Characteristic.Active.INACTIVE)
 			.setCharacteristic(Characteristic.InUse, Characteristic.InUse.NOT_IN_USE)
-			.setCharacteristic(Characteristic.ValveType, this.platform.useIrrigationDisplay ? 1 : this.platform.displayValveType)
+			.setCharacteristic(Characteristic.ValveType, this.platform.displayValveType)
 			.setCharacteristic(Characteristic.SetDuration, Math.ceil(defaultRuntime/60)*60)
 			.setCharacteristic(Characteristic.RemainingDuration, 0)
 			.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
@@ -102,17 +102,17 @@ irrigation.prototype={
 		return valve
 	},
 
-	configureValveService(device, valveService){
+	configureValveService(device,zone,valveService){
 		this.log.info("Configured zone-%s for %s with %s min runtime",valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value, valveService.getCharacteristic(Characteristic.Name).value, valveService.getCharacteristic(Characteristic.SetDuration).value/60)
 		valveService
 			.getCharacteristic(Characteristic.Active)
 			.on('get', this.getValveValue.bind(this, valveService, "ValveActive"))
-			.on('set', this.setValveValue.bind(this, device, valveService))
+			.on('set', this.setValveValue.bind(this, device, zone, valveService))
 
 		valveService
 			.getCharacteristic(Characteristic.InUse)
 			.on('get', this.getValveValue.bind(this, valveService, "ValveInUse"))
-			.on('set', this.setValveValue.bind(this, device, valveService))
+			.on('set', this.setValveValue.bind(this, device, zone, valveService))
 
 		valveService
 			.getCharacteristic(Characteristic.SetDuration)
@@ -124,25 +124,25 @@ irrigation.prototype={
 			.on('get', this.getValveValue.bind(this, valveService, "ValveRemainingDuration"))
 	},
 
-	getDeviceValue(irrigationSystemService, characteristicName, callback){
-		//this.log.debug('%s - Set something %s', irrigationSystemService.getCharacteristic(Characteristic.Name).value)
+	getDeviceValue(valveService, characteristicName, callback){
+		//this.log.debug('%s - Set something %s', valveService.getCharacteristic(Characteristic.Name).value)
 		switch (characteristicName){
 		case "DeviceActive":
-			//this.log.debug("%s=%s %s", irrigationSystemService.getCharacteristic(Characteristic.Name).value, characteristicName,irrigationSystemService.getCharacteristic(Characteristic.Active).value)
-			if(irrigationSystemService.getCharacteristic(Characteristic.StatusFault).value==Characteristic.StatusFault.GENERAL_FAULT){
+			//this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName,valveService.getCharacteristic(Characteristic.Active).value)
+			if(valveService.getCharacteristic(Characteristic.StatusFault).value==Characteristic.StatusFault.GENERAL_FAULT){
 				callback('error')
 			}
 			else{
-				callback(null, irrigationSystemService.getCharacteristic(Characteristic.Active).value)
+				callback(null, valveService.getCharacteristic(Characteristic.Active).value)
 			}
 			break
 		case "DeviceInUse":
-			//this.log.debug("%s=%s %s", irrigationSystemService.getCharacteristic(Characteristic.Name).value, characteristicName,irrigationSystemService.getCharacteristic(Characteristic.InUse).value)
-				callback(null, irrigationSystemService.getCharacteristic(Characteristic.InUse).value)
+			//this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName,valveService.getCharacteristic(Characteristic.InUse).value)
+				callback(null, valveService.getCharacteristic(Characteristic.InUse).value)
 			break
 		case "DeviceProgramMode":
-			//this.log.debug("%s=%s %s", irrigationSystemService.getCharacteristic(Characteristic.Name).value, characteristicName,irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).value)
-			callback(null, irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).value)
+			//this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName,valveService.getCharacteristic(Characteristic.ProgramMode).value)
+			callback(null, valveService.getCharacteristic(Characteristic.ProgramMode).value)
 			break
 		default:
 			this.log.debug("Unknown Device Characteristic Name called", characteristicName)
@@ -190,11 +190,11 @@ irrigation.prototype={
 		}
 	},
 
-	setValveValue(device, valveService, value, callback){
+	setValveValue(device, zone, valveService, value, callback){
 	//this.log.debug('%s - Set Active state to %s', valveService.getCharacteristic(Characteristic.Name).value, value)
 	let uuid=UUIDGen.generate(device.id)
-	let irrigationAccessory=this.platform.accessories[uuid]
-	let irrigationSystemService=irrigationAccessory.getService(Service.IrrigationSystem)
+	let valveAccessory=this.platform.accessories[uuid]
+	valveService=valveAccessory.getService(Service.Valve)
 	// Set homekit state and prepare message for Orbit API
 	let runTime=valveService.getCharacteristic(Characteristic.SetDuration).value
 	if(value == Characteristic.Active.ACTIVE){
@@ -202,7 +202,7 @@ irrigation.prototype={
 		this.log.info("Starting zone-%s %s for %s mins", valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value, valveService.getCharacteristic(Characteristic.Name).value, runTime/60)
 		let station=valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value
 		this.orbitapi.startZone(this.platform.token, device, station, runTime/60)
-		irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.Active.ACTIVE)
+		valveService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.Active.ACTIVE)
 		valveService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
 		//json start stuff
 		let myJsonStart={
@@ -235,7 +235,7 @@ irrigation.prototype={
 		// Turn off/stopping the valve
 		this.log.info("Stopping Zone", valveService.getCharacteristic(Characteristic.Name).value)
 		this.orbitapi.stopZone(this.platform.token, device,)
-		irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.Active.INACTIVE)
+		valveService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.Active.INACTIVE)
 		valveService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
 		//json stop stuff
 		let myJsonStop={
@@ -261,4 +261,4 @@ irrigation.prototype={
 
 }
 
-module.exports = irrigation
+module.exports = valve

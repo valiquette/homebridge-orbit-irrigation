@@ -13,8 +13,8 @@ let minPingInterval = 20000
 function OrbitAPI (platform,log){
 	this.log=log
 	this.platform=platform
-	this.rws=new WebSocketProxy()
-	this.wsp=new WebSocketProxy(log)
+	this.rws=new WebSocketProxy(platform,log)
+	this.wsp=new WebSocketProxy(platform,log)
 }
 
 OrbitAPI.prototype={
@@ -380,34 +380,36 @@ OrbitAPI.prototype={
 					device_id: device.id,
 					identify_time_ms:5000
 				}))
-			}catch(err) {this.log.error('Error syncing data \n%s', err)}
+			}catch(err) {this.log.error('Error identify data \n%s', err)}
 	}
 
 }
 
 class WebSocketProxy {
-	constructor(log) {
+	constructor(platform,log) {
 		this.rws = null
 		this.ping = null
 		this.log = log
+		this.platform = platform
 	}
 
 	connect(token, deviceId) {
-	if (this.rws) {
-			return Promise.resolve(this.rws)
+	if(this.rws){
+		return Promise.resolve(this.rws)
 	}
 
 	return new Promise((resolve, reject)=>{
 		try {
+			let fault=true
 			this.rws = new reconnectingwebsocket(WS_endpoint+'/events', [], {
 			WebSocket: ws,
 			maxReconnectionDelay: 10000, //64000
-			minReconnectionDelay: 1000 + Math.random() * 4000, //2000
-			reconnectionDelayGrowFactor: 1.3, //2
+			minReconnectionDelay: 1000 + Math.random() * 4000,
+			reconnectionDelayGrowFactor: 1.3,
 			minUptime: 5000,
 			connectionTimeout: 4000, //10000
 			maxRetries: Infinity,
-			maxEnqueuedMessages: Infinity,
+			maxEnqueuedMessages: 1, //Infinity
 			startClosed: false,
 			debug: false,
 			})
@@ -418,40 +420,57 @@ class WebSocketProxy {
 			if (typeof data === 'object') {
 					data = JSON.stringify(data,null,2)
 				}
-				//this.log.debug(JSON.parse(data).event) //comment line to supress ping info from filling debug log
-				if (JSON.parse(data).event!= 'ping'){
-					this.log.debug('%s sending %s', deviceId, data)
+				if(this.platform.showOutgoingMessages){
+					this.log.debug(JSON.parse(data).event)
 				}
+				if (JSON.parse(data).event!= 'ping'){
+					this.log.debug('sending %s outgoing message %s', deviceId, data)
+				}
+
 				origSend(data, options, callback)
 			}
 
 			// Open
-			this.rws.addEventListener('open', ()=>{
+			this.rws.addEventListener('open', msg=>{
 				this.rws.send({
 					event: 'app_connection',
 					orbit_session_token: token,
 					subscribe_device_id: deviceId
 				})
+				if(fault){
+					this.log.info('WebSocket connection established')
+					fault=false
+				}
 				resolve(this.rws)
 			})
 
-			// close
+			// Close
 			this.rws.addEventListener('close', msg=>{
-					//this.log.debug('connection closed', msg)
-					this.log.debug('connection closed', JSON.stringify(msg,null,2))
+					//this.log.debug('connection closed', JSON.stringify(msg,null,2))
+					this.log.debug('connection closed', JSON.stringify({
+						"type": msg.type,
+						"wasClean": msg.wasClean,
+						"code": msg.code,
+						"reason": msg.reason
+						},null,2)
+					)
 			})
 
 			// Message
 			this.rws.addEventListener('message', msg=>{
-					if(this.showExtraDebugMessages){
-						this.log.debug('recieved message', JSON.parse(msg.data))
+					if(this.platform.showIncomingMessages){
+						this.log.debug('incoming message', JSON.parse(msg.data))
 					}
 			})
 
 			// Error
 			this.rws.addEventListener('error', msg=>{
-				this.log.error('WebSocket Error', msg)
-				this.rws.close()
+				this.log.debug('WebSocket Error', msg.error)
+				if(!fault){
+					this.log.error('WebSocket Error %s, check network connection.', msg.message)
+					this.log.warn('Devices will not sync until WebSocket connection is restored.')
+					fault=true
+				}
 				reject(msg)
 			})
 
@@ -463,6 +482,8 @@ class WebSocketProxy {
 			}catch (error) {
 				// Will not execute
 				this.log.error('caught', error.message)
+				this.log.error('connection closed')
+				this.rws.close()
 			}
 		})
 	}

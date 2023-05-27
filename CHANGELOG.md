@@ -1,5 +1,19 @@
 # Changes
 
+## 1.2.16
+Update
+-  Added support to show single hose timer as simple valve.
+-  Updated readme file.
+-  Added settings to expose additional debug messaging.
+-  Improved WebSocket logging
+-  Added support for node.js v20.
+-  Removed support for node.js v14.
+-  Bumped dependencies.
+Fix
+-  Fixed bug (issue #57) and crash scenario when trying to add disabled program.
+-  Fixed a bug (issue #58) where connection closed if an error was caught with no network connection.
+
+
 ## 1.2.15
 Update
 - Improved startup routine.
@@ -37,11 +51,11 @@ Update
 
 ## 1.2.9
 Update
-- Updated readme.
--	Corrected error handeling during startup.
-- Changed configuration default to true for use irrigation display.
--	API updates
-- Code Cleanup
+-  Updated readme.
+-  Corrected error handeling during startup.
+-  Changed configuration default to true for use irrigation display.
+-  API updates
+-  Code Cleanup
 
 ## 1.2.8
 Update
@@ -58,7 +72,7 @@ Update
 ## 1.2.6
 Update
 -	Suppressed additional debug logging.
-- Improved error messaging.
+-  Improved error messaging.
 -	Fixed sensor and XD Timer low battery notifications.
 - Code Cleanup
 
@@ -81,13 +95,13 @@ Update
 
 ## 1.2.1
 Update
-- Code Cleanup
+-  Code Cleanup
 -	Suppressed "Unknown sprinker device message received: device_status" message for XD hose timer.
 
 ## 1.2.0
 Update
 *Version 1.2.x upgrade from 1.1.x is a breaking change and will require the plugin config to be open and saved to display irrigation system.*
-- Verified support for Gen2 Bridge BH1G2-0001 and Hose Timer HT31-0001.
+-  Verified support for Gen2 Bridge BH1G2-0001 and Hose Timer HT31-0001.
 -	Updated location for hub connected devices such as flood sensors to follow the location of the hub's address.
 -	Inital support for Flood Sensors FS1-0001.
 -	Corrected device online state during start up.
@@ -105,13 +119,13 @@ Enhancment
 - Added configuration option to load zones with intial runtime option from H-Hyve. Runtime or flow rates will have to be configured in the App. Defautls will be used if no valid times are found.
 -	Added low battery status to HomeKit status for Hose Timers
 -	Removed Shower and Faucet valve types which are not compatable with an irrigation system from config schema
-- Removed Show Bridge option from config schema
+-  Removed Show Bridge option from config schema
 -	Updated readme
-- Code Cleanup
+-  Code Cleanup
 
 ## 1.1.2
 Fix
-- Corrected error handeling for older model types that could cause plugin to fail to start.
+-  Corrected error handeling for older model types that could cause plugin to fail to start.
 -	Corrected bugs with Run-All switch when more than one controller is present on account.
 Update
 -	Added supoort for Gen-1 Water Timer WT25

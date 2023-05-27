@@ -35,7 +35,7 @@ basicSwitch.prototype={
 	},
 
 	configureSwitchService(device, switchService){
-		this.log.info("Configured switch for %s" ,switchService.getCharacteristic(Characteristic.Name).value)
+		this.log.info("Configured switch for program %s %s" ,switchService.subtype, switchService.getCharacteristic(Characteristic.Name).value)
 		switchService
 			.getCharacteristic(Characteristic.On)
 			.on('get', this.getSwitchValue.bind(this, switchService))
