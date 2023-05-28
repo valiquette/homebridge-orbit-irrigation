@@ -1,4 +1,5 @@
 //Pulbic site https://techsupport.orbitbhyve.com
+'use strict'
 
 let axios = require('axios')
 let ws = require('ws')
@@ -17,7 +18,7 @@ class OrbitAPI {
 		this.rws = new WebSocketProxy(platform, log)
 		this.wsp = new WebSocketProxy(platform, log)
 	}
-	
+
 	async getToken(email, password) {
 		// Get token
 		try {
@@ -50,6 +51,7 @@ class OrbitAPI {
 			}
 		} catch (err) { this.log.error('Error retrieving API key \n%s', err)}
 	}
+
 	async getDevices(token, userId) {
 		// Get the device details
 		try {
@@ -77,6 +79,7 @@ class OrbitAPI {
 			}
 		} catch (err) { this.log.error('Error retrieving devices \n%s', err)}
 	}
+
 	async getDevice(token, device) {
 		// Get the device details
 		try {
@@ -104,6 +107,7 @@ class OrbitAPI {
 			}
 		} catch (err) { this.log.error('Error retrieving device \n%s', err)}
 	}
+
 	async getMeshes(token, meshId) {
 		// Get mesh details
 		try {
@@ -131,6 +135,7 @@ class OrbitAPI {
 			}
 		} catch (err) { this.log.error('Error retrieving mesh info \n%s', err)}
 	}
+
 	async getNetworkTopologies(token, networkTopologyId) {
 		// Get mesh details
 		try {
@@ -158,6 +163,7 @@ class OrbitAPI {
 			}
 		} catch (err) { this.log.error('Error retrieving network topologies info \n%s', err)}
 	}
+
 	async getDeviceGraph(token, userId) {
 		// Get device graph details
 		try {
@@ -203,6 +209,7 @@ class OrbitAPI {
 			}
 		} catch (err) { this.log.error('Error retrieving graph \n%s', err)}
 	}
+
 	async getTimerPrograms(token, device) {
 		// Get mesh details
 		try {
@@ -233,6 +240,7 @@ class OrbitAPI {
 			}
 		} catch (err) { this.log.error('Error retrieving schedules \n%s', err)}
 	}
+
 	startZone(token, device, station, runTime) {
 		try {
 			this.log.debug('startZone', device.id, station, runTime)
@@ -250,6 +258,7 @@ class OrbitAPI {
 				}))
 		} catch (err) { this.log.error('Error starting zone \n%s', err)}
 	}
+
 	startSchedule(token, device, program) {
 		try {
 			this.log.debug('startZone', device.id, program)
@@ -262,6 +271,7 @@ class OrbitAPI {
 				}))
 		} catch (err) { this.log.error('Error starting zone \n%s', err)}
 	}
+
 	stopZone(token, device) {
 		try {
 			this.log.debug('stopZone')
@@ -274,6 +284,7 @@ class OrbitAPI {
 				}))
 		} catch (err) { this.log.error('Error starting zone \n%s', err)}
 	}
+
 	startMultipleZone(token, device, runTime) {
 		try {
 			let body = []
@@ -298,6 +309,7 @@ class OrbitAPI {
 				}))
 		} catch (err) { this.log.error('Error starting multiple zone \n%s', err)}
 	}
+
 	stopDevice(token, device) {
 		try {
 			this.log.debug('stopZone')
@@ -311,6 +323,7 @@ class OrbitAPI {
 				}))
 		} catch (err) { this.log.error('Error stopping device \n%s', err)}
 	}
+
 	deviceStandby(token, device, mode) {
 		try {
 			this.log.debug('standby')
@@ -335,6 +348,7 @@ class OrbitAPI {
 				}))
 		} catch (err) { this.log.error('Error opening connection \n%s', err)}
 	}
+
 	onMessage(token, device, listner) {
 		try {
 			this.log.debug('Adding Event Listener for %s', device.name)
@@ -344,6 +358,7 @@ class OrbitAPI {
 				}))
 		} catch (err) { this.log.error('Error configuring listener \n%s', err)}
 	}
+
 	sync(token, device) {
 		try {
 			this.log.debug('Syncing device %s info', device.name)
@@ -471,4 +486,3 @@ class WebSocketProxy {
 		})
 	}
 }
-module.exports = WebSocketProxy
