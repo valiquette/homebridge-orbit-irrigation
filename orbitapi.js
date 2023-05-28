@@ -10,8 +10,6 @@ let WS_endpoint = 'wss://api.orbitbhyve.com/v1'
 let maxPingInterval = 25000 // Websocket get's timed out after 30s, will set a random value between 20 and 25
 let minPingInterval = 20000
 
-module.exports = OrbitAPI
-
 class OrbitAPI {
 	constructor(platform, log) {
 		this.log = log
@@ -19,6 +17,7 @@ class OrbitAPI {
 		this.rws = new WebSocketProxy(platform, log)
 		this.wsp = new WebSocketProxy(platform, log)
 	}
+	
 	async getToken(email, password) {
 		// Get token
 		try {
@@ -367,7 +366,7 @@ class OrbitAPI {
 		} catch (err) { this.log.error('Error identify data \n%s', err)}
 	}
 }
-
+module.exports = OrbitAPI
 
 class WebSocketProxy {
 	constructor(platform,log) {
@@ -472,3 +471,4 @@ class WebSocketProxy {
 		})
 	}
 }
+module.exports = WebSocketProxy

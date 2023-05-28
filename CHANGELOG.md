@@ -1,5 +1,9 @@
 # Changes
 
+## 1.2.17
+Update
+-  Refactor.
+
 ## 1.2.16
 Update
 -  Added support to show single hose timer as simple valve.

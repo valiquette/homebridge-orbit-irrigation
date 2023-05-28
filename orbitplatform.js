@@ -8,7 +8,6 @@ let sensor=require('./devices/sensor')
 let basicSwitch=require('./devices/switch')
 
 class PlatformOrbit {
-
 	constructor(log, config, api){
 		this.orbitapi=new OrbitAPI(this,log)
 		this.battery=new battery(this,log)
