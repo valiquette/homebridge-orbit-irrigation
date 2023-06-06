@@ -140,6 +140,12 @@ class PlatformOrbit {
 			}).forEach(async(newDevice)=>{
 				// adding devices that met filter criteria
 				let uuid=UUIDGen.generate(newDevice.id)
+				//remove cached accessory
+				if(this.accessories[uuid]){
+					this.log.debug('Removed cached device')
+					this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
+					delete this.accessories[uuid]
+				}
 				switch (newDevice.type){
 					case "sprinkler_timer":
 						let switchService
@@ -423,20 +429,39 @@ class PlatformOrbit {
 			}
 		}
 
-		// Refresh battery status every so often for flood sensors if netowrk exsits
+		// Refresh battery status every so often for hub 2 device flood sensors if network exsits
 		setInterval(()=>{
 			try{
 				if(this.networkTopologyId){
 					this.networkTopology.devices.forEach(async(sensor)=>{
 						let sensorResponse=(await this.orbitapi.getDevice(this.token,sensor.device_id).catch(err=>{this.log.error('Failed to get device response %s', err)}))
-						this.log.debug('check battery status %s %s @ %s',sensorResponse.location_name, sensorResponse.name, sensorResponse.battery.percent)
-						sensorResponse.device_id=sensorResponse.id
-						sensorResponse.event='battery'
-						this.updateService(JSON.stringify(sensorResponse))
+						if(sensorResponse.battery!=null){
+							this.log.debug('check battery status %s %s',sensorResponse.location_name, sensorResponse.name)
+							sensorResponse.device_id=sensorResponse.id
+							sensorResponse.event='battery'
+							this.updateService(JSON.stringify(sensorResponse))
+						}
 					})
 				}
 			}catch(err){this.log.error('Failed to read each sensor', err)}
 		}, 4*60*60*1000) //4 hours in ms
+
+			// Refresh battery status every so often for hub 1 devices if network exsits
+			setInterval(()=>{
+				try{
+					if(this.meshId){
+						this.meshNetwork.devices.forEach(async(sensor)=>{
+							let sensorResponse=(await this.orbitapi.getDevice(this.token,sensor.device_id).catch(err=>{this.log.error('Failed to get device response %s', err)}))
+							if(sensorResponse.battery!=null){
+								this.log.debug('check mesh battery status %s %s',sensorResponse.location_name, sensorResponse.name)
+								sensorResponse.device_id=sensorResponse.id
+								sensorResponse.event='battery'
+								this.updateService(JSON.stringify(sensorResponse))
+							}
+						})
+					}
+				}catch(err){this.log.error('Failed to read each sensor', err)}
+			}, 4*60*60*1000) //4 hours in ms
 	}
 
 	//**
@@ -475,6 +500,7 @@ class PlatformOrbit {
 				let irrigationAccessory
 				let irrigationSystemService
 				let valveAccessory
+				let percent
 				if(this.showIrrigation){
 					if(this.showSimpleValve && deviceModel.includes('HT25')){
 						valveAccessory=this.accessories[uuid]
@@ -601,18 +627,28 @@ class PlatformOrbit {
 								})
 								break
 							case "battery": //maybe deprecated
-								this.log.debug('update battery status %s @ %s', deviceName, jsonBody.battery.percent)
-								batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.battery.percent)
+								percent=0
+								if(jsonBody.battery.mv){
+									percent=jsonBody.battery.mv/3000*100 > 100 ? 100 : jsonBody.battery.mv/3000*100>100
+								}
+								else if(jsonBody.battery.percent){
+									percent=jsonBody.battery.percent
+								}
+								if(jsonBody.battery.charging==undefined){jsonBody.battery.charging=false}
+								this.log.debug('update battery status %s to %s%, charging=%s', deviceName, percent, jsonBody.battery.charging)
+								batteryService.getCharacteristic(Characteristic.ChargingState).updateValue(jsonBody.battery.charging)
+								batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(percent)
 								break
 							case "battery_status":
-								let percent
+								percent=0
 								if(jsonBody.mv){
 									percent=jsonBody.mv/3000*100 > 100 ? 100 : jsonBody.mv/3000*100>100
 								}
-								else{
+								else if(jsonBody.percent){
 									percent=jsonBody.percent
 								}
-								this.log.debug('update battery status %s @ %s, % charging=%s', deviceName, percent, jsonBody.charging)
+								if(jsonBody.charging==undefined){jsonBody.charging=false}
+								this.log.debug('update battery status %s to %s%, charging=%s', deviceName, percent, jsonBody.charging)
 								batteryService.getCharacteristic(Characteristic.ChargingState).updateValue(jsonBody.charging)
 								batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(percent)
 								break
@@ -777,18 +813,28 @@ class PlatformOrbit {
 								})
 								break
 							case "battery": //maybe deprecated
-								this.log.debug('update battery status %s @ %s', jsonBody.name, jsonBody.battery.percent)
-								batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.battery.percent)
+								percent=0
+								if(jsonBody.battery.mv){
+									percent=jsonBody.battery.mv/3000*100 > 100 ? 100 : jsonBody.battery.mv/3000*100>100
+								}
+								else if(jsonBody.battery.percent){
+									percent=jsonBody.battery.percent
+								}
+								if(jsonBody.battery.charging==undefined){jsonBody.battery.charging=false}
+								this.log.debug('update battery status %s to %s%, charging=%s', deviceName, percent, jsonBody.battery.charging)
+								batteryService.getCharacteristic(Characteristic.ChargingState).updateValue(jsonBody.battery.charging)
+								batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(percent)
 								break
 							case "battery_status":
-								let percent
+								percent=0
 								if(jsonBody.mv){
 									percent=jsonBody.mv/3000*100 > 100 ? 100 : jsonBody.mv/3000*100>100
 								}
-								else{
+								else if(jsonBody.percent){
 									percent=jsonBody.percent
 								}
-								this.log.debug('update battery status %s @ %s, % charging=%s', deviceName, percent, jsonBody.charging)
+								if(jsonBody.charging==undefined){jsonBody.charging=false}
+								this.log.debug('update battery status %s to %s%, charging=%s', deviceName, percent, jsonBody.charging)
 								batteryService.getCharacteristic(Characteristic.ChargingState).updateValue(jsonBody.charging)
 								batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(percent)
 								break
@@ -866,7 +912,7 @@ class PlatformOrbit {
 					occupancySensor=FSAccessory.getService(Service.OccupancySensor)
 						switch (jsonBody.event){
 							case 'battery':
-								this.log.debug('update battery status %s %s @ %s',jsonBody.location_name, jsonBody.name, jsonBody.battery.percent)
+								this.log.debug('update battery status %s %s to %s%',jsonBody.location_name, jsonBody.name, jsonBody.battery.percent)
 								batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.battery.percent)
 								if(jsonBody.battery.percent<=this.lowBattery){
 									batteryService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)

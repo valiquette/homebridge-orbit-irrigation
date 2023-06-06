@@ -1,5 +1,12 @@
 # Changes
 
+## 1.2.18
+Update
+- Automatically removed unused cached devices.
+Fix
+-  Improved battery updates and adjusted to changes in notifications.
+-  Fixed characteristic battery level warning.
+
 ## 1.2.17
 Update
 -  Refactor portions of code.
