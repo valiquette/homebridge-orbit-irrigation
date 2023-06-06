@@ -17,7 +17,11 @@ class battery {
 			this.log.debug("create battery service for %s", device.name)
 			batteryStatus = new Service.Battery(device.name, device.id)
 		}
+		if(device.battery.mv){
+			device.battery.percent=device.battery.mv/3000*100 > 100 ? 100 : device.battery.mv/3000*100
+		}
 		batteryStatus
+			.setCharacteristic(Characteristic.ChargingState, Characteristic.ChargingState.NOT_CHARGEABLE)
 			.setCharacteristic(Characteristic.StatusLowBattery, Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL)
 			.setCharacteristic(Characteristic.BatteryLevel, device.battery.percent)
 		return batteryStatus

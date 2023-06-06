@@ -77,17 +77,17 @@ class PlatformOrbit {
 			this.log.debug('Fetching Build info...')
 			this.log.info('Getting Account info...')
 			// login to the API and get the token
-			let signinResponse=(await this.orbitapi.getToken(this.email,this.password).catch(err=>{this.log.error('Failed to get token for build', err)})).data
+			let signinResponse=(await this.orbitapi.getToken(this.email,this.password).catch(err=>{this.log.error('Failed to get token for build', err)}))
 			this.log.info('Found account for',signinResponse.user_name)
 			//this.log.debug('Found api key',signinResponse.orbit_api_key)
 			this.log.debug('Found api key %s********************%s', signinResponse.orbit_api_key.substring(0,35),signinResponse.orbit_api_key.substring((signinResponse.orbit_api_key).length-35))
 			this.token=signinResponse.orbit_api_key
 			this.userId=signinResponse.user_id
 			//get device graph
-			this.deviceGraph=(await this.orbitapi.getDeviceGraph(this.token,this.userId).catch(err=>{this.log.error('Failed to get graph info %s', err)})).data
+			this.deviceGraph=(await this.orbitapi.getDeviceGraph(this.token,this.userId).catch(err=>{this.log.error('Failed to get graph info %s', err)}))
 			this.log.debug('Found device graph for user id %s, %s',this.userId,this.deviceGraph)
 			// get an array of the devices
-			let deviceResponse=(await this.orbitapi.getDevices(this.token, this.userId).catch(err=>{this.log.error('Failed to get devices for build %s', err)})).data
+			let deviceResponse=(await this.orbitapi.getDevices(this.token, this.userId).catch(err=>{this.log.error('Failed to get devices for build %s', err)}))
 			deviceResponse=deviceResponse.sort(function (a, b){ // read bridge info first
 				return a.type > b.type ? 1
 						:a.type < b.type ? -1
@@ -109,11 +109,11 @@ class PlatformOrbit {
 						this.log.info('Online device %s %s found at the configured location address: %s',device.hardware_version,device.name,device.address.line_1)
 						if(device.network_topology_id){
 							this.networkTopologyId=device.network_topology_id
-							this.networkTopology=(await this.orbitapi.getNetworkTopologies(this.token,device.network_topology_id).catch(err=>{this.log.error('Failed to get network topology %s', err)})).data
+							this.networkTopology=(await this.orbitapi.getNetworkTopologies(this.token,device.network_topology_id).catch(err=>{this.log.error('Failed to get network topology %s', err)}))
 						}
 						if(device.mesh_id){
 							this.meshId=device.mesh_id
-							this.meshNetwork=(await this.orbitapi.getMeshes(this.token,device.mesh_id).catch(err=>{this.log.error('Failed to get network mesh %s', err)})).data
+							this.meshNetwork=(await this.orbitapi.getMeshes(this.token,device.mesh_id).catch(err=>{this.log.error('Failed to get network mesh %s', err)}))
 						}
 					}
 					else{
@@ -152,7 +152,7 @@ class PlatformOrbit {
 							this.log.debug('Found device %s with status %s',newDevice.name,newDevice.status.run_mode)
 						}
 						else{
-							this.log.warn('Found device %s with an unknown status %s, please check connection status',newDevice.name)
+							this.log.warn('Found device %s with an unknown status %s, please check connection status',newDevice.name) ////error maybe
 						}
 						// Remove cached accessory
 						this.log.debug('Removed cached device')
@@ -254,7 +254,7 @@ class PlatformOrbit {
 								}
 							})
 							if(this.showSchedules){
-								let scheduleResponse=(await this.orbitapi.getTimerPrograms(this.token,newDevice).catch(err=>{this.log.error('Failed to get schedule for device', err)})).data
+								let scheduleResponse=(await this.orbitapi.getTimerPrograms(this.token,newDevice).catch(err=>{this.log.error('Failed to get schedule for device', err)}))
 								scheduleResponse=scheduleResponse.sort(function (a, b){
 									//return a.program - b.program
 									return a.program > b.program ? 1
@@ -314,7 +314,7 @@ class PlatformOrbit {
 							case "BH1-0001":
 								// Create and configure Gen 1Bridge Service
 								this.log.warn(this.token,newDevice.mesh_id)
-								let meshNetwork=(await this.orbitapi.getMeshes(this.token,newDevice.mesh_id).catch(err=>{this.log.error('Failed to add G1 bridge %s', err)})).data
+								let meshNetwork=(await this.orbitapi.getMeshes(this.token,newDevice.mesh_id).catch(err=>{this.log.error('Failed to add G1 bridge %s', err)}))
 								this.log.warn(meshNetwork)
 								this.log.debug('Creating and configuring new bridge')
 								bridgeAccessory=this.bridge.createBridgeAccessory(newDevice,uuid)
@@ -333,7 +333,7 @@ class PlatformOrbit {
 								break
 							case "BH1G2-0001":
 								// Create and configure Gen2 Bridge Service
-								let networkTopology=(await this.orbitapi.getNetworkTopologies(this.token,newDevice.network_topology_id).catch(err=>{this.log.error('Failed to add G2 bridge %s', err)})).data
+								let networkTopology=(await this.orbitapi.getNetworkTopologies(this.token,newDevice.network_topology_id).catch(err=>{this.log.error('Failed to add G2 bridge %s', err)}))
 								this.log.debug('Creating and configuring new bridge')
 								bridgeAccessory=this.bridge.createBridgeAccessory(newDevice,uuid)
 								bridgeService=bridgeAccessory.getService(Service.Tunnel)
@@ -413,6 +413,7 @@ class PlatformOrbit {
 			if(this.retryAttempt<this.retryMax){
 				this.retryAttempt++
 				this.log.error('Failed to get devices. Retry attempt %s of %s in %s seconds...',this.retryAttempt, this.retryMax, this.retryWait)
+				this.log.error(err)
 				setTimeout(async()=>{
 					this.getDevices()
 				},this.retryWait*1000)
@@ -427,7 +428,7 @@ class PlatformOrbit {
 			try{
 				if(this.networkTopologyId){
 					this.networkTopology.devices.forEach(async(sensor)=>{
-						let sensorResponse=(await this.orbitapi.getDevice(this.token,sensor.device_id).catch(err=>{this.log.error('Failed to get device response %s', err)})).data
+						let sensorResponse=(await this.orbitapi.getDevice(this.token,sensor.device_id).catch(err=>{this.log.error('Failed to get device response %s', err)}))
 						this.log.debug('check battery status %s %s @ %s',sensorResponse.location_name, sensorResponse.name, sensorResponse.battery.percent)
 						sensorResponse.device_id=sensorResponse.id
 						sensorResponse.event='battery'
@@ -464,10 +465,10 @@ class PlatformOrbit {
 		True	  True	  Running
 		False	  True	  Stopping
 		******************************/
-		if(this.showExtraDebugMessages){this.log.debug('extra message',jsonBody)} //additional debug info before suppressing duplicate
+		if(this.showExtraDebugMessages){this.log.debug('extra message',jsonBody)} //additional debug info before suppressing duplicates
 		this.lastMessage.timestamp=jsonBody.timestamp //ignore message with no timestamp deltas
 		if(JSON.stringify(this.lastMessage)==JSON.stringify(jsonBody)){return} //suppress duplicate websocket messages
-		if(this.showExtraDebugMessages){this.log.info('extra message',jsonBody)} //additional debug info
+		if(this.showExtraDebugMessages){this.log.info('extra message',jsonBody)} //additional debug info after suppressing duplicates
 		this.lastMessage=jsonBody
 		switch (eventType){
 			case "sprinkler_timer":
@@ -599,11 +600,23 @@ class PlatformOrbit {
 									}
 								})
 								break
-							case 'battery':
-								this.log.debug('update battery status %s @ %s', jsonBody.name, jsonBody.battery.percent)
+							case "battery": //maybe deprecated
+								this.log.debug('update battery status %s @ %s', deviceName, jsonBody.battery.percent)
 								batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.battery.percent)
 								break
-							case "clear_low_battery":
+							case "battery_status":
+								let percent
+								if(jsonBody.mv){
+									percent=jsonBody.mv/3000*100 > 100 ? 100 : jsonBody.mv/3000*100>100
+								}
+								else{
+									percent=jsonBody.percent
+								}
+								this.log.debug('update battery status %s @ %s, % charging=%s', deviceName, percent, jsonBody.charging)
+								batteryService.getCharacteristic(Characteristic.ChargingState).updateValue(jsonBody.charging)
+								batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(percent)
+								break
+							case "clear_low_battery": //maybe deprecated
 								this.log.debug('%s low battery cleared',deviceName)
 								activeService=valveAccessory.getServiceById(Service.Battery, jsonBody.device_id)
 								if(activeService){
@@ -763,11 +776,23 @@ class PlatformOrbit {
 									}
 								})
 								break
-							case 'battery':
+							case "battery": //maybe deprecated
 								this.log.debug('update battery status %s @ %s', jsonBody.name, jsonBody.battery.percent)
 								batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.battery.percent)
 								break
-							case "clear_low_battery":
+							case "battery_status":
+								let percent
+								if(jsonBody.mv){
+									percent=jsonBody.mv/3000*100 > 100 ? 100 : jsonBody.mv/3000*100>100
+								}
+								else{
+									percent=jsonBody.percent
+								}
+								this.log.debug('update battery status %s @ %s, % charging=%s', deviceName, percent, jsonBody.charging)
+								batteryService.getCharacteristic(Characteristic.ChargingState).updateValue(jsonBody.charging)
+								batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(percent)
+								break
+							case "clear_low_battery": //maybe deprecated
 								this.log.debug('%s low battery cleared',deviceName)
 								activeService=irrigationAccessory.getServiceById(Service.Battery, jsonBody.device_id)
 								if(activeService){

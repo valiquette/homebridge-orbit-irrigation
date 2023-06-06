@@ -47,7 +47,7 @@ class OrbitAPI {
 			})
 			if (response.status == 200) {
 				if (this.platform.showAPIMessages) { this.log.debug('get token response', JSON.stringify(response.data, null, 2))}
-				return response
+				return response.data
 			}
 		} catch (err) { this.log.error('Error retrieving API key \n%s', err)}
 	}
@@ -71,11 +71,11 @@ class OrbitAPI {
 				this.log.error('Error getting devices %s', err.message)
 				this.log.debug(JSON.stringify(err, null, 2))
 				if (err.response) { this.log.warn(JSON.stringify(err.response.data, null, 2))}
-				return err.response
+				return err.response.data
 			})
 			if (response.status == 200) {
 				if (this.platform.showAPIMessages) { this.log.debug('get devices response', JSON.stringify(response.data, null, 2))}
-				return response
+				return response.data
 			}
 		} catch (err) { this.log.error('Error retrieving devices \n%s', err)}
 	}
@@ -103,7 +103,7 @@ class OrbitAPI {
 			})
 			if (response.status == 200) {
 				if (this.platform.showAPIMessages) { this.log.debug('get device response', JSON.stringify(response.data, null, 2))}
-				return response
+				return response.data
 			}
 		} catch (err) { this.log.error('Error retrieving device \n%s', err)}
 	}
@@ -131,7 +131,7 @@ class OrbitAPI {
 			})
 			if (response.status == 200) {
 				if (this.platform.showAPIMessages) { this.log.debug('get mesh info response', JSON.stringify(response.data, null, 2))}
-				return response
+				return response.data
 			}
 		} catch (err) { this.log.error('Error retrieving mesh info \n%s', err)}
 	}
@@ -159,7 +159,7 @@ class OrbitAPI {
 			})
 			if (response.status == 200) {
 				if (this.platform.showAPIMessages) { this.log.debug('get network topology info response', JSON.stringify(response.data, null, 2))}
-				return response
+				return response.data
 			}
 		} catch (err) { this.log.error('Error retrieving network topologies info \n%s', err)}
 	}
@@ -205,7 +205,7 @@ class OrbitAPI {
 			})
 			if (response.status == 200) {
 				if (this.platform.showAPIMessages) { this.log.debug('get device graph response', JSON.stringify(response.data, null, 2))}
-				return response
+				return response.data
 			}
 		} catch (err) { this.log.error('Error retrieving graph \n%s', err)}
 	}
@@ -236,7 +236,7 @@ class OrbitAPI {
 			})
 			if (response.status == 200) {
 				if (this.platform.showAPIMessages) { this.log.debug('get timer programs response', JSON.stringify(response.data, null, 2))}
-				return response
+				return response.data
 			}
 		} catch (err) { this.log.error('Error retrieving schedules \n%s', err)}
 	}
@@ -477,12 +477,14 @@ class WebSocketProxy {
 				this.rws.send({ event: 'ping' })
 			}, Math.floor(Math.random()*(maxPingInterval-minPingInterval))+minPingInterval)
 
-			}catch (error) {
-				// Will not execute
-				this.log.error('caught', error.message)
+		}catch (error) {
+			// Will not execute
+			this.log.error('caught', error.message)
+			if(this.rws){//check if connection is open
 				this.log.error('connection closed')
 				this.rws.close()
 			}
+		}
 		})
 	}
 }
