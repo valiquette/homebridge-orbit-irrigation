@@ -1,5 +1,13 @@
 # Changes
 
+## 1.2.17
+Update
+-  Refactor portions of code.
+Fix
+-  Low Battery warning for hose timers on new firmware.
+-  Fixed error handeling for 504 errors that result in a restart.
+-  Fix error (issue #60) trying to close a WebSocket before it is opened when trying to load fails.
+
 ## 1.2.16
 Update
 -  Added support to show single hose timer as simple valve.
