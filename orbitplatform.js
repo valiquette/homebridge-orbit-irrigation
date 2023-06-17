@@ -604,7 +604,7 @@ class PlatformOrbit {
 							case "battery_status":
 								percent=0
 								if(jsonBody.mv){
-									percent=jsonBody.mv/3000*100 > 100 ? 100 : jsonBody.mv/3000*100>100
+									percent=jsonBody.mv/3000*100 > 100 ? 100 : jsonBody.mv/3000*100
 								}
 								else if(jsonBody.percent){
 									percent=jsonBody.percent
@@ -770,7 +770,7 @@ class PlatformOrbit {
 							case "battery_status":
 								percent=0
 								if(jsonBody.mv){
-									percent=jsonBody.mv/3000*100 > 100 ? 100 : jsonBody.mv/3000*100>100
+									percent=jsonBody.mv/3000*100 > 100 ? 100 : jsonBody.mv/3000*100
 								}
 								else if(jsonBody.percent){
 									percent=jsonBody.percent
