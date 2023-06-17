@@ -15,7 +15,6 @@ class OrbitAPI {
 	constructor(platform, log) {
 		this.log = log
 		this.platform = platform
-		this.rws = new WebSocketProxy(platform, log)
 		this.wsp = new WebSocketProxy(platform, log)
 	}
 
@@ -398,7 +397,7 @@ class WebSocketProxy {
 
 	return new Promise((resolve, reject)=>{
 		try {
-			let fault=true
+			let connectionOpen=true
 			this.rws = new reconnectingwebsocket(WS_endpoint+'/events', [], {
 			WebSocket: ws,
 			maxReconnectionDelay: 10000, //64000
@@ -415,16 +414,15 @@ class WebSocketProxy {
 			// Intercept send events for logging
 			const origSend = this.rws.send.bind(this.rws)
 			this.rws.send = (data, options, callback)=>{
-			if (typeof data === 'object') {
+				if(typeof data === 'object') {
 					data = JSON.stringify(data,null,2)
 				}
 				if(this.platform.showOutgoingMessages){
-					this.log.debug(JSON.parse(data).event)
+				//this.log.debug(JSON.parse(data).event)
+					if(JSON.parse(data).event!= 'ping'){
+						this.log.debug('sending outgoing message %s', data)
+					}
 				}
-				if (JSON.parse(data).event!= 'ping'){
-					this.log.debug('sending %s outgoing message %s', deviceId, data)
-				}
-
 				origSend(data, options, callback)
 			}
 
@@ -435,9 +433,9 @@ class WebSocketProxy {
 					orbit_session_token: token,
 					subscribe_device_id: deviceId
 				})
-				if(fault){
+				if(connectionOpen){
 					this.log.info('WebSocket connection established')
-					fault=false
+					connectionOpen=false
 				}
 				resolve(this.rws)
 			})
@@ -452,6 +450,7 @@ class WebSocketProxy {
 						"reason": msg.reason
 						},null,2)
 					)
+					connectionOpen=true
 			})
 
 			// Message
@@ -464,10 +463,10 @@ class WebSocketProxy {
 			// Error
 			this.rws.addEventListener('error', msg=>{
 				this.log.debug('WebSocket Error', msg.error)
-				if(!fault){
+				if(!connectionOpen){
 					this.log.error('WebSocket Error %s, check network connection.', msg.message)
 					this.log.warn('Devices will not sync until WebSocket connection is restored.')
-					fault=true
+					connectionOpen=true
 				}
 				reject(msg)
 			})

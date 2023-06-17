@@ -222,12 +222,16 @@ class irrigation {
 				event: 'watering_complete',
 				device_id: device.id
 			}
-			this.log.debug(myJsonStart)
-			this.log.debug('Simulating websocket event for %s will update services', myJsonStart.device_id)
+			this.log.debug('Simulating websocket event for %s', myJsonStart.device_id)
+			if(this.platform.showIncomingMessages){
+				this.log.debug('simulated message',myJsonStart)
+			}
 			this.platform.updateService(JSON.stringify(myJsonStart))
 			this.fakeWebsocket = setTimeout(() => {
-				this.log.debug('Simulating websocket event for %s will update services', myJsonStop.device_id)
-				this.log.debug(myJsonStop)
+				this.log.debug('Simulating websocket event for %s', myJsonStop.device_id)
+				if(this.platform.showIncomingMessages){
+					this.log.debug('simulated message',myJsonStop)
+				}
 				this.platform.updateService(JSON.stringify(myJsonStop))
 			}, runTime * 1000)
 		}
@@ -244,8 +248,10 @@ class irrigation {
 				event: 'watering_complete',
 				device_id: device.id
 			}
-			this.log.debug(myJsonStop)
-			this.log.debug('Simulating websocket event for %s will update services', myJsonStop.device_id)
+			this.log.debug('Simulating websocket event for %s', myJsonStop.device_id)
+			if(this.platform.showIncomingMessages){
+				this.log.debug('simulated message',myJsonStop)
+			}
 			this.platform.updateService(JSON.stringify(myJsonStop))
 			clearTimeout(this.fakeWebsocket)
 		}

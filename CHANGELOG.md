@@ -1,5 +1,11 @@
 # Changes
 
+## 1.2.19
+Update
+- Code cleanup
+- Bumped Node.jS dependencies.
+- Fixed Battery state (issue #63)
+
 ## 1.2.18
 Update
 - Automatically removed unused cached devices.
