@@ -67,7 +67,7 @@ class basicSwitch {
 				else {
 					if (value) {
 						switchService.getCharacteristic(Characteristic.On).updateValue(true)
-						this.orbitapi.startMultipleZone(this.platform.token, device, this.platfrom.defaultRuntime / 60)
+						this.orbitapi.startMultipleZone(this.platform.token, device, this.platform.defaultRuntime / 60)
 						this.log.info('Running all zones for %s min each', this.platform.defaultRuntime / 60)
 					}
 					else {

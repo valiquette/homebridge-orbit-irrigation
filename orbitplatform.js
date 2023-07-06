@@ -448,7 +448,7 @@ class PlatformOrbit {
 		this.accessories[accessory.UUID]=accessory
 	}
 
-	updateService(message){
+	async updateService(message){
 		//process incoming messages
 		try{
 		let jsonBody=JSON.parse(message)
@@ -461,7 +461,7 @@ class PlatformOrbit {
 				 Possible states
 		Active	InUse	  HomeKit Shows
 		False	  False	  Off
-		True  	False	  Idle
+		True    False	  Waiting
 		True	  True	  Running
 		False	  True	  Stopping
 		******************************/
@@ -556,15 +556,12 @@ class PlatformOrbit {
 								this.log.debug('%s mode changed to %s',deviceName,jsonBody.mode)
 								switch (jsonBody.mode){
 									case "auto":
-										//irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).updateValue(Characteristic.ProgramMode.PROGRAM_SCHEDULED)
 										if(this.showStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(false)}
 										break
 									case "manual":
-										//irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).updateValue(Characteristic.ProgramMode.PROGRAM_SCHEDULED_MANUAL_MODE_)
 										if(this.showStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(false)}
 										break
 									case "off":
-										//irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).updateValue(Characteristic.ProgramMode.NO_PROGRAM_SCHEDULED)
 										if(this.showStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(true)}
 										break
 									}
@@ -668,7 +665,6 @@ class PlatformOrbit {
 										}
 									}
 									//start new
-									activeService=irrigationAccessory.getServiceById(Service.Valve, jsonBody.current_station)
 									if(jsonBody.source!='local'){
 										this.log.info('Device %s, %s zone watering in progress for %s mins',deviceName, activeService.getCharacteristic(Characteristic.Name).value, Math.round(jsonBody.run_time))
 										this.activeZone=jsonBody.current_station
@@ -677,6 +673,44 @@ class PlatformOrbit {
 									activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
 									activeService.getCharacteristic(Characteristic.RemainingDuration).updateValue(jsonBody.run_time * 60)
 									this.endTime[activeService.subtype]= new Date(Date.now() + parseInt(jsonBody.run_time) * 60 * 1000).toISOString()
+								}
+								//update other zones in quque status
+								if(jsonBody.water_event_queue.length>0){
+									let match
+									let deviceResponse=(await this.orbitapi.getDevice(this.token, jsonBody.device_id).catch(err=>{this.log.error('Failed to get device response %s', err)}))
+									for (let n = 0; n < deviceResponse.zones.length; n++) {
+										match=false
+										deviceResponse.zones[n].enabled = true // need orbit version of enabled
+										if (deviceResponse.zones[n]) {
+											for (let i = 0; i < jsonBody.water_event_queue.length; i++) {
+												if(deviceResponse.zones[n].station==jsonBody.current_station && jsonBody.current_station==jsonBody.water_event_queue[i].station){
+													this.log.debug('%s program %s for zone-%s %s running', deviceName, jsonBody.program, deviceResponse.zones[n].station, deviceResponse.zones[n].name)
+													//skip updates for current zone, already set.
+													match=true
+													break
+												}
+												else if(deviceResponse.zones[n].station==jsonBody.water_event_queue[i].station){
+													this.log.debug('%s program %s for zone-%s %s waiting', deviceName, jsonBody.program, deviceResponse.zones[n].station, deviceResponse.zones[n].name)
+													activeService=irrigationAccessory.getServiceById(Service.Valve, deviceResponse.zones[n].station)
+													if(activeService){
+														activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.ACTIVE)
+														activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
+													}
+													match=true
+													break
+												}
+											}
+											if(!match){
+												this.log.debug('%s program %s for zone-%s %s stopped', deviceName, jsonBody.program, deviceResponse.zones[n].station, deviceResponse.zones[n].name)
+													activeService=irrigationAccessory.getServiceById(Service.Valve, deviceResponse.zones[n].station)
+													if(activeService){
+														activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
+														activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
+													}
+													continue
+											}
+										}
+									}
 								}
 								break
 							case "watering_complete":

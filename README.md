@@ -2,7 +2,7 @@
  <img width="300" src="logo/homebridge-bhyve.png" />
 </p>
 
-# homebridge-platform-orbit
+# homebridge-orbit-irrigation
 [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 <br>Orbit B-Hyve platform plugin for [Homebridge](https://github.com/nfarina/homebridge).
 <br>Supporting
