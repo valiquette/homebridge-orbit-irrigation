@@ -6,7 +6,7 @@ let ws = require('ws')
 let reconnectingwebsocket = require('reconnecting-websocket')
 
 let endpoint = 'https://api.orbitbhyve.com/v1'
-let WS_endpoint = 'wss://api.orbitbhyve.com/v1'
+let WS_endpoint = 'wss://api.orbitbhyve.com/v1/events'
 
 let maxPingInterval = 25000 // Websocket get's timed out after 30s, will set a random value between 20 and 25
 let minPingInterval = 20000
@@ -243,7 +243,7 @@ class OrbitAPI {
 	startZone(token, device, station, runTime) {
 		try {
 			this.log.debug('startZone', device.id, station, runTime)
-			this.wsp.connect(token, device.id)
+			this.wsp.connect(token, device)
 				.then(ws => ws.send({
 					event: "change_mode",
 					mode: "manual",
@@ -261,7 +261,7 @@ class OrbitAPI {
 	startSchedule(token, device, program) {
 		try {
 			this.log.debug('startZone', device.id, program)
-			this.wsp.connect(token, device.id)
+			this.wsp.connect(token, device)
 				.then(ws => ws.send({
 					event: "change_mode",
 					mode: "manual",
@@ -274,7 +274,7 @@ class OrbitAPI {
 	stopZone(token, device) {
 		try {
 			this.log.debug('stopZone')
-			this.wsp.connect(token, device.id)
+			this.wsp.connect(token, device)
 				.then(ws => ws.send({
 					event: "change_mode",
 					mode: "manual",
@@ -299,7 +299,7 @@ class OrbitAPI {
 				}
 			})
 			this.log.debug('multiple zone run data', JSON.stringify(body, null, 2))
-			this.wsp.connect(token, device.id)
+			this.wsp.connect(token, device)
 				.then(ws => ws.send({
 					event: "change_mode",
 					mode: "manual",
@@ -312,7 +312,7 @@ class OrbitAPI {
 	stopDevice(token, device) {
 		try {
 			this.log.debug('stopZone')
-			this.wsp.connect(token, device.id)
+			this.wsp.connect(token, device)
 				.then(ws => ws.send({
 					event: "change_mode",
 					mode: "manual",
@@ -326,7 +326,7 @@ class OrbitAPI {
 	deviceStandby(token, device, mode) {
 		try {
 			this.log.debug('standby')
-			this.wsp.connect(token, device.id)
+			this.wsp.connect(token, device)
 				.then(ws => ws.send({
 					event: "change_mode",
 					mode: mode,
@@ -338,20 +338,27 @@ class OrbitAPI {
 	openConnection(token, device) {
 		try {
 			this.log.debug('Opening WebSocket Connection for %s', device.name)
-			this.wsp.connect(token, device.id)
-				.then(ws => ws.send({
-					name: device.name,
-					id: device.id,
-					event: "app_connection",
-					orbit_session_token: token
-				}))
+			this.wsp.connect(token, device)
+			.then(ws => ws.send({
+				name: device.name,
+				id: device.id,
+				event: "app_connection",
+				orbit_session_token: token
+			}))
+			/* also works
+			.then(ws => ws.send({
+				event: 'app_connection',
+				orbit_session_token: token,
+				subscribe_device_id: device.id
+			}))
+			*/
 		} catch (err) { this.log.error('Error opening connection \n%s', err)}
 	}
 
 	onMessage(token, device, listner) {
 		try {
 			this.log.debug('Adding Event Listener for %s', device.name)
-			this.wsp.connect(token, device.id)
+			this.wsp.connect(token, device)
 				.then(ws => ws.addEventListener('message', msg => {
 					listner(msg.data, device.id)
 				}))
@@ -361,7 +368,7 @@ class OrbitAPI {
 	sync(token, device) {
 		try {
 			this.log.debug('Syncing device %s info', device.name)
-			this.wsp.connect(token, device.id)
+			this.wsp.connect(token, device)
 				.then(ws => ws.send({
 					event: "sync",
 					device_id: device.id
@@ -371,7 +378,7 @@ class OrbitAPI {
 	identify(token, device) {
 		try {
 			this.log.debug('Identify device %s info', device.name)
-			this.wsp.connect(token, device.id)
+			this.wsp.connect(token, device)
 				.then(ws => ws.send({
 					event: "fs_identify",
 					device_id: device.id,
@@ -390,29 +397,29 @@ class WebSocketProxy {
 		this.platform = platform
 	}
 
-	connect(token, deviceId) {
+	connect(token, device) {
 	if(this.rws){
 		return Promise.resolve(this.rws)
 	}
 
 	return new Promise((resolve, reject)=>{
 		try {
-			let connectionOpen=true
-			this.rws = new reconnectingwebsocket(WS_endpoint+'/events', [], {
-			WebSocket: ws,
-			maxReconnectionDelay: 10000, //64000
-			minReconnectionDelay: 1000 + Math.random() * 4000,
-			reconnectionDelayGrowFactor: 1.3,
-			minUptime: 5000,
-			connectionTimeout: 4000, //10000
-			maxRetries: Infinity,
-			maxEnqueuedMessages: 1, //Infinity
-			startClosed: false,
-			debug: false,
-			})
-
+			let connectionOpen=false
+			let options = {
+				WebSocket: ws,
+				maxReconnectionDelay: 10000, //64000
+				minReconnectionDelay: 1000 + Math.random() * 4000,
+				reconnectionDelayGrowFactor: 1.3,
+				minUptime: 5000,
+				connectionTimeout: 4000, //10000
+				maxRetries: Infinity,
+				maxEnqueuedMessages: 1, //Infinity
+				startClosed: false,
+				debug: false,
+			}
+			this.rws = new reconnectingwebsocket(WS_endpoint, [], options )
 			// Intercept send events for logging
-			const origSend = this.rws.send.bind(this.rws)
+			let origSend = this.rws.send.bind(this.rws)
 			this.rws.send = (data, options, callback)=>{
 				if(typeof data === 'object') {
 					data = JSON.stringify(data,null,2)
@@ -425,63 +432,70 @@ class WebSocketProxy {
 				}
 				origSend(data, options, callback)
 			}
-
-			// Open
-			this.rws.addEventListener('open', msg=>{
-				this.rws.send({
-					event: 'app_connection',
-					orbit_session_token: token,
-					subscribe_device_id: deviceId
-				})
-				if(connectionOpen){
-					this.log.info('WebSocket connection established')
-					connectionOpen=false
-				}
-				resolve(this.rws)
-			})
-
-			// Close
-			this.rws.addEventListener('close', msg=>{
-					//this.log.debug('connection closed', JSON.stringify(msg,null,2))
-					this.log.debug('connection closed', JSON.stringify({
-						"type": msg.type,
-						"wasClean": msg.wasClean,
-						"code": msg.code,
-						"reason": msg.reason
-						},null,2)
-					)
-					connectionOpen=true
-			})
-
-			// Message
-			this.rws.addEventListener('message', msg=>{
-					if(this.platform.showIncomingMessages){
-						this.log.debug('incoming message', JSON.parse(msg.data))
-					}
-			})
-
-			// Error
-			this.rws.addEventListener('error', msg=>{
-				this.log.debug('WebSocket Error', msg.error)
-				if(!connectionOpen){
-					this.log.error('WebSocket Error %s, check network connection.', msg.message)
-					this.log.warn('Devices will not sync until WebSocket connection is restored.')
-					connectionOpen=true
-				}
-				reject(msg)
-			})
-
 			// Ping
 			this.ping = setInterval(()=>{
 				this.rws.send({ event: 'ping' })
 			}, Math.floor(Math.random()*(maxPingInterval-minPingInterval))+minPingInterval)
 
+			this.rws.onopen = (event) => {
+				this.rws.send({
+					name: device.name,
+					id: device.id,
+					event: "app_connection",
+					orbit_session_token: token
+				})
+				this.log.debug('connection open', JSON.stringify({
+					"type": event.type
+					},null,2)
+				)
+				if(!connectionOpen){
+					this.log.info('WebSocket connected')
+				}
+				connectionOpen=true
+				resolve(this.rws)
+			}
+
+			this.rws.onclose = (event) => {
+				this.log.debug('connection closed', JSON.stringify({
+					"type": event.type,
+					"wasClean": event.wasClean,
+					"code": event.code,
+					"reason": event.reason
+					},null,2)
+				)
+				if(connectionOpen){
+					this.log.info('WebSocket disconnected')
+				}
+				connectionOpen=false
+			}
+
+			this.rws.onmessage = (msg) => {
+					if(this.platform.showIncomingMessages){
+						this.log.debug('incoming message', JSON.parse(msg.data))
+					}
+			}
+
+			this.rws.onerror = (event) => {
+				this.log.debug('WebSocket Error', event.error)
+				if(connectionOpen){
+					this.log.error('WebSocket Error %s, check network connection.', event.message)
+					this.log.warn('Devices will not sync until WebSocket connection is restored.')
+					connectionOpen=false
+				}
+				reject(event)
+			}
 		}catch (error) {
-			// Will not execute
 			this.log.error('caught', error.message)
 			if(this.rws){//check if connection is open
-				this.log.error('connection closed')
-				this.rws.close()
+				this.log.warn('connection closed')
+				this.rws.close(code=1000, reason="Session terminated by client")
+				try {
+					this.rws.removeEventListener("open")
+					this.rws.removeEventListener("close")
+					this.rws.removeEventListener("message")
+					this.rws.removeEventListener("error")
+					clearInterval(this.ping)
+					} catch (err) { this.log.error('Error closing connection \n%s', err)}
 			}
 		}
 		})

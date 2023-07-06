@@ -1,5 +1,14 @@
 # Changes
 
+## 1.2.20
+Fixes
+- Fixed crash associated with (issue #65)
+- Fixed error (issue #66) Run All switch failed.
+Update
+- Improved Program updates to reflect zones in queue
+- Code cleanup
+- Bumped Node.jS dependencies.
+
 ## 1.2.19
 Update
 - Code cleanup
