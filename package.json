@@ -1,6 +1,6 @@
 {
 	"name": "homebridge-orbit-irrigation",
-	"version": "1.2.20",
+	"version": "1.2.21",
 	"description": "Orbit Irrigation System platform plugin for [Homebridge](https://github.com/nfarina/homebridge).",
 	"main": "index.js",
 	"dependencies": {
@@ -10,7 +10,7 @@
 	},
 	"engines": {
 		"homebridge": "^1.6.1 || ^2.0.0-beta",
-		"node": "^16.20.1 || ^18.16.1 || ^20.4.0"
+		"node": "^16.20.1 || ^18.17.0 || ^20.5.0"
 	},
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
