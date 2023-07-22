@@ -1,5 +1,12 @@
 # Changes
 
+## 1.2.21
+Update
+- improved handleing of misconfigured device in app
+- fixed bug with multiple locations
+- fixed bug causing error message when starting a zone
+- Bumped Node.jS dependencies.
+
 ## 1.2.20
 Fixes
 - Fixed crash associated with (issue #65)

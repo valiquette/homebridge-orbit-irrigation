@@ -34,7 +34,6 @@ class PlatformOrbit {
 		this.showRunall=config.showRunall
 		this.showSchedules=config.showSchedules
 		this.locationAddress=config.locationAddress
-		this.locationMatch=true
 		this.showIrrigation=config.showIrrigation
 		this.showBridge=config.showBridge
 		this.showFloodSensor=config.showFloodSensor
@@ -74,6 +73,7 @@ class PlatformOrbit {
 
 	async getDevices(){
 		try{
+			let locationMatch
 			this.log.debug('Fetching Build info...')
 			this.log.info('Getting Account info...')
 			// login to the API and get the token
@@ -85,15 +85,13 @@ class PlatformOrbit {
 			this.userId=signinResponse.user_id
 			//get device graph
 			this.deviceGraph=(await this.orbitapi.getDeviceGraph(this.token,this.userId).catch(err=>{this.log.error('Failed to get graph info %s', err)}))
-			this.log.debug('Found device graph for user id %s, %s',this.userId,this.deviceGraph)
-			// get an array of the devices
-			let deviceResponse=(await this.orbitapi.getDevices(this.token, this.userId).catch(err=>{this.log.error('Failed to get devices for build %s', err)}))
-			deviceResponse=deviceResponse.sort(function (a, b){ // read bridge info first
+			this.deviceGraph.devices=this.deviceGraph.devices.sort(function (a, b){ // read bridge info first
 				return a.type > b.type ? 1
 						:a.type < b.type ? -1
 						:0
 			})
-			deviceResponse.filter(async(device)=>{
+			this.log.debug('Found device graph for user id %s, %s',this.userId,this.deviceGraph)
+			this.deviceGraph.devices.filter((device)=>{
 				if(device.address==undefined){
 					device.address={
 						"line_1":"undefined location",
@@ -109,18 +107,18 @@ class PlatformOrbit {
 						this.log.info('Online device %s %s found at the configured location address: %s',device.hardware_version,device.name,device.address.line_1)
 						if(device.network_topology_id){
 							this.networkTopologyId=device.network_topology_id
-							this.networkTopology=(await this.orbitapi.getNetworkTopologies(this.token,device.network_topology_id).catch(err=>{this.log.error('Failed to get network topology %s', err)}))
+							this.networkTopology=(this.orbitapi.getNetworkTopologies(this.token,device.network_topology_id).catch(err=>{this.log.error('Failed to get network topology %s', err)}))
 						}
 						if(device.mesh_id){
 							this.meshId=device.mesh_id
-							this.meshNetwork=(await this.orbitapi.getMeshes(this.token,device.mesh_id).catch(err=>{this.log.error('Failed to get network mesh %s', err)}))
+							this.meshNetwork=(this.orbitapi.getMeshes(this.token,device.mesh_id).catch(err=>{this.log.error('Failed to get network mesh %s', err)}))
 						}
 					}
 					else{
 						this.log.info('Offline device %s %s found at the configured location address: %s',device.hardware_version,device.name,device.address.line_1)
 						this.log.warn('%s is disconnected! This will show as non-responding in Homekit until the connection is restored.',device.name)
 					}
-					this.locationMatch=true
+					locationMatch=true
 				}
 				else if(device.address.line_1 =='undefined location' && (this.networkTopologyId==device.network_topology_id || this.meshId==device.mesh_id)){
 					if(device.is_connected){
@@ -130,22 +128,24 @@ class PlatformOrbit {
 						this.log.info('Offline device %s %s found for the location: %s',device.hardware_version,device.name,device.location_name)
 						this.log.warn('%s is disconnected! This will show as non-responding in Homekit until the connection is restored.',device.name)
 					}
-					this.locationMatch=true
+					locationMatch=true
 				}
 				else{
 					this.log.info('Skipping device %s %s at %s, not found at the configured location address: %s',device.hardware_version,device.name,device.address.line_1,this.locationAddress)
-					this.locationMatch=false
+					locationMatch=false
 				}
-				return this.locationMatch
-			}).forEach(async(newDevice)=>{
-				// adding devices that met filter criteria
-				let uuid=UUIDGen.generate(newDevice.id)
-				//remove cached accessory
+				//remove cached accessories
+				let uuid=UUIDGen.generate(device.id)
 				if(this.accessories[uuid]){
-					this.log.debug('Removed cached device')
+					this.log.debug('Removed cached device',device.id)
 					this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
 					delete this.accessories[uuid]
 				}
+				return locationMatch
+			}).forEach(async(device)=>{
+				// adding devices that met filter criteria
+				let newDevice=(await this.orbitapi.getDevice(this.token, device.id).catch(err=>{this.log.error('Failed to get devices for build %s', err)}))
+				let uuid=UUIDGen.generate(newDevice.id)
 				switch (newDevice.type){
 					case "sprinkler_timer":
 						let switchService
@@ -160,12 +160,6 @@ class PlatformOrbit {
 						else{
 							this.log.warn('Found device %s with an unknown status %s, please check connection status',newDevice.name) ////error maybe
 						}
-						// Remove cached accessory
-						this.log.debug('Removed cached device')
-						if(this.accessories[uuid]){
-							this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
-							delete this.accessories[uuid]
-						}
 						//this.log.warn(newDevice.hardware_version)
 						if(this.showSimpleValve && newDevice.hardware_version.includes('HT25')){
 							this.log.debug('Creating and configuring new device')
@@ -177,11 +171,6 @@ class PlatformOrbit {
 								return a.station - b.station
 							})
 							newDevice.zones.forEach((zone)=>{
-								//uuid=UUIDGen.generate(newDevice.id+zone.station)
-								if(this.accessories[uuid]){
-									this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
-									delete this.accessories[uuid]
-								}
 								zone.enabled=true // need orbit version of enabled
 								if(!this.useIrrigationDisplay && !zone.enabled){
 									this.log.info('Skipping disabled zone %s',zone.name )
@@ -310,12 +299,6 @@ class PlatformOrbit {
 						}
 						this.log.debug('Adding Bridge Device')
 						this.log.debug('Found device %s', newDevice.name)
-						// Remove cached accessory
-						this.log.debug('Removed cached device')
-						if(this.accessories[uuid]){
-							this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
-							delete this.accessories[uuid]
-						}
 						switch (newDevice.hardware_version){
 							case "BH1-0001":
 								// Create and configure Gen 1Bridge Service
@@ -367,11 +350,6 @@ class PlatformOrbit {
 						// Remove cached accessory
 						this.log.debug('Removed cached device')
 						let FSAccessory
-						if(this.accessories[uuid]){
-							this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
-							delete this.accessories[uuid]
-						}
-
 						if(this.showFloodSensor || this.showTempSensor || this.showLimitsSensor){
 							FSAccessory=this.sensor.createFloodAccessory(newDevice,uuid)
 							this.log.info('Adding Battery status for %s %s',newDevice.location_name, newDevice.name)
@@ -675,39 +653,41 @@ class PlatformOrbit {
 									this.endTime[activeService.subtype]= new Date(Date.now() + parseInt(jsonBody.run_time) * 60 * 1000).toISOString()
 								}
 								//update other zones in quque status
-								if(jsonBody.water_event_queue.length>0){
-									let match
-									let deviceResponse=(await this.orbitapi.getDevice(this.token, jsonBody.device_id).catch(err=>{this.log.error('Failed to get device response %s', err)}))
-									for (let n = 0; n < deviceResponse.zones.length; n++) {
-										match=false
-										deviceResponse.zones[n].enabled = true // need orbit version of enabled
-										if (deviceResponse.zones[n]) {
-											for (let i = 0; i < jsonBody.water_event_queue.length; i++) {
-												if(deviceResponse.zones[n].station==jsonBody.current_station && jsonBody.current_station==jsonBody.water_event_queue[i].station){
-													this.log.debug('%s program %s for zone-%s %s running', deviceName, jsonBody.program, deviceResponse.zones[n].station, deviceResponse.zones[n].name)
-													//skip updates for current zone, already set.
-													match=true
-													break
-												}
-												else if(deviceResponse.zones[n].station==jsonBody.water_event_queue[i].station){
-													this.log.debug('%s program %s for zone-%s %s waiting', deviceName, jsonBody.program, deviceResponse.zones[n].station, deviceResponse.zones[n].name)
-													activeService=irrigationAccessory.getServiceById(Service.Valve, deviceResponse.zones[n].station)
-													if(activeService){
-														activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.ACTIVE)
-														activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
+								if(jsonBody.water_event_queue){
+									if(jsonBody.water_event_queue.length>0){
+										let match
+										let deviceResponse=(await this.orbitapi.getDevice(this.token, jsonBody.device_id).catch(err=>{this.log.error('Failed to get device response %s', err)}))
+										for (let n = 0; n < deviceResponse.zones.length; n++) {
+											match=false
+											deviceResponse.zones[n].enabled = true // need orbit version of enabled
+											if (deviceResponse.zones[n]) {
+												for (let i = 0; i < jsonBody.water_event_queue.length; i++) {
+													if(deviceResponse.zones[n].station==jsonBody.current_station && jsonBody.current_station==jsonBody.water_event_queue[i].station){
+														this.log.debug('%s program %s for zone-%s %s running', deviceName, jsonBody.program, deviceResponse.zones[n].station, deviceResponse.zones[n].name)
+														//skip updates for current zone, already set.
+														match=true
+														break
 													}
-													match=true
-													break
-												}
-											}
-											if(!match){
-												this.log.debug('%s program %s for zone-%s %s stopped', deviceName, jsonBody.program, deviceResponse.zones[n].station, deviceResponse.zones[n].name)
-													activeService=irrigationAccessory.getServiceById(Service.Valve, deviceResponse.zones[n].station)
-													if(activeService){
-														activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
-														activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
+													else if(deviceResponse.zones[n].station==jsonBody.water_event_queue[i].station){
+														this.log.debug('%s program %s for zone-%s %s waiting', deviceName, jsonBody.program, deviceResponse.zones[n].station, deviceResponse.zones[n].name)
+														activeService=irrigationAccessory.getServiceById(Service.Valve, deviceResponse.zones[n].station)
+														if(activeService){
+															activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.ACTIVE)
+															activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
+														}
+														match=true
+														break
 													}
-													continue
+												}
+												if(!match){
+													this.log.debug('%s program %s for zone-%s %s stopped', deviceName, jsonBody.program, deviceResponse.zones[n].station, deviceResponse.zones[n].name)
+														activeService=irrigationAccessory.getServiceById(Service.Valve, deviceResponse.zones[n].station)
+														if(activeService){
+															activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
+															activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
+														}
+														continue
+												}
 											}
 										}
 									}

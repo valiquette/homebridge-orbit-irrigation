@@ -13,7 +13,7 @@ class irrigation {
 		// Create new Irrigation System Service
 		if(!device.name){
 			this.log.warn("device with no name, assign a name in B-Hyve app")
-			device.name='Unknown'
+			device.name='Unnamed-'+device.id.substring(20)
 		}
 		let newPlatformAccessory = new PlatformAccessory(device.name, uuid)
 		newPlatformAccessory.addService(Service.IrrigationSystem, device.name)
