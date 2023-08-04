@@ -61,7 +61,7 @@ class PlatformOrbit {
 		if(api){
 			this.api=api
 			this.api.on("didFinishLaunching", function (){
-				// Get devices
+				// Get Orbit devices
 				this.getDevices()
 			}.bind(this))
 		}
@@ -190,19 +190,18 @@ class PlatformOrbit {
 										let batteryStatus=this.battery.createBatteryService(newDevice)
 										this.battery.configureBatteryService(batteryStatus)
 										valveAccessory.getService(Service.Valve).addLinkedService(batteryStatus)
-										//valveAccessory.getService(Service.Valve)
 										valveAccessory.addService(batteryStatus)
 									}
-							else{
-								this.log.debug('%s has no battery found, skipping add battery service', newDevice.name)
-							}
+									else{
+										this.log.debug('%s has no battery found, skipping add battery service', newDevice.name)
+									}
 								}
 							})
 								// Register platform accessory
 								this.log.debug('Registering platform accessory')
 								this.api.registerPlatformAccessories(PluginName, PlatformName, [valveAccessory])
 								this.accessories[uuid]=valveAccessory
-						}
+							}
 						else{ // Create and configure Irrigation Service
 							this.log.debug('Creating and configuring new device')
 							let irrigationAccessory=this.irrigation.createIrrigationAccessory(newDevice,uuid)
@@ -217,7 +216,6 @@ class PlatformOrbit {
 								let batteryStatus=this.battery.createBatteryService(newDevice)
 								this.battery.configureBatteryService(batteryStatus)
 								irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(batteryStatus)
-								//irrigationAccessory.getService(Service.IrrigationSystem)
 								irrigationAccessory.addService(batteryStatus)
 							}
 							else{
@@ -285,9 +283,9 @@ class PlatformOrbit {
 							}
 
 							// Register platform accessory
-								this.log.debug('Registering platform accessory')
-								this.api.registerPlatformAccessories(PluginName, PlatformName, [irrigationAccessory])
-								this.accessories[uuid]=irrigationAccessory
+							this.log.debug('Registering platform accessory')
+							this.api.registerPlatformAccessories(PluginName, PlatformName, [irrigationAccessory])
+							this.accessories[uuid]=irrigationAccessory
 						}
 						break
 					case "bridge":
@@ -302,11 +300,9 @@ class PlatformOrbit {
 						switch (newDevice.hardware_version){
 							case "BH1-0001":
 								// Create and configure Gen 1Bridge Service
-								this.log.warn(this.token,newDevice.mesh_id)
 								let meshNetwork=(await this.orbitapi.getMeshes(this.token,newDevice.mesh_id).catch(err=>{this.log.error('Failed to add G1 bridge %s', err)}))
-								this.log.warn(meshNetwork)
 								this.log.debug('Creating and configuring new bridge')
-								bridgeAccessory=this.bridge.createBridgeAccessory(newDevice,uuid)
+								bridgeAccessory=this.bridge.createBridgeAccessory(newDevice, uuid)
 								bridgeService=bridgeAccessory.getService(Service.Tunnel)
 								bridgeService=this.bridge.createBridgeService(newDevice,meshNetwork,false)
 								this.bridge.configureBridgeService(bridgeService)
@@ -324,7 +320,7 @@ class PlatformOrbit {
 								// Create and configure Gen2 Bridge Service
 								let networkTopology=(await this.orbitapi.getNetworkTopologies(this.token,newDevice.network_topology_id).catch(err=>{this.log.error('Failed to add G2 bridge %s', err)}))
 								this.log.debug('Creating and configuring new bridge')
-								bridgeAccessory=this.bridge.createBridgeAccessory(newDevice,uuid)
+								bridgeAccessory=this.bridge.createBridgeAccessory(newDevice, uuid)
 								bridgeService=bridgeAccessory.getService(Service.Tunnel)
 								bridgeService=this.bridge.createBridgeService(newDevice,networkTopology,true)
 								this.bridge.configureBridgeService(bridgeService)
@@ -351,7 +347,7 @@ class PlatformOrbit {
 						this.log.debug('Removed cached device')
 						let FSAccessory
 						if(this.showFloodSensor || this.showTempSensor || this.showLimitsSensor){
-							FSAccessory=this.sensor.createFloodAccessory(newDevice,uuid)
+							FSAccessory=this.sensor.createFloodAccessory(newDevice, uuid)
 							this.log.info('Adding Battery status for %s %s',newDevice.location_name, newDevice.name)
 							let batteryStatus=this.battery.createBatteryService(newDevice)
 							this.battery.configureBatteryService(batteryStatus)
@@ -608,7 +604,7 @@ class PlatformOrbit {
 								this.log.debug('%s rain delay',deviceName)
 								break
 							default:
-								this.log.warn('Unknown sprinker device message received: %s',jsonBody.event)
+								this.log.warn('Unknown faucut device message received: %s',jsonBody.event)
 							break
 						}
 					}
@@ -681,12 +677,12 @@ class PlatformOrbit {
 												}
 												if(!match){
 													this.log.debug('%s program %s for zone-%s %s stopped', deviceName, jsonBody.program, deviceResponse.zones[n].station, deviceResponse.zones[n].name)
-														activeService=irrigationAccessory.getServiceById(Service.Valve, deviceResponse.zones[n].station)
-														if(activeService){
-															activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
-															activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
-														}
-														continue
+													activeService=irrigationAccessory.getServiceById(Service.Valve, deviceResponse.zones[n].station)
+													if(activeService){
+														activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
+														activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
+													}
+													continue
 												}
 											}
 										}
@@ -734,6 +730,7 @@ class PlatformOrbit {
 								break
 							case "change_mode":
 								this.log.debug('%s mode changed to %s',deviceName,jsonBody.mode)
+								//this.log.info(activeService.getCharacteristic(Characteristic.Name))
 								switch (jsonBody.mode){
 									case "auto":
 										irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).updateValue(Characteristic.ProgramMode.PROGRAM_SCHEDULED)
@@ -925,7 +922,7 @@ class PlatformOrbit {
 					}
 					break
 				default:
-				this.log.warn('Unknown device message received: %s',jsonBody.event)
+				this.log.warn('Unknown irrigation device message received: %s',jsonBody.event)
 				break
 			}
 			return
