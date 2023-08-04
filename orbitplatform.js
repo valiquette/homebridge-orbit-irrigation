@@ -202,7 +202,7 @@ class PlatformOrbit {
 								this.api.registerPlatformAccessories(PluginName, PlatformName, [valveAccessory])
 								this.accessories[uuid]=valveAccessory
 							}
-						else{ // Create and configure Irrigation Service
+						else{ // **** Create and configure Irrigation Service ****
 							this.log.debug('Creating and configuring new device')
 							let irrigationAccessory=this.irrigation.createIrrigationAccessory(newDevice,uuid)
 							let irrigationSystemService=irrigationAccessory.getService(Service.IrrigationSystem)
