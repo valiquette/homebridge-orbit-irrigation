@@ -1,5 +1,11 @@
 # Changes
 
+## 1.2.22
+Fixes
+-  Fixed issue where zones failed to update correctly when watering competed when more than one contoller was active at the same time. (issue #69)
+-  Fixed issue where accesorries could move from assinged room to  default room. (issue #70)
+-  Changes to naming for additional switches
+
 ## 1.2.21
 Update
 - improved handleing of misconfigured device in app

@@ -46,7 +46,7 @@ class PlatformOrbit {
 		this.lowBattery=config.lowBattery ? config.lowBattery : 20
 		this.lastMessage={}
 		this.endTime=[]
-		this.activeZone
+		this.activeZone=[]
 		this.activeProgram
 		this.meshNetwork
 		this.meshId
@@ -134,18 +134,17 @@ class PlatformOrbit {
 					this.log.info('Skipping device %s %s at %s, not found at the configured location address: %s',device.hardware_version,device.name,device.address.line_1,this.locationAddress)
 					locationMatch=false
 				}
-				//remove cached accessories
-				let uuid=UUIDGen.generate(device.id)
-				if(this.accessories[uuid]){
-					this.log.debug('Removed cached device',device.id)
-					this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
-					delete this.accessories[uuid]
-				}
 				return locationMatch
 			}).forEach(async(device)=>{
 				// adding devices that met filter criteria
 				let newDevice=(await this.orbitapi.getDevice(this.token, device.id).catch(err=>{this.log.error('Failed to get devices for build %s', err)}))
 				let uuid=UUIDGen.generate(newDevice.id)
+				//remove cached accessories
+				if(this.accessories[uuid]){
+					this.log.debug('Removed cached device',device.id)
+					this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
+					delete this.accessories[uuid]
+				}
 				switch (newDevice.type){
 					case "sprinkler_timer":
 						let switchService
@@ -199,8 +198,8 @@ class PlatformOrbit {
 							})
 								// Register platform accessory
 								this.log.debug('Registering platform accessory')
-								this.api.registerPlatformAccessories(PluginName, PlatformName, [valveAccessory])
 								this.accessories[uuid]=valveAccessory
+								this.api.registerPlatformAccessories(PluginName, PlatformName, [valveAccessory])
 							}
 						else{ // **** Create and configure Irrigation Service ****
 							this.log.debug('Creating and configuring new device')
@@ -269,14 +268,14 @@ class PlatformOrbit {
 							}
 							if(this.showRunall){
 								this.log.debug('adding new run all switch')
-								switchService=this.basicSwitch.createSwitchService(newDevice,' Run All')
+								switchService=this.basicSwitch.createSwitchService(newDevice,'Run All')
 								this.basicSwitch.configureSwitchService(newDevice, switchService)
 								irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(switchService)
 								irrigationAccessory.addService(switchService)
 								}
 							if(this.showStandby){
 								this.log.debug('adding new standby switch')
-								switchService=this.basicSwitch.createSwitchService(newDevice,' Standby')
+								switchService=this.basicSwitch.createSwitchService(newDevice,'Standby')
 								this.basicSwitch.configureSwitchService(newDevice, switchService)
 								irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(switchService)
 								irrigationAccessory.addService(switchService)
@@ -284,8 +283,8 @@ class PlatformOrbit {
 
 							// Register platform accessory
 							this.log.debug('Registering platform accessory')
-							this.api.registerPlatformAccessories(PluginName, PlatformName, [irrigationAccessory])
 							this.accessories[uuid]=irrigationAccessory
+							this.api.registerPlatformAccessories(PluginName, PlatformName, [irrigationAccessory])
 						}
 						break
 					case "bridge":
@@ -311,9 +310,9 @@ class PlatformOrbit {
 								bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
 
 								bridgeAccessory.addService(bridgeService)
-								this.accessories[uuid]=bridgeAccessory
 								this.log.info('Adding Gen-1 Bridge')
 								this.log.debug('Registering platform accessory')
+								this.accessories[uuid]=bridgeAccessory
 								this.api.registerPlatformAccessories(PluginName, PlatformName, [bridgeAccessory])
 								break
 							case "BH1G2-0001":
@@ -329,9 +328,9 @@ class PlatformOrbit {
 								bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
 
 								bridgeAccessory.addService(bridgeService)
-								this.accessories[uuid]=bridgeAccessory
 								this.log.info('Adding Gen-2 Bridge')
 								this.log.debug('Registering platform accessory')
+								this.accessories[uuid]=bridgeAccessory
 								this.api.registerPlatformAccessories(PluginName, PlatformName, [bridgeAccessory])
 								break
 						}
@@ -353,8 +352,8 @@ class PlatformOrbit {
 							this.battery.configureBatteryService(batteryStatus)
 							FSAccessory.getService(Service.Battery)
 							FSAccessory.addService(batteryStatus)
-							this.accessories[uuid]=FSAccessory
 							this.log.debug('Registering platform accessory')
+							this.accessories[uuid]=FSAccessory
 							this.api.registerPlatformAccessories(PluginName, PlatformName, [FSAccessory])
 							// Refresh battery status every so often for flood sensors
 							setInterval(async()=>{
@@ -418,7 +417,7 @@ class PlatformOrbit {
 	//**
 	configureAccessory(accessory){
 		// Added cached devices to the accessories array
-		this.log.debug('Found cached accessory %s', accessory.displayName);
+		this.log.debug('Found cached accessory %s', accessory.displayName)
 		this.accessories[accessory.UUID]=accessory
 	}
 
@@ -455,8 +454,8 @@ class PlatformOrbit {
 						valveAccessory=this.accessories[uuid]
 						if(!valveAccessory){return}
 						let batteryService=valveAccessory.getService(Service.Battery)
-						let switchServiceStandby=valveAccessory.getServiceById(Service.Switch,UUIDGen.generate(jsonBody.device_id+' Standby'))
-						let switchServiceRunall=valveAccessory.getServiceById(Service.Switch,UUIDGen.generate(jsonBody.device_id+' Run All'))
+						let switchServiceStandby=valveAccessory.getServiceById(Service.Switch, UUIDGen.generate(jsonBody.device_id+'Standby'))
+						let switchServiceRunall=valveAccessory.getServiceById(Service.Switch, UUIDGen.generate(jsonBody.device_id+'Run All'))
 						switch (jsonBody.event){
 							case "watering_in_progress_notification":
 								activeService=valveAccessory.getService(Service.Valve)
@@ -470,7 +469,7 @@ class PlatformOrbit {
 											this.log.info('Running Program %s',jsonBody.program)
 										}
 										this.activeProgram=jsonBody.program
-										if(this.activeZone){
+										if(this.activeZone[jsonBody.device_id]){
 											if(jsonBody.source!='local'){
 												this.log.info('Device %s faucet, %s watering completed',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
 											}
@@ -481,7 +480,7 @@ class PlatformOrbit {
 									//start new
 									if(jsonBody.source!='local'){
 										this.log.info('Device %s faucet, %s watering in progress for %s mins',deviceName, activeService.getCharacteristic(Characteristic.Name).value, Math.round(jsonBody.run_time))
-										this.activeZone=jsonBody.current_station
+										this.activeZone[jsonBody.device_id]=jsonBody.current_station
 									}
 									activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.ACTIVE)
 									activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
@@ -494,7 +493,7 @@ class PlatformOrbit {
 								if(activeService){
 									if(jsonBody.source!='local'){
 										this.log.info('Device %s faucet, %s watering completed',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
-										this.activeZone=false
+										this.activeZone[jsonBody.device_id]=false
 									}
 									activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
 									activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
@@ -502,7 +501,7 @@ class PlatformOrbit {
 								break
 							case "device_idle":
 								activeService=valveAccessory.getServiceById(Service.Switch, this.activeProgram)
-								if(this.showRunall && switchServiceRunall.getCharacteristic(Characteristic.On).value){
+								if(this.showRunall && switchServiceRunall){
 									switchServiceRunall.getCharacteristic(Characteristic.On).updateValue(false)
 									this.log.info('Running all zones completed')
 								}
@@ -530,13 +529,13 @@ class PlatformOrbit {
 								this.log.debug('%s mode changed to %s',deviceName,jsonBody.mode)
 								switch (jsonBody.mode){
 									case "auto":
-										if(this.showStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(false)}
+										if(this.showStandby && switchServiceStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(false)}
 										break
 									case "manual":
-										if(this.showStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(false)}
+										if(this.showStandby && switchServiceStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(false)}
 										break
 									case "off":
-										if(this.showStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(true)}
+										if(this.showStandby && switchServiceStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(true)}
 										break
 									}
 								break
@@ -613,8 +612,8 @@ class PlatformOrbit {
 						irrigationSystemService=irrigationAccessory.getService(Service.IrrigationSystem)
 						if(!irrigationAccessory){return}
 						let batteryService=irrigationAccessory.getService(Service.Battery)
-						let switchServiceStandby=irrigationAccessory.getServiceById(Service.Switch,UUIDGen.generate(jsonBody.device_id+' Standby'))
-						let switchServiceRunall=irrigationAccessory.getServiceById(Service.Switch,UUIDGen.generate(jsonBody.device_id+' Run All'))
+						let switchServiceStandby=irrigationAccessory.getServiceById(Service.Switch, UUIDGen.generate(jsonBody.device_id+'Standby'))
+						let switchServiceRunall=irrigationAccessory.getServiceById(Service.Switch, UUIDGen.generate(jsonBody.device_id+'Run All'))
 						switch (jsonBody.event){
 							case "watering_in_progress_notification":
 								irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
@@ -629,7 +628,7 @@ class PlatformOrbit {
 											this.log.info('Running Program %s',jsonBody.program)
 										}
 										this.activeProgram=jsonBody.program
-										if(this.activeZone){
+										if(this.activeZone[jsonBody.device_id]){
 											activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone)
 											if(jsonBody.source!='local'){
 												this.log.info('Device %s, %s zone watering completed',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
@@ -641,7 +640,7 @@ class PlatformOrbit {
 									//start new
 									if(jsonBody.source!='local'){
 										this.log.info('Device %s, %s zone watering in progress for %s mins',deviceName, activeService.getCharacteristic(Characteristic.Name).value, Math.round(jsonBody.run_time))
-										this.activeZone=jsonBody.current_station
+										this.activeZone[jsonBody.device_id]=jsonBody.current_station
 									}
 									activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.ACTIVE)
 									activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
@@ -691,11 +690,11 @@ class PlatformOrbit {
 								break
 							case "watering_complete":
 								irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
-								activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone)
+								activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone[jsonBody.device_id])
 								if(activeService){
 									if(jsonBody.source!='local'){
 										this.log.info('Device %s, %s zone watering completed',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
-										this.activeZone=false
+										this.activeZone[jsonBody.device_id]=false
 									}
 									activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
 									activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
@@ -704,7 +703,7 @@ class PlatformOrbit {
 							case "device_idle":
 								irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
 								activeService=irrigationAccessory.getServiceById(Service.Switch, this.activeProgram)
-								if(this.showRunall && switchServiceRunall.getCharacteristic(Characteristic.On).value){
+								if(this.showRunall && switchServiceRunall){
 									switchServiceRunall.getCharacteristic(Characteristic.On).updateValue(false)
 									this.log.info('Running all zones completed')
 								}
@@ -720,7 +719,7 @@ class PlatformOrbit {
 										this.activeProgram=false
 									}
 								}
-								activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone)
+								activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone[jsonBody.device_id])
 								if(activeService){
 									//this.log.info('Device %s, %s zone idle',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
 									this.log.info('Device %s idle',deviceName)
@@ -734,15 +733,15 @@ class PlatformOrbit {
 								switch (jsonBody.mode){
 									case "auto":
 										irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).updateValue(Characteristic.ProgramMode.PROGRAM_SCHEDULED)
-										if(this.showStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(false)}
+										if(this.showStandby && switchServiceStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(false)}
 										break
 									case "manual":
 										irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).updateValue(Characteristic.ProgramMode.PROGRAM_SCHEDULED_MANUAL_MODE_)
-										if(this.showStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(false)}
+										if(this.showStandby && switchServiceStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(false)}
 										break
 									case "off":
 										irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).updateValue(Characteristic.ProgramMode.NO_PROGRAM_SCHEDULED)
-										if(this.showStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(true)}
+										if(this.showStandby && switchServiceStandby){switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(true)}
 										break
 									}
 								break
