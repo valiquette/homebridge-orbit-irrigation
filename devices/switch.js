@@ -15,7 +15,8 @@ class basicSwitch {
 		switchService.addCharacteristic(Characteristic.SerialNumber)
 		switchService
 			.setCharacteristic(Characteristic.On, false)
-			.setCharacteristic(Characteristic.Name, schedule)
+			.setCharacteristic(Characteristic.Name, schedule.name)
+			.setCharacteristic(Characteristic.ConfiguredName, schedule.name)
 			.setCharacteristic(Characteristic.SerialNumber, schedule.id)
 			.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
 		return switchService
@@ -28,7 +29,8 @@ class basicSwitch {
 		switchService.addCharacteristic(Characteristic.ConfiguredName)
 		switchService
 			.setCharacteristic(Characteristic.On, false)
-			.setCharacteristic(Characteristic.Name, device.name + switchType)
+			.setCharacteristic(Characteristic.Name, device.name +' '+ switchType)
+			.setCharacteristic(Characteristic.ConfiguredName, switchType +' '+ device.name)
 			.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
 		return switchService
 	}
@@ -44,7 +46,7 @@ class basicSwitch {
 	setSwitchValue(device, switchService, value, callback) {
 		this.log.debug('toggle switch state %s', switchService.getCharacteristic(Characteristic.Name).value)
 		switch (switchService.getCharacteristic(Characteristic.Name).value) {
-			case device.name + ' Standby':
+			case device.name +' '+ 'Standby':
 				if (switchService.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
 					callback('error')
 				}
@@ -60,7 +62,7 @@ class basicSwitch {
 					callback()
 				}
 				break
-			case device.name + ' Run All':
+			case device.name +' '+ 'Run All':
 				if (switchService.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
 					callback('error')
 				}

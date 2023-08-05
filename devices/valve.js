@@ -9,7 +9,7 @@ class valve {
 	}
 
 	createValveAccessory(device, zone, uuid) {
-		this.log.debug('Create valve service %s station-%s %s', device.id, zone.station, device.name)
+		this.log.debug('Create valve accessory %s station-%s %s', device.id, zone.station, device.name)
 		// Create new valve System Service
 		let newPlatformAccessory = new PlatformAccessory(zone.name, uuid)
 		newPlatformAccessory.addService(Service.Valve, zone.name)
@@ -35,7 +35,7 @@ class valve {
 	}
 
 	configureValveService(device, zone, valveService) {
-		this.log.info('Configure Valve system for %s', valveService.getCharacteristic(Characteristic.Name).value)
+		this.log.info('Configure Valve service for %s', valveService.getCharacteristic(Characteristic.Name).value)
 		valveService
 			.setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
 			.setCharacteristic(Characteristic.InUse, Characteristic.InUse.NOT_IN_USE)
