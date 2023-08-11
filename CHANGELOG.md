@@ -1,5 +1,10 @@
 # Changes
 
+## 1.2.23
+Update
+-  Fixed some error meesages with running programs
+-  Added support for standby and schedules for simple valves
+
 ## 1.2.22
 Fixes
 -  Fixed issue where zones failed to update correctly when watering competed when more than one contoller was active at the same time. (issue #69)
