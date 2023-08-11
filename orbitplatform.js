@@ -196,6 +196,43 @@ class PlatformOrbit {
 									}
 								}
 							})
+							if(this.showSchedules){
+								let scheduleResponse=(await this.orbitapi.getTimerPrograms(this.token,newDevice).catch(err=>{this.log.error('Failed to get schedule for device', err)}))
+								scheduleResponse=scheduleResponse.sort(function (a, b){
+									//return a.program - b.program
+									return a.program > b.program ? 1
+											:a.program < b.program ? -1
+											:0
+								})
+								scheduleResponse.forEach((schedule)=>{
+									if(schedule.enabled){
+										this.log.debug('adding schedules %s program %s',schedule.name, schedule.program )
+										switchService=this.basicSwitch.createScheduleSwitchService(newDevice, schedule)
+										this.basicSwitch.configureSwitchService(newDevice, switchService)
+										valveAccessory.getService(Service.Valve).addLinkedService(switchService)
+										valveAccessory.addService(switchService)
+									}
+									else{
+										this.log.warn('Skipping switch for disabled program %s', schedule.name)
+									}
+								})
+							}
+							/*
+							if(this.showRunall){
+								this.log.debug('adding new run all switch')
+								switchService=this.basicSwitch.createSwitchService(newDevice,'Run All')
+								this.basicSwitch.configureSwitchService(newDevice, switchService)
+								valveAccessory.getService(Service.Valve).addLinkedService(switchService)
+								valveAccessory.addService(switchService)
+								}
+							*/
+							if(this.showStandby){
+								this.log.debug('adding new standby switch')
+								switchService=this.basicSwitch.createSwitchService(newDevice,'Standby')
+								this.basicSwitch.configureSwitchService(newDevice, switchService)
+								valveAccessory.getService(Service.Valve).addLinkedService(switchService)
+								valveAccessory.addService(switchService)
+							}
 								// Register platform accessory
 								this.log.debug('Registering platform accessory')
 								this.accessories[uuid]=valveAccessory
@@ -454,8 +491,8 @@ class PlatformOrbit {
 						valveAccessory=this.accessories[uuid]
 						if(!valveAccessory){return}
 						let batteryService=valveAccessory.getService(Service.Battery)
-						let switchServiceStandby=valveAccessory.getServiceById(Service.Switch, UUIDGen.generate(jsonBody.device_id+'Standby'))
-						let switchServiceRunall=valveAccessory.getServiceById(Service.Switch, UUIDGen.generate(jsonBody.device_id+'Run All'))
+						let switchServiceStandby=valveAccessory.getServiceById(Service.Switch, UUIDGen.generate(jsonBody.device_id + 'Standby'))
+						let switchServiceRunall=valveAccessory.getServiceById(Service.Switch, UUIDGen.generate(jsonBody.device_id + 'Run All'))
 						switch (jsonBody.event){
 							case "watering_in_progress_notification":
 								activeService=valveAccessory.getService(Service.Valve)
@@ -463,7 +500,7 @@ class PlatformOrbit {
 									//stop last if program is running
 									if(jsonBody.program!= 'manual'){
 										if(this.showSchedules){
-											this.log.info('Running Program %s',irrigationAccessory.getServiceById(Service.Switch, jsonBody.program).getCharacteristic(Characteristic.Name).value)
+											this.log.info('Running Program %s, %s',jsonBody.program, valveAccessory.getServiceById(Service.Switch, jsonBody.program).getCharacteristic(Characteristic.Name).value)
 										}
 										else{
 											this.log.info('Running Program %s',jsonBody.program)
@@ -612,8 +649,8 @@ class PlatformOrbit {
 						irrigationSystemService=irrigationAccessory.getService(Service.IrrigationSystem)
 						if(!irrigationAccessory){return}
 						let batteryService=irrigationAccessory.getService(Service.Battery)
-						let switchServiceStandby=irrigationAccessory.getServiceById(Service.Switch, UUIDGen.generate(jsonBody.device_id+'Standby'))
-						let switchServiceRunall=irrigationAccessory.getServiceById(Service.Switch, UUIDGen.generate(jsonBody.device_id+'Run All'))
+						let switchServiceStandby=irrigationAccessory.getServiceById(Service.Switch, UUIDGen.generate(jsonBody.device_id + 'Standby'))
+						let switchServiceRunall=irrigationAccessory.getServiceById(Service.Switch, UUIDGen.generate(jsonBody.device_id + 'Run All'))
 						switch (jsonBody.event){
 							case "watering_in_progress_notification":
 								irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
@@ -622,14 +659,14 @@ class PlatformOrbit {
 									//stop last if program is running
 									if(jsonBody.program!= 'manual'){
 										if(this.showSchedules){
-											this.log.info('Running Program %s',irrigationAccessory.getServiceById(Service.Switch, jsonBody.program).getCharacteristic(Characteristic.Name).value)
+											this.log.info('Running Program %s, %s',jsonBody.program, irrigationAccessory.getServiceById(Service.Switch, jsonBody.program).getCharacteristic(Characteristic.Name).value)
 										}
 										else{
 											this.log.info('Running Program %s',jsonBody.program)
 										}
 										this.activeProgram=jsonBody.program
 										if(this.activeZone[jsonBody.device_id]){
-											activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone)
+											activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone[jsonBody.device_id])
 											if(jsonBody.source!='local'){
 												this.log.info('Device %s, %s zone watering completed',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
 											}

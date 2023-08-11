@@ -10,13 +10,13 @@ class basicSwitch {
 
 	createScheduleSwitchService(device, schedule) {
 		this.log.debug("Created service for %s with id %s and program %s", schedule.name, schedule.id, schedule.program)
-		let switchService = new Service.Switch(schedule.name, schedule.program)
+		let switchService = new Service.Switch(device.name +' '+ schedule.name, schedule.program)
 		switchService.addCharacteristic(Characteristic.ConfiguredName)
 		switchService.addCharacteristic(Characteristic.SerialNumber)
 		switchService
 			.setCharacteristic(Characteristic.On, false)
-			.setCharacteristic(Characteristic.Name, schedule.name)
-			.setCharacteristic(Characteristic.ConfiguredName, schedule.name)
+			.setCharacteristic(Characteristic.Name, device.name +' '+ schedule.name)
+			.setCharacteristic(Characteristic.ConfiguredName, schedule.name +' '+ device.name)
 			.setCharacteristic(Characteristic.SerialNumber, schedule.id)
 			.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
 		return switchService
@@ -25,7 +25,7 @@ class basicSwitch {
 	createSwitchService(device, switchType) {
 		this.log.debug('adding new switch')
 		let uuid = UUIDGen.generate(device.id + switchType)
-		let switchService = new Service.Switch(device.name + switchType, uuid)
+		let switchService = new Service.Switch(device.name + ' ' + switchType, uuid)
 		switchService.addCharacteristic(Characteristic.ConfiguredName)
 		switchService
 			.setCharacteristic(Characteristic.On, false)
@@ -87,7 +87,6 @@ class basicSwitch {
 					if (value) {
 						switchService.getCharacteristic(Characteristic.On).updateValue(true)
 						this.orbitapi.startSchedule(this.platform.token, device, switchService.subtype)
-						//this.activeProgram=switchService.subtype
 					}
 					else {
 						switchService.getCharacteristic(Characteristic.On).updateValue(false)
