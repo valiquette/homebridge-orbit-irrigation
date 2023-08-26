@@ -121,7 +121,7 @@ class irrigation {
 		valveService
 			.getCharacteristic(Characteristic.SetDuration)
 			.on('get', this.getValveValue.bind(this, valveService, "ValveSetDuration"))
-			.on('set', this.setValveSetDuration.bind(this, valveService, "ValveSetDuration"))
+			.on('set', this.setValveSetDuration.bind(this, device, valveService))
 
 		valveService
 			.getCharacteristic(Characteristic.RemainingDuration)
@@ -183,8 +183,7 @@ class irrigation {
 				if (isNaN(timeRemaining)) {
 					timeRemaining = 0
 				}
-				valveService.getCharacteristic(Characteristic.RemainingDuration).updateValue(timeRemaining)
-				//this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName,timeRemaining)
+				//this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName, timeRemaining)
 				callback(null, timeRemaining)
 				break
 			default:
@@ -211,21 +210,33 @@ class irrigation {
 			//json start stuff
 			let myJsonStart = {
 				source: "local",
-				event: 'watering_in_progress_notification',
-				program: 'manual',
 				current_station: valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value,
-				run_time: runTime / 60,
-				started_watering_station_at: new Date().toISOString(),
+				water_event_queue: [
+					{
+					program: null,
+					station: valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value,
+					run_time_sec: runTime
+					}
+				 ],
+				event: 'watering_in_progress_notification',
+				status: 'watering_in_progress',
 				rain_sensor_hold: false,
 				device_id: device.id,
-				timestamp: new Date().toISOString()
-			}
+				timestamp: new Date().toISOString(),
+				program: 'manual',
+				started_watering_station_at: new Date().toISOString(),
+				run_time: runTime / 60,
+				total_run_time_sec: runTime,
+			 }
 			let myJsonStop = {
 				source: "local",
 				timestamp: new Date().toISOString(),
 				event: 'watering_complete',
+				'stream-id': '',
+				'gateway-topic': 'devices-8',
 				device_id: device.id
-			}
+			 }
+
 			this.log.debug('Simulating websocket event for %s', myJsonStart.device_id)
 			if(this.platform.showIncomingMessages){
 				this.log.debug('simulated message',myJsonStart)
@@ -262,7 +273,7 @@ class irrigation {
 		callback()
 	}
 
-	setValveSetDuration(valveService, CharacteristicName, value, callback) {
+	setValveSetDuration(device, valveService, value, callback) {
 		// Set default duration from Homekit value
 		valveService.getCharacteristic(Characteristic.SetDuration).updateValue(value)
 		this.log.info("Set %s duration for %s mins", valveService.getCharacteristic(Characteristic.Name).value, value / 60)

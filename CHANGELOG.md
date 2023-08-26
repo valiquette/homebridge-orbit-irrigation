@@ -1,9 +1,14 @@
 # Changes
 
+## 1.2.24
+Update
+-  Fixed display issues with running times in homebridge.
+-  Fixed logging issue with zone numbers when running schedule. (issue #73)
+
 ## 1.2.23
 Update
--  Fixed some error meesages with running programs
--  Added support for standby and schedules for simple valves
+-  Fixed some error meesages with running programs.
+-  Added support for standby and schedules for simple valves.
 
 ## 1.2.22
 Fixes

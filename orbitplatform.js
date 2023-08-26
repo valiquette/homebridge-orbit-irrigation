@@ -45,9 +45,10 @@ class PlatformOrbit {
 		this.showExtraDebugMessages=config.showExtraDebugMessages ? config.showExtraDebugMessages : false
 		this.lowBattery=config.lowBattery ? config.lowBattery : 20
 		this.lastMessage={}
+		this.secondLastMessage={}
 		this.endTime=[]
 		this.activeZone=[]
-		this.activeProgram
+		this.activeProgram=false
 		this.meshNetwork
 		this.meshId
 		this.networkTopology
@@ -476,9 +477,12 @@ class PlatformOrbit {
 		False	  True	  Stopping
 		******************************/
 		if(this.showExtraDebugMessages){this.log.debug('extra message',jsonBody)} //additional debug info before suppressing duplicates
-		this.lastMessage.timestamp=jsonBody.timestamp //ignore message with no timestamp deltas
-		if(JSON.stringify(this.lastMessage)==JSON.stringify(jsonBody)){return} //suppress duplicate websocket messages
+		this.lastMessage.timestamp=jsonBody.timestamp //ignore message with no timestamp deltas, ignoring mode changes
+		this.secondLastMessage.timestamp=jsonBody.timestamp //ignore message with no timestamp deltas, ignoring mode changes
+		if(JSON.stringify(this.lastMessage)==JSON.stringify(jsonBody) || JSON.stringify(this.secondLastMessage)==JSON.stringify(jsonBody) ){return} //suppress duplicate websocket messages and checks sequence
 		if(this.showExtraDebugMessages){this.log.info('extra message',jsonBody)} //additional debug info after suppressing duplicates
+		if(jsonBody.event!='battery_status') //ignore event that is not logged
+		this.secondLastMessage=this.lastMessage
 		this.lastMessage=jsonBody
 		switch (eventType){
 			case "sprinkler_timer":
@@ -499,30 +503,37 @@ class PlatformOrbit {
 								if(activeService){
 									//stop last if program is running
 									if(jsonBody.program!= 'manual'){
-										if(this.showSchedules){
-											this.log.info('Running Program %s, %s',jsonBody.program, valveAccessory.getServiceById(Service.Switch, jsonBody.program).getCharacteristic(Characteristic.Name).value)
-										}
-										else{
-											this.log.info('Running Program %s',jsonBody.program)
-										}
-										this.activeProgram=jsonBody.program
-										if(this.activeZone[jsonBody.device_id]){
-											if(jsonBody.source!='local'){
-												this.log.info('Device %s faucet, %s watering completed',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
+										if(!this.activeProgram){
+											if(this.showSchedules){
+												this.log.info('Running Program %s, %s',jsonBody.program, valveAccessory.getServiceById(Service.Switch, jsonBody.program).getCharacteristic(Characteristic.Name).value)
 											}
+											else{
+												this.log.info('Running Program %s',jsonBody.program)
+											}
+										}
+										if(this.activeZone[jsonBody.device_id]){
+											activeService=valveAccessory.getServiceById(Service.Valve, this.activeZone[jsonBody.device_id])
 											activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
 											activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
+											this.activeZone[jsonBody.device_id]=false
+											if(jsonBody.source!='local'){
+												if(this.activeProgram){
+													this.log.info('Device %s, Faucet %s scheduled watering',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
+												}
+											}
 										}
+										this.activeProgram=jsonBody.program
 									}
-									//start new
+									//start active zone
 									if(jsonBody.source!='local'){
-										this.log.info('Device %s faucet, %s watering in progress for %s mins',deviceName, activeService.getCharacteristic(Characteristic.Name).value, Math.round(jsonBody.run_time))
 										this.activeZone[jsonBody.device_id]=jsonBody.current_station
+										this.log.info('Device %s faucet, %s watering in progress for %s mins',deviceName, activeService.getCharacteristic(Characteristic.Name).value, Math.round(jsonBody.run_time))
 									}
 									activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.ACTIVE)
 									activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
-									activeService.getCharacteristic(Characteristic.RemainingDuration).updateValue(jsonBody.run_time * 60)
-									this.endTime[activeService.subtype]= new Date(Date.now() + parseInt(jsonBody.run_time) * 60 * 1000).toISOString()
+									activeService.getCharacteristic(Characteristic.SetDuration).updateValue(jsonBody.total_run_time_sec)
+									activeService.getCharacteristic(Characteristic.RemainingDuration).updateValue(parseInt(jsonBody.run_time * 60))
+									this.endTime[activeService.subtype]= new Date(Date.now() + parseInt(jsonBody.run_time * 60 * 1000)).toISOString()
 								}
 								break
 							case "watering_complete":
@@ -540,7 +551,7 @@ class PlatformOrbit {
 								activeService=valveAccessory.getServiceById(Service.Switch, this.activeProgram)
 								if(this.showRunall && switchServiceRunall){
 									switchServiceRunall.getCharacteristic(Characteristic.On).updateValue(false)
-									this.log.info('Running all zones completed')
+									this.log.info('Device is idle')
 								}
 								if(activeService){
 									//this.log.info('Device %s, %s zone idle',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
@@ -634,10 +645,10 @@ class PlatformOrbit {
 								}
 								break
 							case "program_changed":
-								this.log.info('%s program change',deviceName)
+								this.log.debug('%s program %s %s changed',deviceName, jsonBody.program.program, jsonBody.program.name)
 								break
 							case "rain_delay":
-								this.log.debug('%s rain delay',deviceName)
+								this.log.debug('%s rain delay for %s',deviceName, jsonBody.rain_delay_weather_type)
 								break
 							default:
 								this.log.warn('Unknown faucut device message received: %s',jsonBody.event)
@@ -658,33 +669,41 @@ class PlatformOrbit {
 								if(activeService){
 									//stop last if program is running
 									if(jsonBody.program!= 'manual'){
-										if(this.showSchedules){
-											this.log.info('Running Program %s, %s',jsonBody.program, irrigationAccessory.getServiceById(Service.Switch, jsonBody.program).getCharacteristic(Characteristic.Name).value)
+										if(!this.activeProgram){
+											if(this.showSchedules){
+												this.log.info('Program %s, %s started',jsonBody.program, irrigationAccessory.getServiceById(Service.Switch, jsonBody.program).getCharacteristic(Characteristic.Name).value)
+											}
+											else{
+												this.log.info('Program %s started',jsonBody.program)
+											}
 										}
-										else{
-											this.log.info('Running Program %s',jsonBody.program)
-										}
-										this.activeProgram=jsonBody.program
 										if(this.activeZone[jsonBody.device_id]){
 											activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone[jsonBody.device_id])
-											if(jsonBody.source!='local'){
-												this.log.info('Device %s, %s zone watering completed',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
-											}
 											activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
 											activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
+											this.activeZone[jsonBody.device_id]=false
+											if(jsonBody.source!='local'){
+												if(this.activeProgram){
+													this.log.info('Device %s, Zone %s watering completed, starting next Zone',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
+												}
+											}
 										}
+										this.activeProgram=jsonBody.program
 									}
-									//start new
+									//start active zone
 									if(jsonBody.source!='local'){
-										this.log.info('Device %s, %s zone watering in progress for %s mins',deviceName, activeService.getCharacteristic(Characteristic.Name).value, Math.round(jsonBody.run_time))
 										this.activeZone[jsonBody.device_id]=jsonBody.current_station
+										if(this.activeProgram){
+											this.log.info('Device %s, Zone %s watering in progress for %s mins',deviceName, activeService.getCharacteristic(Characteristic.Name).value, Math.round(jsonBody.run_time))
+										}
 									}
 									activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.ACTIVE)
 									activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
-									activeService.getCharacteristic(Characteristic.RemainingDuration).updateValue(jsonBody.run_time * 60)
-									this.endTime[activeService.subtype]= new Date(Date.now() + parseInt(jsonBody.run_time) * 60 * 1000).toISOString()
+									activeService.getCharacteristic(Characteristic.SetDuration).updateValue(jsonBody.total_run_time_sec)
+									activeService.getCharacteristic(Characteristic.RemainingDuration).updateValue(parseInt(jsonBody.run_time * 60))
+									this.endTime[activeService.subtype]= new Date(Date.now() + parseInt(jsonBody.run_time * 60 * 1000)).toISOString()
 								}
-								//update other zones in quque status
+								//update other zones in quque with status
 								if(jsonBody.water_event_queue){
 									if(jsonBody.water_event_queue.length>0){
 										let match
@@ -696,7 +715,15 @@ class PlatformOrbit {
 												for (let i = 0; i < jsonBody.water_event_queue.length; i++) {
 													if(deviceResponse.zones[n].station==jsonBody.current_station && jsonBody.current_station==jsonBody.water_event_queue[i].station){
 														this.log.debug('%s program %s for zone-%s %s running', deviceName, jsonBody.program, deviceResponse.zones[n].station, deviceResponse.zones[n].name)
-														//skip updates for current zone, already set.
+														//zone already running
+														/*
+														activeService=irrigationAccessory.getServiceById(Service.Valve, deviceResponse.zones[n].station)
+														activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.ACTIVE)
+														activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
+														activeService.getCharacteristic(Characteristic.SetDuration).updateValue(jsonBody.total_run_time_sec)
+														activeService.getCharacteristic(Characteristic.RemainingDuration).updateValue(parseInt(jsonBody.run_time * 60))
+														this.endTime[activeService.subtype]= new Date(Date.now() + parseInt(jsonBody.run_time * 60 * 1000)).toISOString()
+														*/
 														match=true
 														break
 													}
@@ -723,6 +750,22 @@ class PlatformOrbit {
 											}
 										}
 									}
+									//turn program switch off at last zone
+									if(jsonBody.water_event_queue.length==1){
+										activeService=irrigationAccessory.getServiceById(Service.Switch, this.activeProgram)
+										if(activeService){
+											//this.log.info('Device %s, %s zone idle',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
+											this.log.info('Program %s finishing',activeService.getCharacteristic(Characteristic.Name).value)
+											activeService.getCharacteristic(Characteristic.On).updateValue(false)
+											this.activeProgram=false
+										}
+										else{
+											if(this.activeProgram){
+												this.log.info('Program %s finishing',this.activeProgram)
+												this.activeProgram=false
+											}
+										}
+									}
 								}
 								break
 							case "watering_complete":
@@ -730,7 +773,7 @@ class PlatformOrbit {
 								activeService=irrigationAccessory.getServiceById(Service.Valve, this.activeZone[jsonBody.device_id])
 								if(activeService){
 									if(jsonBody.source!='local'){
-										this.log.info('Device %s, %s zone watering completed',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
+										this.log.info('Device %s, Zone %s watering completed',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
 										this.activeZone[jsonBody.device_id]=false
 									}
 									activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
@@ -742,7 +785,7 @@ class PlatformOrbit {
 								activeService=irrigationAccessory.getServiceById(Service.Switch, this.activeProgram)
 								if(this.showRunall && switchServiceRunall){
 									switchServiceRunall.getCharacteristic(Characteristic.On).updateValue(false)
-									this.log.info('Running all zones completed')
+									this.log.info('Device is idle')
 								}
 								if(activeService){
 									//this.log.info('Device %s, %s zone idle',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
@@ -840,10 +883,10 @@ class PlatformOrbit {
 								}
 								break
 							case "program_changed":
-								this.log.info('%s program change',deviceName)
+								this.log.debug('%s program %s %s changed',deviceName, jsonBody.program.program, jsonBody.program.name)
 								break
 							case "rain_delay":
-								this.log.debug('%s rain delay',deviceName)
+								this.log.debug('%s rain delay for %s',deviceName, jsonBody.rain_delay_weather_type)
 								break
 							default:
 								this.log.warn('Unknown sprinker device message received: %s',jsonBody.event)
