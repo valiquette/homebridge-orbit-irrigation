@@ -7,7 +7,7 @@ class battery {
 		this.orbitapi = new OrbitAPI(this, log)
 	}
 
-	createBatteryService(device) {
+	createBatteryService(device, uuid) {
 		let batteryStatus
 		if (device.location_name) {
 			this.log.debug("create battery service for %s", device.location_name + ' ' + device.name)
@@ -26,7 +26,7 @@ class battery {
 			.setCharacteristic(Characteristic.BatteryLevel, device.battery.percent)
 		return batteryStatus
 	}
-
+	
 	configureBatteryService(batteryStatus) {
 		this.log.debug("configured battery service for %s", batteryStatus.getCharacteristic(Characteristic.Name).value)
 		batteryStatus

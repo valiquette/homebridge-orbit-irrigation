@@ -1,28 +1,40 @@
 let packageJson=require('../package.json')
 let OrbitAPI=require('../orbitapi')
+let OrbitUpdate=require('../orbitupdate')
 
 class valve {
-	constructor(platform, log) {
+	constructor(platform, log, config) {
 		this.log = log
+		this.config = config
 		this.platform = platform
 		this.orbitapi = new OrbitAPI(this, log)
+		this.orbit = new OrbitUpdate(this, log, config)
 	}
 
-	createValveAccessory(device, zone, uuid) {
-		this.log.debug('Create valve accessory %s station-%s %s', device.id, zone.station, device.name)
-		// Create new valve System Service
-		let newPlatformAccessory = new PlatformAccessory(zone.name, uuid)
-		newPlatformAccessory.addService(Service.Valve, zone.name)
-		let valveService = newPlatformAccessory.getService(Service.Valve)
-		// Check if the device is connected
-		if (device.is_connected == true) {
-			valveService.setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
-		} else {
-			this.log.warn('%s disconnected at %s! This will show as non-responding in Homekit until the connection is restored.', device.name, device.last_connected_at)
-			valveService.setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.GENERAL_FAULT)
+	createValveAccessory(device, zone, uuid, platformAccessory) {
+		let valveService
+		if(!device.name){
+			this.log.warn("device with no name, assign a name in B-Hyve app")
+			device.name='Unnamed-'+device.id.substring(20)
 		}
+		if(!platformAccessory){
+			// Create new Valve System Service
+			this.log.debug('Create valve accessory %s station-%s %s', device.id, zone.station, device.name)
+			platformAccessory = new PlatformAccessory(zone.name, uuid)
+			valveService = platformAccessory.addService(Service.Valve, zone.station)
+			//valveService = new Service.Valve(zone.name, zone.station)
+			valveService.addCharacteristic(Characteristic.SerialNumber) //Use Serial Number to store the zone id
+			valveService.addCharacteristic(Characteristic.Model)
+			valveService.addCharacteristic(Characteristic.ConfiguredName)
+			valveService.addCharacteristic(Characteristic.ProgramMode)
+		}
+		else{
+			// Update Valve System Service
+			this.log.debug('Update valve accessory %s station-%s %s', device.id, zone.station, device.name)
+		}
+
 		// Create AccessoryInformation Service
-		newPlatformAccessory.getService(Service.AccessoryInformation)
+		platformAccessory.getService(Service.AccessoryInformation)
 			.setCharacteristic(Characteristic.Name, zone.name)
 			.setCharacteristic(Characteristic.Manufacturer, "Orbit Irrigation")
 			.setCharacteristic(Characteristic.SerialNumber, device.mac_address)
@@ -31,7 +43,18 @@ class valve {
 			.setCharacteristic(Characteristic.FirmwareRevision, device.firmware_version)
 			.setCharacteristic(Characteristic.HardwareRevision, device.hardware_version)
 			.setCharacteristic(Characteristic.SoftwareRevision, packageJson.version)
-		return newPlatformAccessory
+			.setCharacteristic(Characteristic.ProductData, "Valve")
+
+		// Create Valve Service
+		// Check if the device is connected
+		valveService=platformAccessory.getService(Service.Valve)
+		if (device.is_connected == true) {
+			valveService.setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
+		} else {
+			this.log.warn('%s disconnected at %s! This will show as non-responding in Homekit until the connection is restored.', device.name, device.last_connected_at)
+			valveService.setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.GENERAL_FAULT)
+		}
+		return platformAccessory
 	}
 
 	configureValveService(device, zone, valveService) {
@@ -76,10 +99,6 @@ class valve {
 			this.log.debug('error setting runtime, using default runtime')
 		}
 		this.log.debug("Created valve service for %s with zone-id %s with %s sec runtime (%s min)", zone.name, zone.station, defaultRuntime, Math.round(defaultRuntime / 60))
-		valve.addCharacteristic(Characteristic.SerialNumber) //Use Serial Number to store the zone id
-		valve.addCharacteristic(Characteristic.Model)
-		valve.addCharacteristic(Characteristic.ConfiguredName)
-		valve.addCharacteristic(Characteristic.ProgramMode)
 		valve
 			.setCharacteristic(Characteristic.Active, Characteristic.Active.INACTIVE)
 			.setCharacteristic(Characteristic.InUse, Characteristic.InUse.NOT_IN_USE)
@@ -102,17 +121,17 @@ class valve {
 		return valve
 	}
 
-	configureValveService(device, zone, valveService) {
+	configureValveService(device, valveService) {
 		this.log.info("Configured zone-%s for %s with %s min runtime", valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value, valveService.getCharacteristic(Characteristic.Name).value, valveService.getCharacteristic(Characteristic.SetDuration).value / 60)
 		valveService
 			.getCharacteristic(Characteristic.Active)
 			.on('get', this.getValveValue.bind(this, valveService, "ValveActive"))
-			.on('set', this.setValveValue.bind(this, device, zone, valveService))
+			.on('set', this.setValveValue.bind(this, device, valveService))
 
 		valveService
 			.getCharacteristic(Characteristic.InUse)
 			.on('get', this.getValveValue.bind(this, valveService, "ValveInUse"))
-			.on('set', this.setValveValue.bind(this, device, zone, valveService))
+			.on('set', this.setValveValue.bind(this, device, valveService))
 
 		valveService
 			.getCharacteristic(Characteristic.SetDuration)
@@ -189,7 +208,7 @@ class valve {
 		}
 	}
 
-	setValveValue(device, zone, valveService, value, callback) {
+	setValveValue(device, valveService, value, callback) {
 		//this.log.debug('%s - Set Active state to %s', valveService.getCharacteristic(Characteristic.Name).value, value)
 		let uuid = UUIDGen.generate(device.id)
 		let valveAccessory = this.platform.accessories[uuid]
@@ -237,13 +256,13 @@ class valve {
 			if(this.platform.showIncomingMessages){
 				this.log.debug('simulated message',myJsonStart)
 			}
-			this.platform.updateService(JSON.stringify(myJsonStart))
+			this.eventMsg(JSON.stringify(myJsonStart))
 			this.fakeWebsocket = setTimeout(() => {
 				this.log.debug('Simulating websocket event for %s', myJsonStop.device_id)
 				if(this.platform.showIncomingMessages){
 					this.log.debug('simulated message',myJsonStop)
 				}
-				this.platform.updateService(JSON.stringify(myJsonStop))
+				this.eventMsg(JSON.stringify(myJsonStop))
 			}, runTime * 1000)
 		}
 		else {
@@ -263,7 +282,7 @@ class valve {
 			if(this.platform.showIncomingMessages){
 				this.log.debug('simulated message',myJsonStop)
 			}
-			this.platform.updateService(JSON.stringify(myJsonStop))
+			this.eventMsg(JSON.stringify(myJsonStop))
 			clearTimeout(this.fakeWebsocket)
 		}
 		callback()
@@ -274,6 +293,12 @@ class valve {
 		valveService.getCharacteristic(Characteristic.SetDuration).updateValue(value)
 		this.log.info("Set %s duration for %s mins", valveService.getCharacteristic(Characteristic.Name).value, value / 60)
 		callback()
+	}
+
+	localMessage(listener){
+		this.eventMsg=(msg)=>{
+			listener(msg)
+		}
 	}
 }
 module.exports = valve
