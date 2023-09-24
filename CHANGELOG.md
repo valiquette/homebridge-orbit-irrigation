@@ -4,7 +4,7 @@
 Update
 -  Fixed display issues with running times in homebridge.
 -  Fixed logging issue with zone numbers when running schedule. (issue #73)
--  Fixed battery status calulation for displayed values
+-  Fixed battery status calulation for displayed values.
 -  Refactored code to address (issue #70)
 -  Bumped dependencies.
 
