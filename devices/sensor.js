@@ -8,10 +8,15 @@ class sensor {
 		this.orbitapi = new OrbitAPI(this, log)
 	}
 
-	createFloodAccessory(device, uuid) {
-		this.log.debug('Create flood accessory %s %s', device.id, device.location_name + ' ' + device.name)
-		let newPlatformAccessory = new PlatformAccessory(device.location_name + ' ' + device.name, uuid)
-		newPlatformAccessory.getService(Service.AccessoryInformation)
+	createFloodAccessory(device, uuid, platformAccessory) {
+		if(!platformAccessory){
+			this.log.debug('Create flood accessory %s %s', device.id, device.location_name + ' ' + device.name)
+			platformAccessory = new PlatformAccessory(device.location_name + ' ' + device.name, uuid)
+		}
+		else{
+			this.log.debug('Update flood accessory %s %s', device.id, device.location_name + ' ' + device.name)
+		}
+		platformAccessory.getService(Service.AccessoryInformation)
 			.setCharacteristic(Characteristic.Name, device.location_name + ' ' + device.name)
 			.setCharacteristic(Characteristic.Manufacturer, "Orbit Irrigation")
 			.setCharacteristic(Characteristic.SerialNumber, device.mac_address)
@@ -20,10 +25,10 @@ class sensor {
 			.setCharacteristic(Characteristic.FirmwareRevision, device.firmware_version)
 			.setCharacteristic(Characteristic.HardwareRevision, device.hardware_version)
 			.setCharacteristic(Characteristic.SoftwareRevision, packageJson.version)
-		newPlatformAccessory.getService(Service.AccessoryInformation)
+			platformAccessory.getService(Service.AccessoryInformation)
 			.getCharacteristic(Characteristic.Identify)
 			.on('set', this.orbitapi.identify.bind(this.platform.token, device))
-		return newPlatformAccessory
+		return platformAccessory
 	}
 
 	createLeakService(device) {
@@ -42,8 +47,8 @@ class sensor {
 		}
 		let leakSensor = new Service.LeakSensor(device.location_name + ' ' + device.name, device.id)
 		leakSensor
-			.setCharacteristic(Characteristic.LeakDetected, currentAlarm)
 			.setCharacteristic(Characteristic.StatusActive, true)
+			.setCharacteristic(Characteristic.LeakDetected, currentAlarm)
 			.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
 			.setCharacteristic(Characteristic.StatusTampered, Characteristic.StatusTampered.NOT_TAMPERED)
 		return leakSensor
@@ -60,8 +65,8 @@ class sensor {
 		this.log.debug("create temperature sensor service for %s", device.location_name + ' ' + device.name)
 		let tempSensor = new Service.TemperatureSensor(device.location_name + ' ' + device.name + ' Temp', 'tempSensor')
 		tempSensor
-			.setCharacteristic(Characteristic.CurrentTemperature, (device.status.temp_f - 32) * 5 / 9)
 			.setCharacteristic(Characteristic.StatusActive, true)
+			.setCharacteristic(Characteristic.CurrentTemperature, (device.status.temp_f - 32) * 5 / 9)
 			.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
 			.setCharacteristic(Characteristic.StatusTampered, Characteristic.StatusTampered.NOT_TAMPERED)
 		return tempSensor
@@ -78,8 +83,8 @@ class sensor {
 		this.log.debug("create Occupancy service for %s", device.location_name + ' ' + device.name)
 		let occupancyStatus = new Service.OccupancySensor(device.location_name + ' ' + device.name + ' high-low', device.id)
 		occupancyStatus
-			.setCharacteristic(Characteristic.OccupancyDetected, Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED)
 			.setCharacteristic(Characteristic.StatusActive, true)
+			.setCharacteristic(Characteristic.OccupancyDetected, Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED)
 			.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
 			.setCharacteristic(Characteristic.StatusTampered, Characteristic.StatusTampered.NOT_TAMPERED)
 		return occupancyStatus

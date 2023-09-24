@@ -1,4 +1,4 @@
-const PlatformOrbit = require('./orbitplatform')
+const OrbitPlatform = require('./orbitplatform')
 const packageJson = require('./package')
 
 module.exports = (homebridge) => {
@@ -9,5 +9,5 @@ module.exports = (homebridge) => {
 	PluginName = packageJson.name
 	PluginVersion = packageJson.version
 	PlatformName = 'bhyve'
-	homebridge.registerPlatform(PluginName, PlatformName, PlatformOrbit, true)
+	homebridge.registerPlatform(PluginName, PlatformName, OrbitPlatform, true)
 }

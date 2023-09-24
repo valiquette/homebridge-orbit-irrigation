@@ -1,23 +1,33 @@
 let packageJson=require('../package.json')
 let OrbitAPI=require('../orbitapi')
+let OrbitUpdate=require('../orbitupdate')
 
 class irrigation {
-	constructor(platform, log) {
+	constructor(platform, log, config) {
 		this.log = log
+		this.config = config
 		this.platform = platform
 		this.orbitapi = new OrbitAPI(this, log)
+		this.orbit = new OrbitUpdate(this, log, config)
 	}
 
-	createIrrigationAccessory(device, uuid) {
+	createIrrigationAccessory(device, uuid, platformAccessory) {
 		this.log.debug('Create Irrigation device %s %s', device.id, device.name)
-		// Create new Irrigation System Service
 		if(!device.name){
 			this.log.warn("device with no name, assign a name in B-Hyve app")
 			device.name='Unnamed-'+device.id.substring(20)
 		}
-		let newPlatformAccessory = new PlatformAccessory(device.name, uuid)
-		newPlatformAccessory.addService(Service.IrrigationSystem, device.name)
-		let irrigationSystemService = newPlatformAccessory.getService(Service.IrrigationSystem)
+		if(!platformAccessory){
+			// Create new Irrigation System Service
+			this.log.debug('Create Irrigation device %s %s', device.id, device.name)
+			platformAccessory = new PlatformAccessory(device.name, uuid)
+			platformAccessory.addService(Service.IrrigationSystem, device.name)
+		}
+		else{
+			// Update Irrigation System Service
+			this.log.debug('Update Irrigation device %s %s', device.id, device.name)
+		}
+		let irrigationSystemService = platformAccessory.getService(Service.IrrigationSystem)
 		// Check if the device is connected
 		if (device.is_connected == true) {
 			irrigationSystemService.setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
@@ -26,7 +36,7 @@ class irrigation {
 			irrigationSystemService.setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.GENERAL_FAULT)
 		}
 		// Create AccessoryInformation Service
-		newPlatformAccessory.getService(Service.AccessoryInformation)
+		platformAccessory.getService(Service.AccessoryInformation)
 			.setCharacteristic(Characteristic.Name, device.name)
 			.setCharacteristic(Characteristic.Manufacturer, "Orbit Irrigation")
 			.setCharacteristic(Characteristic.SerialNumber, device.mac_address)
@@ -35,7 +45,8 @@ class irrigation {
 			.setCharacteristic(Characteristic.FirmwareRevision, device.firmware_version)
 			.setCharacteristic(Characteristic.HardwareRevision, device.hardware_version)
 			.setCharacteristic(Characteristic.SoftwareRevision, packageJson.version)
-		return newPlatformAccessory
+			.setCharacteristic(Characteristic.ProductData, "Irrigation")
+		return platformAccessory
 	}
 
 	configureIrrigationService(device, irrigationSystemService) {
@@ -56,8 +67,8 @@ class irrigation {
 			.on('get', this.getDeviceValue.bind(this, irrigationSystemService, "DeviceProgramMode"))
 	}
 
-	createValveService(zone, device) {
-		let valve = new Service.Valve(zone.name, zone.station)
+	createValveService(device, zone) {
+		let valve
 		let defaultRuntime = this.platform.defaultRuntime
 		zone.enabled = true // need orbit version of enabled
 		this.log.debug(zone)
@@ -81,6 +92,7 @@ class irrigation {
 			this.log.debug('error setting runtime, using default runtime')
 		}
 		this.log.debug("Created valve service for %s with zone-id %s with %s sec runtime (%s min)", zone.name, zone.station, defaultRuntime, Math.round(defaultRuntime / 60))
+		valve=new Service.Valve(zone.name, zone.station)
 		valve.addCharacteristic(Characteristic.SerialNumber) //Use Serial Number to store the zone id
 		valve.addCharacteristic(Characteristic.Model)
 		valve.addCharacteristic(Characteristic.ConfiguredName)
@@ -121,7 +133,7 @@ class irrigation {
 		valveService
 			.getCharacteristic(Characteristic.SetDuration)
 			.on('get', this.getValveValue.bind(this, valveService, "ValveSetDuration"))
-			.on('set', this.setValveSetDuration.bind(this, valveService, "ValveSetDuration"))
+			.on('set', this.setValveSetDuration.bind(this, device, valveService))
 
 		valveService
 			.getCharacteristic(Characteristic.RemainingDuration)
@@ -183,8 +195,7 @@ class irrigation {
 				if (isNaN(timeRemaining)) {
 					timeRemaining = 0
 				}
-				valveService.getCharacteristic(Characteristic.RemainingDuration).updateValue(timeRemaining)
-				//this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName,timeRemaining)
+				//this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName, timeRemaining)
 				callback(null, timeRemaining)
 				break
 			default:
@@ -203,40 +214,52 @@ class irrigation {
 		let runTime = valveService.getCharacteristic(Characteristic.SetDuration).value
 		if (value == Characteristic.Active.ACTIVE) {
 			// Turn on/idle the valve
-			this.log.info("Starting zone-%s %s for %s mins", valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value, valveService.getCharacteristic(Characteristic.Name).value, runTime / 60)
+			this.log.info("Starting zone-%s %s for %s mins", valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value, valveService.getCharacteristic(Characteristic.Name).value, runTime/60)
 			let station = valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value
-			this.orbitapi.startZone(this.platform.token, device, station, runTime / 60)
+			this.orbitapi.startZone(this.platform.token, device, station, runTime/60)
 			irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.Active.ACTIVE)
 			valveService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
 			//json start stuff
 			let myJsonStart = {
 				source: "local",
-				event: 'watering_in_progress_notification',
-				program: 'manual',
 				current_station: valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value,
-				run_time: runTime / 60,
-				started_watering_station_at: new Date().toISOString(),
+				water_event_queue: [
+					{
+					program: null,
+					station: valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value,
+					run_time_sec: runTime
+					}
+				 ],
+				event: 'watering_in_progress_notification',
+				status: 'watering_in_progress',
 				rain_sensor_hold: false,
 				device_id: device.id,
-				timestamp: new Date().toISOString()
-			}
+				timestamp: new Date().toISOString(),
+				program: 'manual',
+				started_watering_station_at: new Date().toISOString(),
+				run_time: runTime / 60,
+				total_run_time_sec: runTime,
+			 }
 			let myJsonStop = {
 				source: "local",
 				timestamp: new Date().toISOString(),
 				event: 'watering_complete',
+				'stream-id': '',
+				'gateway-topic': 'devices-8',
 				device_id: device.id
-			}
+			 }
+
 			this.log.debug('Simulating websocket event for %s', myJsonStart.device_id)
 			if(this.platform.showIncomingMessages){
 				this.log.debug('simulated message',myJsonStart)
 			}
-			this.platform.updateService(JSON.stringify(myJsonStart))
+			this.eventMsg(JSON.stringify(myJsonStart))
 			this.fakeWebsocket = setTimeout(() => {
 				this.log.debug('Simulating websocket event for %s', myJsonStop.device_id)
 				if(this.platform.showIncomingMessages){
 					this.log.debug('simulated message',myJsonStop)
 				}
-				this.platform.updateService(JSON.stringify(myJsonStop))
+				this.eventMsg(JSON.stringify(myJsonStop))
 			}, runTime * 1000)
 		}
 		else {
@@ -256,17 +279,23 @@ class irrigation {
 			if(this.platform.showIncomingMessages){
 				this.log.debug('simulated message',myJsonStop)
 			}
-			this.platform.updateService(JSON.stringify(myJsonStop))
+			this.eventMsg(JSON.stringify(myJsonStop))
 			clearTimeout(this.fakeWebsocket)
 		}
 		callback()
 	}
 
-	setValveSetDuration(valveService, CharacteristicName, value, callback) {
+	setValveSetDuration(device, valveService, value, callback) {
 		// Set default duration from Homekit value
 		valveService.getCharacteristic(Characteristic.SetDuration).updateValue(value)
 		this.log.info("Set %s duration for %s mins", valveService.getCharacteristic(Characteristic.Name).value, value / 60)
 		callback()
+	}
+
+	localMessage(listener){
+		this.eventMsg=(msg)=>{
+			listener(msg)
+		}
 	}
 }
 module.exports = irrigation

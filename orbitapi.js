@@ -355,12 +355,12 @@ class OrbitAPI {
 		} catch (err) { this.log.error('Error opening connection \n%s', err)}
 	}
 
-	onMessage(token, device, listner) {
+	onMessage(token, device, listener) {
 		try {
 			this.log.debug('Adding Event Listener for %s', device.name)
 			this.wsp.connect(token, device)
 				.then(ws => ws.addEventListener('message', msg => {
-					listner(msg.data, device.id)
+					listener(msg.data, device.id)
 				}))
 		} catch (err) { this.log.error('Error configuring listener \n%s', err)}
 	}

@@ -8,10 +8,17 @@ class bridge {
 		this.orbitapi = new OrbitAPI(this, log)
 	}
 
-	createBridgeAccessory(device, uuid) {
-		this.log.debug('Create Bridge Accessory %s %s', device.id, device.name)
-		let newPlatformAccessory = new PlatformAccessory(device.name, uuid)
-		newPlatformAccessory.getService(Service.AccessoryInformation)
+	createBridgeAccessory(device, uuid, platformAccessory) {
+		if(!platformAccessory){
+			this.log.debug('Create Bridge Accessory %s %s', device.id, device.name)
+			platformAccessory = new PlatformAccessory(device.name, uuid)
+			platformAccessory.addService(Service.IrrigationSystem, device.name)
+		}
+		else{
+			this.log.debug('Update Bridge Accessory %s %s', device.id, device.name)
+		}
+
+		platformAccessory.getService(Service.AccessoryInformation)
 			.setCharacteristic(Characteristic.Name, device.name)
 			.setCharacteristic(Characteristic.Manufacturer, "Orbit Irrigation")
 			.setCharacteristic(Characteristic.SerialNumber, device.mac_address)
@@ -20,7 +27,7 @@ class bridge {
 			.setCharacteristic(Characteristic.FirmwareRevision, device.firmware_version)
 			.setCharacteristic(Characteristic.HardwareRevision, device.hardware_version)
 			.setCharacteristic(Characteristic.SoftwareRevision, packageJson.version)
-		return newPlatformAccessory
+		return platformAccessory
 	}
 
 	createBridgeService(device, network, G2) {
