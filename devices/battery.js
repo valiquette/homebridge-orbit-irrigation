@@ -17,16 +17,24 @@ class battery {
 			this.log.debug("create battery service for %s", device.name)
 			batteryStatus = new Service.Battery(device.name, device.id)
 		}
-		if(device.battery.mv){
-			device.battery.percent=device.battery.mv/3000*100 > 100 ? 100 : device.battery.mv/3000*100
+		let percent=100
+		if(device.battery.percent){
+			percent=device.battery.percent
+		}
+		else if(device.battery.mv){
+			if(device.hardware_version.includes("HT32"))
+			{
+				this.log.debug(device.hardware_version)
+			}
+			percent=device.battery.mv/3815*100 > 100 ? 100 : device.battery.mv/3815*100 //not sure why not 3000 for 2 AA batteries
 		}
 		batteryStatus
 			.setCharacteristic(Characteristic.ChargingState, Characteristic.ChargingState.NOT_CHARGEABLE)
 			.setCharacteristic(Characteristic.StatusLowBattery, Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL)
-			.setCharacteristic(Characteristic.BatteryLevel, device.battery.percent)
+			.setCharacteristic(Characteristic.BatteryLevel, percent)
 		return batteryStatus
 	}
-	
+
 	configureBatteryService(batteryStatus) {
 		this.log.debug("configured battery service for %s", batteryStatus.getCharacteristic(Characteristic.Name).value)
 		batteryStatus

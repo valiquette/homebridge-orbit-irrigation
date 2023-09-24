@@ -42,6 +42,7 @@ class Orbit {
 				let valveAccessory
 				let percent
 				if(this.showIrrigation){
+					//**Valve**//
 					if(this.showSimpleValve && deviceModel.includes('HT25')){
 						valveAccessory=this.accessories[uuid]
 						if(!valveAccessory){return}
@@ -100,6 +101,7 @@ class Orbit {
 								break
 							case "device_idle":
 								activeService=valveAccessory.getServiceById(Service.Switch, this.activeProgram)
+								//activeService=valveAccessory.getService(Service.Switch)
 								if(this.showRunall && switchServiceRunall){
 									switchServiceRunall.getCharacteristic(Characteristic.On).updateValue(false)
 									this.log.info('Device is idle')
@@ -172,11 +174,11 @@ class Orbit {
 								break
 							case "battery_status":
 								percent=0
-								if(jsonBody.mv){
-									percent=jsonBody.mv/3000*100 > 100 ? 100 : jsonBody.mv/3000*100
-								}
-								else if(jsonBody.percent){
+								if(jsonBody.percent){
 									percent=jsonBody.percent
+								}
+								else if(jsonBody.mv){
+									percent=jsonBody.mv/3815*100 > 100 ? 100 : jsonBody.mv/3815*100
 								}
 								if(jsonBody.charging==undefined){jsonBody.charging=false}
 								this.log.debug('update battery status %s to %s%, charging=%s', deviceName, percent, jsonBody.charging)
@@ -202,7 +204,7 @@ class Orbit {
 								this.log.debug('%s rain delay for %s',deviceName, jsonBody.rain_delay_weather_type)
 								break
 							default:
-								this.log.warn('Unknown faucut device message received: %s',jsonBody.event)
+								this.log.warn('Unknown faucet device message received: %s',jsonBody.event)
 							break
 						}
 					}
@@ -410,11 +412,15 @@ class Orbit {
 								break
 							case "battery_status":
 								percent=0
-								if(jsonBody.mv){
-									percent=jsonBody.mv/3000*100 > 100 ? 100 : jsonBody.mv/3000*100
-								}
-								else if(jsonBody.percent){
+								if(jsonBody.percent){
 									percent=jsonBody.percent
+								}
+								else if(jsonBody.mv){
+									if(deviceModel.includes("HT32"))
+									{
+										this.log.debug(deviceModel)
+									}
+									percent=jsonBody.mv/3367*100 > 100 ? 100 : jsonBody.mv/3367*100 //not sure why not 3000 for 2 AA batteries
 								}
 								if(jsonBody.charging==undefined){jsonBody.charging=false}
 								this.log.debug('update battery status %s to %s%, charging=%s', deviceName, percent, jsonBody.charging)

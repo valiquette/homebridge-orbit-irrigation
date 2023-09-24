@@ -152,9 +152,13 @@ class OrbitPlatform {
 				switch (newDevice.type){
 					//Handle Water accessories
 					case "sprinkler_timer":
-						let switchService
 						if(!this.showIrrigation){
 							this.log.info('Skipping Irrigation System %s %s based on config', newDevice.hardware_version, newDevice.name)
+							if(this.accessories[uuid]){
+								this.log.debug('Removed cached device',device.id)
+								this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
+								delete this.accessories[uuid]
+							}
 							return
 						}
 						this.log.debug('Adding Sprinkler Timer Device')
@@ -188,26 +192,37 @@ class OrbitPlatform {
 							valveService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
 
 							// Create and configure Battery Service if needed
-							let batteryStatus
 							if(newDevice.battery!=null){
 								this.log.info('Adding Battery status for %s', newDevice.name)
-								batteryStatus=this.battery.createBatteryService(newDevice, uuid)
-								this.battery.configureBatteryService(batteryStatus)
-								let service=valveAccessory.getService(Service.Battery)
-								if(!service){
+								let batteryStatus=valveAccessory.getService(Service.Battery)
+								if(batteryStatus){ //update
+									batteryStatus
+										.setCharacteristic(Characteristic.ChargingState, Characteristic.ChargingState.NOT_CHARGEABLE)
+										.setCharacteristic(Characteristic.StatusLowBattery, Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL)
+										.setCharacteristic(Characteristic.BatteryLevel, newDevice.battery.percent)
+								}
+								else{ //add new
+									batteryStatus=this.battery.createBatteryService(newDevice, uuid)
+									this.battery.configureBatteryService(batteryStatus)
 									valveAccessory.addService(batteryStatus)
 									this.api.updatePlatformAccessories([valveAccessory])
 								}
+								batteryStatus=valveAccessory.getService(Service.Battery)
 								valveAccessory.getService(Service.Valve).addLinkedService(batteryStatus)
 							}
-							else{
+							else{ //remove
 								this.log.debug('%s has no battery found, skipping add battery service', newDevice.name)
+								let batteryStatus=valveAccessory.getService(Service.Battery)
+								if(batteryStatus){
+									valveAccessory.removeService(batteryStatus)
+									this.api.updatePlatformAccessories([valveAccessory])
+								}
 							}
 
 							if(this.showSchedules){
 								let scheduleResponse=(await this.orbitapi.getTimerPrograms(this.token,newDevice).catch(err=>{this.log.error('Failed to get schedule for device', err)}))
 								scheduleResponse=scheduleResponse.sort(function (a, b){
-									// return a.program - b.program
+									//return a.program - b.program
 									return a.program > b.program ? 1
 											:a.program < b.program ? -1
 											:0
@@ -215,53 +230,74 @@ class OrbitPlatform {
 								scheduleResponse.forEach((schedule)=>{
 									if(schedule.enabled){
 										this.log.debug('adding schedules %s program %s',schedule.name, schedule.program )
-										switchService=this.basicSwitch.createScheduleSwitchService(newDevice, schedule)
-										this.basicSwitch.configureSwitchService(newDevice, switchService)
-										let service=valveAccessory.getService(Service.Switch)
-										if(!service){
-											valveAccessory.addService(switchService)
+										let switchService=valveAccessory.getServiceById(Service.Switch, schedule.program)
+										if(switchService){ //update
+											switchService
+												.setCharacteristic(Characteristic.On, false)
+												.setCharacteristic(Characteristic.Name, device.name +' '+ schedule.name)
+												.setCharacteristic(Characteristic.ConfiguredName, schedule.name +' '+ device.name)
+												.setCharacteristic(Characteristic.SerialNumber, schedule.id)
+												.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
+											this.basicSwitch.configureSwitchService(newDevice, switchService)
 											this.api.updatePlatformAccessories([valveAccessory])
 										}
-										else{
-											service
-											.setCharacteristic(Characteristic.Name, device.name)
-											.setCharacteristic(Characteristic.ConfiguredName, device.name)
-											.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
+										else{ //add new
+											switchService=this.basicSwitch.createScheduleSwitchService(newDevice, schedule)
+											this.basicSwitch.configureSwitchService(newDevice, switchService)
+											valveAccessory.addService(switchService, uuid)
+											this.api.updatePlatformAccessories([valveAccessory])
 										}
 										valveAccessory.getService(Service.Valve).addLinkedService(switchService)
+										this.api.updatePlatformAccessories([valveAccessory])
 									}
-									else{
+									else{ //skip
 										this.log.warn('Skipping switch for disabled program %s', schedule.name)
-										let service=valveAccessory.getService(Service.Switch)
-										if(service){
-											valveAccessory.removeService(service)
+										let switchService=valveAccessory.getServiceById(Service.Switch, schedule.program)
+										if(switchService){
+											valveAccessory.removeService(switchService)
 											this.api.updatePlatformAccessories([valveAccessory])
 										}
 									}
 								})
 							}
+							else{ //remove
+								let scheduleResponse=(await this.orbitapi.getTimerPrograms(this.token,newDevice).catch(err=>{this.log.error('Failed to get schedule for device', err)}))
+								scheduleResponse.forEach((schedule)=>{
+									this.log.debug('removed schedule switch')
+									let switchService=valveAccessory.getServiceById(Service.Switch, schedule.program)
+									if(switchService){
+										valveAccessory.removeService(switchService)
+										this.api.updatePlatformAccessories([valveAccessory])
+									}
+								})
+							}
+
 							if(this.showStandby){
 								let switchType='Standby'
 								this.log.debug('adding new standby switch')
-								switchService=this.basicSwitch.createSwitchService(newDevice, switchType)
-								this.basicSwitch.configureSwitchService(newDevice, switchService)
-								let service=valveAccessory.getService(Service.Switch)
-								if(!service){
-									valveAccessory.addService(switchService)
-									this.api.updatePlatformAccessories([valveAccessory])
-								}
-								else{
-									service
+								let switchService=valveAccessory.getService(Service.Switch)
+								if(switchService){ //update
+									switchService
 										.setCharacteristic(Characteristic.Name, newDevice.name +' '+ switchType)
 										.setCharacteristic(Characteristic.ConfiguredName, switchType +' '+ newDevice.name)
 										.setCharacteristic(Characteristic.StatusFault, !newDevice.is_connected)
+									this.basicSwitch.configureSwitchService(newDevice, switchService)
+									this.api.updatePlatformAccessories([valveAccessory])
+								}
+								else{ //add new
+									switchService=this.basicSwitch.createSwitchService(newDevice, switchType)
+									this.basicSwitch.configureSwitchService(newDevice, switchService)
+									valveAccessory.addService(switchService, uuid)
+									this.api.updatePlatformAccessories([valveAccessory])
 								}
 								valveAccessory.getService(Service.Valve).addLinkedService(switchService)
+								this.api.updatePlatformAccessories([valveAccessory])
 							}
-							else{
-								let service=valveAccessory.getService(Service.Switch)
-								if(service){
-									valveAccessory.removeService(service)
+							else{ //remove
+								this.log.debug('removed standby switch')
+								let switchService=valveAccessory.getService(Service.Switch)
+								if(switchService){
+									valveAccessory.removeService(switchService)
 									this.api.updatePlatformAccessories([valveAccessory])
 								}
 							}
@@ -279,7 +315,6 @@ class OrbitPlatform {
 
 						else{
 							this.log.debug('Creating and configuring new device')
-							//let valveService
 
 							if(this.accessories[uuid]){
 								// Check if accessory changed
@@ -297,21 +332,33 @@ class OrbitPlatform {
 							irrigationSystemService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
 
 							// Create and configure Battery Service if needed
-							let batteryStatus
 							if(newDevice.battery!=null){
 								this.log.info('Adding Battery status for %s', newDevice.name)
-								batteryStatus=this.battery.createBatteryService(newDevice, uuid)
-								this.battery.configureBatteryService(batteryStatus)
-								let service=irrigationAccessory.getService(Service.Battery)
-								if(!service){
+								let batteryStatus=irrigationAccessory.getService(Service.Battery)
+								if(batteryStatus){ //update
+									batteryStatus
+										.setCharacteristic(Characteristic.ChargingState, Characteristic.ChargingState.NOT_CHARGEABLE)
+										.setCharacteristic(Characteristic.StatusLowBattery, Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL)
+										.setCharacteristic(Characteristic.BatteryLevel, newDevice.battery.percent)
+								}
+								else{ //add new
+									batteryStatus=this.battery.createBatteryService(newDevice, uuid)
+									this.battery.configureBatteryService(batteryStatus)
 									irrigationAccessory.addService(batteryStatus)
 									this.api.updatePlatformAccessories([irrigationAccessory])
 								}
+								batteryStatus=irrigationAccessory.getService(Service.Battery)
 								irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(batteryStatus)
 							}
-							else{
+							else{ //remove
 								this.log.debug('%s has no battery found, skipping add battery service', newDevice.name)
+								let batteryStatus=irrigationAccessory.getService(Service.Battery)
+								if(batteryStatus){
+									irrigationAccessory.removeService(batteryStatus)
+									this.api.updatePlatformAccessories([irrigationAccessory])
+								}
 							}
+
 							// Create and configure Values services and link to Irrigation Service
 							newDevice.zones=newDevice.zones.sort(function (a, b){
 								return a.station - b.station
@@ -372,28 +419,44 @@ class OrbitPlatform {
 								scheduleResponse.forEach((schedule)=>{
 									if(schedule.enabled){
 										this.log.debug('adding schedules %s program %s',schedule.name, schedule.program )
-										let switchService=this.basicSwitch.createScheduleSwitchService(newDevice, schedule)
-										this.basicSwitch.configureSwitchService(newDevice, switchService)
-										let service=irrigationAccessory.getServiceById(Service.Switch, schedule.program)
-										if(!service){
-											irrigationAccessory.addService(switchService)
+										let switchService=irrigationAccessory.getServiceById(Service.Switch, schedule.program)
+										if(switchService){ //update
+											switchService
+												.setCharacteristic(Characteristic.On, false)
+												.setCharacteristic(Characteristic.Name, device.name +' '+ schedule.name)
+												.setCharacteristic(Characteristic.ConfiguredName, schedule.name +' '+ device.name)
+												.setCharacteristic(Characteristic.SerialNumber, schedule.id)
+												.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
+											this.basicSwitch.configureSwitchService(newDevice, switchService)
 											this.api.updatePlatformAccessories([irrigationAccessory])
 										}
-										else{
-											service
-											.setCharacteristic(Characteristic.Name, newDevice.name)
-											.setCharacteristic(Characteristic.ConfiguredName, newDevice.name)
-											.setCharacteristic(Characteristic.StatusFault, !newDevice.is_connected)
+										else{ //add new
+											switchService=this.basicSwitch.createScheduleSwitchService(newDevice, schedule)
+											this.basicSwitch.configureSwitchService(newDevice, switchService)
+											irrigationAccessory.addService(switchService, uuid)
+											this.api.updatePlatformAccessories([irrigationAccessory])
 										}
 										irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(switchService)
+										this.api.updatePlatformAccessories([irrigationAccessory])
 									}
-									else{
+									else{ //skip
 										this.log.warn('Skipping switch for disabled program %s', schedule.name)
-										let service=irrigationAccessory.getServiceById(Service.Switch, schedule.program)
-										if(service){
-											irrigationAccessory.removeService(service)
+										let switchService=irrigationAccessory.getServiceById(Service.Switch, schedule.program)
+										if(switchService){
+											irrigationAccessory.removeService(switchService)
 											this.api.updatePlatformAccessories([irrigationAccessory])
 										}
+									}
+								})
+							}
+							else{ //remove
+								let scheduleResponse=(await this.orbitapi.getTimerPrograms(this.token,newDevice).catch(err=>{this.log.error('Failed to get schedule for device', err)}))
+								scheduleResponse.forEach((schedule)=>{
+									this.log.debug('removed schedule switch')
+									let switchService=irrigationAccessory.getServiceById(Service.Switch, schedule.program)
+									if(switchService){
+										irrigationAccessory.removeService(switchService)
+										this.api.updatePlatformAccessories([irrigationAccessory])
 									}
 								})
 							}
@@ -401,26 +464,32 @@ class OrbitPlatform {
 							if(this.showRunall){
 								let switchType='Run All'
 								this.log.debug('adding new run all switch')
-								switchService=this.basicSwitch.createSwitchService(newDevice, switchType)
-								this.basicSwitch.configureSwitchService(newDevice, switchService)
 								let uuid = UUIDGen.generate(newDevice.id + switchType)
-								let service=irrigationAccessory.getServiceById(Service.Switch, uuid)
-								if(!service){
+								let switchService=irrigationAccessory.getServiceById(Service.Switch, uuid)
+								if(switchService){ //update
+									switchService
+										.setCharacteristic(Characteristic.Name, newDevice.name +' '+ switchType)
+										.setCharacteristic(Characteristic.ConfiguredName, switchType +' '+ newDevice.name)
+										.setCharacteristic(Characteristic.StatusFault, !newDevice.is_connected)
+									this.basicSwitch.configureSwitchService(newDevice, switchService)
+									this.api.updatePlatformAccessories([irrigationAccessory])
+								}
+								else{ //add new
+									switchService=this.basicSwitch.createSwitchService(newDevice, switchType)
+									this.basicSwitch.configureSwitchService(newDevice, switchService)
 									irrigationAccessory.addService(switchService, uuid)
 									this.api.updatePlatformAccessories([irrigationAccessory])
 								}
-								else{
-									service
-									.setCharacteristic(Characteristic.Name, newDevice.name +' '+ switchType)
-									.setCharacteristic(Characteristic.ConfiguredName, switchType +' '+ newDevice.name)
-									.setCharacteristic(Characteristic.StatusFault, !newDevice.is_connected)
-								}
 								irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(switchService)
+								this.api.updatePlatformAccessories([irrigationAccessory])
 							}
-							else{
-								let service=irrigationAccessory.getServiceById(Service.Switch, uuid)
-								if(service){
-									irrigationAccessory.removeService(service)
+							else{ //remove
+								let switchType='Run All'
+								this.log.debug('removed run all switch')
+								let uuid = UUIDGen.generate(newDevice.id + switchType)
+								let switchService=irrigationAccessory.getServiceById(Service.Switch, uuid)
+								if(switchService){
+									irrigationAccessory.removeService(switchService)
 									this.api.updatePlatformAccessories([irrigationAccessory])
 								}
 							}
@@ -428,26 +497,32 @@ class OrbitPlatform {
 							if(this.showStandby){
 								let switchType='Standby'
 								this.log.debug('adding new standby switch')
-								switchService=this.basicSwitch.createSwitchService(newDevice, switchType)
-								this.basicSwitch.configureSwitchService(newDevice, switchService)
 								let uuid = UUIDGen.generate(newDevice.id + switchType)
-								let service=irrigationAccessory.getServiceById(Service.Switch, uuid)
-								if(!service){
-									irrigationAccessory.addService(switchService, uuid)
-									this.api.updatePlatformAccessories([irrigationAccessory])
-								}
-								else{
-									service
+								let switchService=irrigationAccessory.getServiceById(Service.Switch, uuid)
+								if(switchService){ //update
+									switchService
 										.setCharacteristic(Characteristic.Name, newDevice.name +' '+ switchType)
 										.setCharacteristic(Characteristic.ConfiguredName, switchType +' '+ newDevice.name)
 										.setCharacteristic(Characteristic.StatusFault, !newDevice.is_connected)
+									this.basicSwitch.configureSwitchService(newDevice, switchService)
+									this.api.updatePlatformAccessories([irrigationAccessory])
+							}
+								else{ //add new
+									switchService=this.basicSwitch.createSwitchService(newDevice, switchType)
+									this.basicSwitch.configureSwitchService(newDevice, switchService)
+									irrigationAccessory.addService(switchService, uuid)
+									this.api.updatePlatformAccessories([irrigationAccessory])
 								}
 								irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(switchService)
+								this.api.updatePlatformAccessories([irrigationAccessory])
 							}
-							else{
-								let service=irrigationAccessory.getServiceById(Service.Switch, uuid)
-								if(service){
-									irrigationAccessory.removeService(service)
+							else{ //remove
+								let switchType='Standby'
+								this.log.debug('removed standby switch')
+								let uuid = UUIDGen.generate(newDevice.id + switchType)
+								let switchService=irrigationAccessory.getServiceById(Service.Switch, uuid)
+								if(switchService){
+									irrigationAccessory.removeService(switchService)
 									this.api.updatePlatformAccessories([irrigationAccessory])
 								}
 							}
