@@ -628,7 +628,7 @@ class OrbitPlatform {
 									this.log.debug('check battery status %s %s',sensorResponse.location_name, sensorResponse.name)
 									sensorResponse.device_id=sensorResponse.id
 									sensorResponse.event='battery_status'
-									this.orbit.updateService(JSON.stringify(sensorResponse))
+									this.orbit.updateService.bind(this)(JSON.stringify(sensorResponse))
 								}catch(err){this.log.error('Failed to read each sensor', err)}
 							}, 4*60*60*1000) //4 hours in ms
 						}
