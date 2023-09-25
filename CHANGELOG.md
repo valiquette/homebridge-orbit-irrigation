@@ -1,5 +1,9 @@
 # Changes
 
+## 1.2.25
+Fix
+-  Fixed bug with Flood sensor battery update.
+
 ## 1.2.24
 Update
 -  Fixed display issues with running times in homebridge.
