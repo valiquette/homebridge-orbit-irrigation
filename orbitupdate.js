@@ -250,6 +250,10 @@ class Orbit {
 											this.log.info('Device %s, Zone %s watering in progress for %s mins',deviceName, activeService.getCharacteristic(Characteristic.Name).value, Math.round(jsonBody.run_time))
 										}
 									}
+									if(!jsonBody.total_run_time_sec){
+										//added for older firmware that may not have this field populated
+										jsonBody.total_run_time_sec=jsonBody.run_time * 60
+									}
 									activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.ACTIVE)
 									activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
 									activeService.getCharacteristic(Characteristic.SetDuration).updateValue(jsonBody.total_run_time_sec)

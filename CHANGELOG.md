@@ -1,5 +1,9 @@
 # Changes
 
+## 1.2.26
+Fix
+-  Fixed bug with runtimes on device with older firmware.
+
 ## 1.2.25
 Fix
 -  Fixed bug with Flood sensor battery update.
