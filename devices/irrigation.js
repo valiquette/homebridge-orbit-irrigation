@@ -27,8 +27,8 @@ class irrigation {
 			// Update Irrigation System Service
 			this.log.debug('Update Irrigation device %s %s', device.id, device.name)
 		}
-		let irrigationSystemService = platformAccessory.getService(Service.IrrigationSystem)
 		// Check if the device is connected
+		let irrigationSystemService = platformAccessory.getService(Service.IrrigationSystem)
 		if (device.is_connected == true) {
 			irrigationSystemService.setCharacteristic(Characteristic.StatusFault, Characteristic.StatusFault.NO_FAULT)
 		} else {
