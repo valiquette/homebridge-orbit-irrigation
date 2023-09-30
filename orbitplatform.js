@@ -305,7 +305,7 @@ class OrbitPlatform {
 								// Register platform accessory
 								if(!this.accessories[uuid]){
 									this.log.debug('Registering platform accessory')
-									this.log.info('New accessory %s', valveAccessory.displayName)
+									this.log.info('Adding new accessory %s', valveAccessory.displayName)
 									this.accessories[uuid]=valveAccessory
 									this.api.registerPlatformAccessories(PluginName, PlatformName, [valveAccessory])
 								}
@@ -428,7 +428,7 @@ class OrbitPlatform {
 												.setCharacteristic(Characteristic.SerialNumber, schedule.id)
 												.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
 											this.basicSwitch.configureSwitchService(newDevice, switchService)
-											this.api.updatePlatformAccessories([irrigationAccessory])
+											irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(switchService)
 										}
 										else{ //add new
 											switchService=this.basicSwitch.createScheduleSwitchService(newDevice, schedule)

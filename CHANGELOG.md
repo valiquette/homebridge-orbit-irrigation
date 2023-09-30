@@ -1,5 +1,10 @@
 # Changes
 
+## 1.2.27
+update
+-  Code cleanup
+-  Bumped dependencies.
+
 ## 1.2.26
 Fix
 -  Fixed bug with runtimes on device with older firmware.
