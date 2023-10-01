@@ -1,5 +1,9 @@
 # Changes
 
+## 1.2.28
+Bug Fix
+-  Fixed issue introduced with IOS 17 where multiple set commands are sent from the IOS app if zone is started by sliding vs tap. This create a start stop loop.
+
 ## 1.2.27
 update
 -  Code cleanup
