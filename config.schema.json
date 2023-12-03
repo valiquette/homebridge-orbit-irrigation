@@ -82,12 +82,20 @@
 				"description": "Select valve type to display when not displaying as irrigation system",
 				"oneOf": [
 					{
-						"title": "Generic Valve",
+						"title": "Generic",
 						"enum": [0]
 					},
 					{
 						"title": "Irrigation",
 						"enum": [1]
+					},
+					{
+						"title": "Shower",
+						"enum": [2]
+					},
+					{
+						"title": "Faucet",
+						"enum": [3]
 					}
 				]
 			},
