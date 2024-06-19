@@ -108,7 +108,7 @@ class irrigation {
 			.setCharacteristic(Characteristic.SerialNumber, UUIDGen.generate("zone-" + zone.station))
 			.setCharacteristic(Characteristic.Name, zone.name)
 			.setCharacteristic(Characteristic.ConfiguredName, zone.name)
-			.setCharacteristic(Characteristic.Model, zone.sprinkler_type)
+			.setCharacteristic(Characteristic.Model, zone.sprinkler_type ? zone.sprinkler_type : 'unknown')
 		if (zone.enabled) {
 			valve.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
 		}

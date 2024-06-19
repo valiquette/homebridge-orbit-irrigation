@@ -1,5 +1,12 @@
 # Changes
 
+## 1.2.30
+Update
+-  Suppressed empty fault warning.
+-  Add default model "unknown" for devices with no type configured in the B-Hyve app.
+-  Bumped dependencies.
+-  node.js v22 support.
+
 ## 1.2.29
 Update
 -  Bumped dependencies.

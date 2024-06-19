@@ -203,6 +203,9 @@ class Orbit {
 							case "rain_delay":
 								this.log.debug('%s rain delay for %s',deviceName, jsonBody.rain_delay_weather_type)
 								break
+							case "fault":
+								this.log.debug('Message received: %s for device id %s',jsonBody.event,jsonBody.device_id)
+								break
 							default:
 								this.log.warn('Unknown faucet device message received: %s',jsonBody.event)
 							break
@@ -449,8 +452,11 @@ class Orbit {
 							case "rain_delay":
 								this.log.debug('%s rain delay for %s',deviceName, jsonBody.rain_delay_weather_type)
 								break
+							case "fault":
+								this.log.debug('Message received: %s for device id %s',jsonBody.event,jsonBody.device_id)
+								break
 							default:
-								this.log.warn('Unknown sprinker device message received: %s',jsonBody.event)
+								this.log.warn('Unknown sprinkler device message received: %s',jsonBody.event)
 							break
 						}
 					}
@@ -477,6 +483,10 @@ class Orbit {
 						break
 					case "change_mode":
 					//do nothing
+						break
+					case "fault":
+					//do nothing
+						this.log.debug('Message received: %s for bridge device id %s',jsonBody.event,jsonBody.device_id)
 						break
 					default:
 					this.log.warn('Unknown bridge device message received: %s',jsonBody.event)
@@ -554,6 +564,9 @@ class Orbit {
 								if(this.showFloodSensor){leakService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)}
 								if(this.showTempSensor){tempService.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)}
 								if(this.showLimitsSensor){occupancySensor.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)}
+								break
+							case "fault":
+								//do nothing
 								break
 						default:
 							this.log.warn('Unknown flood sensor device message received: %s',jsonBody.event)
