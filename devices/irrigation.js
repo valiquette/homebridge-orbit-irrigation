@@ -14,7 +14,7 @@ class irrigation {
 	createIrrigationAccessory(device, uuid, platformAccessory) {
 		this.log.debug('Create Irrigation device %s %s', device.id, device.name)
 		if(!device.name){
-			this.log.warn("device with no name, assign a name in B-Hyve app")
+			this.log.warn("device with no name, assign a name to this device in the B-Hyve app")
 			device.name='Unnamed-'+device.id.substring(20)
 		}
 		if(!platformAccessory){

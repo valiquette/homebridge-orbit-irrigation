@@ -14,8 +14,12 @@ class valve {
 	createValveAccessory(device, zone, uuid, platformAccessory) {
 		let valveService
 		if(!device.name){
-			this.log.warn("device with no name, assign a name in B-Hyve app")
+			this.log.warn("device with no name, assign a name to this device in the B-Hyve app")
 			device.name='Unnamed-'+device.id.substring(20)
+		}
+		if(!zone.name){
+			this.log.warn("zone with no name, using device name. assign a name to this zone in the B-Hyve app")
+			zone.name=device.name+' zone-'+zone.station
 		}
 		if(!platformAccessory){
 			// Create new Valve System Service
@@ -111,7 +115,7 @@ class valve {
 			.setCharacteristic(Characteristic.SerialNumber, UUIDGen.generate("zone-" + zone.station))
 			.setCharacteristic(Characteristic.Name, zone.name)
 			.setCharacteristic(Characteristic.ConfiguredName, zone.name)
-			.setCharacteristic(Characteristic.Model, zone.sprinkler_type)
+			.setCharacteristic(Characteristic.Model, zone.sprinkler_type ? zone.sprinkler_type : 'unknown')
 		if (zone.enabled) {
 			valve.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
 		}

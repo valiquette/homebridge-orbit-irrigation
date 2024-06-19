@@ -1,5 +1,9 @@
 # Changes
 
+## 1.2.32
+fix
+-  Add default default nameing for zones with no naming in the B-Hyve app.
+
 ## 1.2.30
 Update
 -  Suppressed empty fault warning.
