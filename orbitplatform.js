@@ -551,8 +551,10 @@ class OrbitPlatform {
 						}
 						this.log.debug('Adding Bridge Device')
 						this.log.debug('Found device %s', newDevice.name)
-						switch (newDevice.hardware_version){
-							case "BH1-0001":
+						//switch (newDevice.hardware_version){
+						switch (newDevice.hardware_version.split("-")[0]){ //look for any rev
+							//case "BH1-0001":
+							case "BH1":
 								// Create and configure Gen 1Bridge Service
 								let meshNetwork=(await this.orbitapi.getMeshes(this.token,newDevice.mesh_id).catch(err=>{this.log.error('Failed to add G1 bridge %s', err)}))
 								this.log.debug('Creating and configuring new bridge')
@@ -568,7 +570,9 @@ class OrbitPlatform {
 								}
 								this.log.info('Adding Gen-1 Bridge')
 								break
-							case "BH1G2-0001":
+							//case "BH1G2-0000":
+							//case "BH1G2-0001":
+							case "BH1G2":
 								// Create and configure Gen2 Bridge Service
 								let networkTopology=(await this.orbitapi.getNetworkTopologies(this.token,newDevice.network_topology_id).catch(err=>{this.log.error('Failed to add G2 bridge %s', err)}))
 								this.log.debug('Creating and configuring new bridge')
@@ -584,6 +588,9 @@ class OrbitPlatform {
 								}
 								this.log.info('Adding Gen-2 Bridge')
 								break
+							default:
+								this.log.warn('Wifi Hub hardware %s, not supported',newDevice.hardware_version)
+								return
 						}
 						if(!this.accessories[uuid]){
 							this.log.debug('Registering platform accessory')

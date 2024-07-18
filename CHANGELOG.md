@@ -1,5 +1,10 @@
 # Changes
 
+## 1.2.33
+fix
+-  Fixed a crash condition when trying to expose gen 2 wifi hub with hardware version of -0000.
+-  Include error handleing for new devices in the future.
+
 ## 1.2.32
 fix
 -  Add default default nameing for zones with no naming in the B-Hyve app.
