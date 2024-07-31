@@ -1,6 +1,6 @@
 {
 	"pluginAlias": "bhyve",
-	"headerDisplay": "Homebridge plugin for Orbit B-Hyve Hose & Water Timers",
+	"headerDisplay": "Homebridge plugin for Orbit BHyve Hose & Water Timers",
 	"pluginType": "platform",
 	"singular": true,
 	"schema": {
@@ -11,8 +11,8 @@
 				"description": "Name for this accessory",
 				"type": "string",
 				"required": true,
-				"placeholder": "B-Hyve",
-				"default": "B-Hyve"
+				"placeholder": "BHyve",
+				"default": "BHyve"
 			},
 			"email": {
 				"title": "Email",

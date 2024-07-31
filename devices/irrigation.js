@@ -168,7 +168,7 @@ class irrigation {
 	}
 
 	getValveValue(valveService, characteristicName, callback) {
-		//this.log.debug("getValue", valveService.getCharacteristic(Characteristic.Name).value, characteristicName)
+		//this.log.debug("value", valveService.getCharacteristic(Characteristic.Name).value, characteristicName)
 		switch (characteristicName) {
 			case "ValveActive":
 				//this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName,valveService.getCharacteristic(Characteristic.Active).value)

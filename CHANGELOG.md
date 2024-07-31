@@ -1,5 +1,11 @@
 # Changes
 
+## 1.2.34-beta.0
+beta
+-  support for homebridge 2.0
+-  removed deprecated getValue()
+
+
 ## 1.2.33
 fix
 -  Fixed a crash condition when trying to expose gen 2 wifi hub with hardware version of -0000.

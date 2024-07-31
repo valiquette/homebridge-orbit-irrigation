@@ -149,10 +149,10 @@ class Orbit {
 										}
 									}
 									if(Service.Valve.UUID == service.UUID){
-										service.getCharacteristic(Characteristic.Active).getValue()
+										service.getCharacteristic(Characteristic.Active).value
 									}
 									if(Service.Switch.UUID == service.UUID){
-										service.getCharacteristic(Characteristic.On).getValue()
+										service.getCharacteristic(Characteristic.On).value
 									}
 								})
 								break
@@ -165,10 +165,10 @@ class Orbit {
 										}
 									}
 									if(Service.Valve.UUID == service.UUID){
-										service.getCharacteristic(Characteristic.Active).getValue()
+										service.getCharacteristic(Characteristic.Active).value
 									}
 									if(Service.Switch.UUID == service.UUID){
-										service.getCharacteristic(Characteristic.On).getValue()
+										service.getCharacteristic(Characteristic.On).value
 									}
 								})
 								break
@@ -394,10 +394,10 @@ class Orbit {
 										}
 									}
 									if(Service.Valve.UUID == service.UUID){
-										service.getCharacteristic(Characteristic.Active).getValue()
+										service.getCharacteristic(Characteristic.Active).value
 									}
 									if(Service.Switch.UUID == service.UUID){
-										service.getCharacteristic(Characteristic.On).getValue()
+										service.getCharacteristic(Characteristic.On).value
 									}
 								})
 								break
@@ -410,10 +410,10 @@ class Orbit {
 										}
 									}
 									if(Service.Valve.UUID == service.UUID){
-										service.getCharacteristic(Characteristic.Active).getValue()
+										service.getCharacteristic(Characteristic.Active).value
 									}
 									if(Service.Switch.UUID == service.UUID){
-										service.getCharacteristic(Characteristic.On).getValue()
+										service.getCharacteristic(Characteristic.On).value
 									}
 								})
 								break
