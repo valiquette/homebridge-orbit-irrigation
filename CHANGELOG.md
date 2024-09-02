@@ -1,10 +1,13 @@
 # Changes
 
-## 1.2.34-beta.0
+## 1.2.35
 beta
 -  support for homebridge 2.0
--  removed deprecated getValue()
 
+## 1.2.34-beta.0
+beta
+-  initial support for homebridge 2.0
+-  removed deprecated getValue()
 
 ## 1.2.33
 fix
