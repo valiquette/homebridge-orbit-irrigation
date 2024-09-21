@@ -8,7 +8,7 @@ let reconnectingwebsocket = require('reconnecting-websocket')
 let endpoint = 'https://api.orbitbhyve.com/v1'
 let WS_endpoint = 'wss://api.orbitbhyve.com/v1/events'
 
-let maxPingInterval = 25000 // Websocket get's timed out after 30s, will set a random value between 20 and 25
+let maxPingInterval = 30000 // Websocket get's timed out after 30s, will set a random value between 20 and 30
 let minPingInterval = 20000
 
 class OrbitAPI {
@@ -340,9 +340,9 @@ class OrbitAPI {
 			this.log.debug('Opening WebSocket Connection for %s', device.name)
 			this.wsp.connect(token, device)
 			.then(ws => ws.send({
+				event: "app_connection",
 				name: device.name,
 				id: device.id,
-				event: "app_connection",
 				orbit_session_token: token
 			}))
 			/* also works
@@ -404,11 +404,10 @@ class WebSocketProxy {
 
 		return new Promise((resolve, reject)=>{
 			try {
-				let connectionOpen=false
 				let options = {
 					WebSocket: ws,
 					maxReconnectionDelay: 10000, //64000
-					minReconnectionDelay: 1000 + Math.random() * 4000,
+					minReconnectionDelay: Math.floor(1000 + Math.random() * 4000),
 					reconnectionDelayGrowFactor: 1.3,
 					minUptime: 5000,
 					connectionTimeout: 4000, //10000
@@ -448,10 +447,12 @@ class WebSocketProxy {
 						"type": event.type
 						},null,2)
 					)
-					if(!connectionOpen){
-						this.log.info('WebSocket connected')
+					switch (this.rws.readyState){
+						case 0: this.log.info('WebSocket connecting'); break
+						case 1: this.log.info('WebSocket opened'); break
+						case 2: this.log.info('WebSocket closing'); break
+						case 3: this.log.info('WebSocket closed'); break
 					}
-					connectionOpen=true
 					resolve(this.rws)
 				}
 
@@ -463,10 +464,12 @@ class WebSocketProxy {
 						"reason": event.reason
 						},null,2)
 					)
-					if(connectionOpen){
-						this.log.info('WebSocket disconnected')
+					switch (this.rws.readyState){
+						case 0: this.log.info('WebSocket connecting'); break
+						case 1: this.log.info('WebSocket opened'); break
+						case 2: this.log.info('WebSocket closing'); break
+						case 3: this.log.info('WebSocket closed'); break
 					}
-					connectionOpen=false
 				}
 
 				this.rws.onmessage = (msg) => {
@@ -477,17 +480,22 @@ class WebSocketProxy {
 
 				this.rws.onerror = (event) => {
 					this.log.debug('WebSocket Error', event.error)
-					if(connectionOpen){
-						this.log.error('WebSocket Error %s, check network connection.', event.message)
-						this.log.warn('Devices will not sync until WebSocket connection is restored.')
-						connectionOpen=false
+					switch (this.rws.readyState){
+						case 0: this.log.info('WebSocket connecting'); break
+						case 1:
+							this.log.info('WebSocket opened')
+							this.log.error('WebSocket Error %s, check network connection.', event.message)
+							this.log.warn('Devices will not sync until WebSocket connection is restored.')
+							break
+						case 2: this.log.info('WebSocket closing'); break
+						case 3: this.log.info('WebSocket closed'); break
 					}
 					reject(event)
 				}
 			}catch (error) {
 				this.log.error('caught', error.message)
-				if(this.rws){//check if connection is open
-					this.log.warn('connection closed')
+				if(this.rws){//check if connected
+					this.log.warn('error, closing connection')
 					//this.rws.close(code=1000, reason="Session terminated by client")
 					this.rws.close()
 					try {
@@ -496,6 +504,7 @@ class WebSocketProxy {
 						this.rws.removeEventListener("message")
 						this.rws.removeEventListener("error")
 						clearInterval(this.ping)
+						this.rws=null
 						} catch (err) { this.log.error('Error closing connection \n%s', err)}
 				}
 			}

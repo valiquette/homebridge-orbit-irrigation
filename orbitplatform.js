@@ -736,7 +736,7 @@ class OrbitPlatform {
 				// Send Sync after 2 sec delay, match state to bhyve state
 				setTimeout(()=>{this.orbitapi.sync(this.token, newDevice)}, 2000)
 			})
-			setTimeout(()=>{this.log.info('Orbit Platform finished loading')}, 500)
+			setTimeout(()=>{this.log.info('Orbit Platform finished loading')}, 2000)
 		}catch(err){
 			if(this.retryAttempt<this.retryMax){
 				this.retryAttempt++

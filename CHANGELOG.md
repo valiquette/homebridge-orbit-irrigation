@@ -1,7 +1,14 @@
 # Changes
 
+## 1.2.36
+update
+-  code cleanup
+-  adjust timeouts
+-  corrected a naming issue in logging
+
+
 ## 1.2.35
-beta
+update
 -  support for homebridge 2.0
 
 ## 1.2.34-beta.0

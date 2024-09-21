@@ -15,15 +15,15 @@ class valve {
 		let valveService
 		if(!device.name){
 			this.log.warn("device with no name, assign a name to this device in the B-Hyve app")
-			device.name='Unnamed-'+device.id.substring(20)
+			device.name='Unnamed-'+device.id.substring(20) //my need to remove -
 		}
 		if(!zone.name){
 			this.log.warn("zone with no name, using device name. assign a name to this zone in the B-Hyve app")
-			zone.name=device.name+' zone-'+zone.station
+			zone.name=device.name+' zone-'+zone.station //may need to remove -
 		}
 		if(!platformAccessory){
 			// Create new Valve System Service
-			this.log.debug('Create valve accessory %s station-%s %s', device.id, zone.station, device.name)
+			this.log.warn('Create valve accessory %s station-%s %s', device.name, zone.station, zone.name)
 			platformAccessory = new PlatformAccessory(zone.name, uuid)
 			valveService = platformAccessory.addService(Service.Valve, zone.station)
 			//valveService = new Service.Valve(zone.name, zone.station)
