@@ -1,12 +1,12 @@
 'use strict'
-let OrbitAPI=require('./orbitapi')
+let OrbitAPI = require('./orbitapi')
 
 class Orbit {
 	constructor(platform, log, config) {
-      this.orbitapi = new OrbitAPI(this, log)
+    this.orbitapi = new OrbitAPI(this, log)
 		this.log = log
 		this.config = config
-      this.platform = platform
+    this.platform = platform
    }
 
 	async updateService(message){
@@ -510,7 +510,7 @@ class Orbit {
 							case 'battery_status':
 								this.log.debug('update battery status %s %s to %s%',jsonBody.location_name, jsonBody.name, jsonBody.battery.percent)
 								batteryService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.battery.percent)
-								if(jsonBody.battery.percent<=this.lowBattery){
+								if(jsonBody.battery.percent <= this.lowBattery){
 									batteryService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)
 								}
 								else{

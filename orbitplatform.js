@@ -12,7 +12,7 @@ class OrbitPlatform {
 	constructor(log, config, api){
 		this.orbitapi=new OrbitAPI(this, log)
 		this.orbit=new OrbitUpdate(this, log, config)
-		this.battery=new battery(this, log)
+		this.battery=new battery(this, log, config)
 		this.bridge=new bridge(this, log)
 		this.irrigation=new irrigation(this, log, config)
 		this.valve=new valve(this, log, config)
@@ -68,7 +68,7 @@ class OrbitPlatform {
 		//** Platforms should wait until the "didFinishLaunching" event has fired before registering any new accessories.
 		//**
 		if(api){
-			this.api=api
+			this.api = api
 			this.api.on("didFinishLaunching", function (){
 				// Get Orbit devices
 				this.getDevices()
@@ -609,35 +609,37 @@ class OrbitPlatform {
 							}
 							return
 						}
-						this.log.debug('Adding Flood Sensor Device')
 						this.log.debug('Found device %s',newDevice.name)
 						let FSAccessory
 						let batteryStatus
 						if(this.showFloodSensor || this.showTempSensor || this.showLimitsSensor){
 							FSAccessory=this.sensor.createFloodAccessory(newDevice, uuid, this.accessories[uuid])
 							if(!this.accessories[uuid]){
-							this.log.debug('Registering platform accessory')
-							this.accessories[uuid]=FSAccessory
-							this.api.registerPlatformAccessories(PluginName, PlatformName, [FSAccessory])
+								this.log.debug('Adding Flood Sensor Device')
+								this.log.debug('Registering platform accessory')
+								this.accessories[uuid]=FSAccessory
+								this.api.registerPlatformAccessories(PluginName, PlatformName, [FSAccessory])
 							}
 							this.log.info('Adding Battery status for %s %s',newDevice.location_name, newDevice.name)
-							batteryStatus=this.battery.createBatteryService(newDevice, uuid)
-							this.battery.configureBatteryService(batteryStatus)
+							batteryStatus=this.sensor.createBatteryService(newDevice, uuid, FSAccessory)
+							this.sensor.configureBatteryService(batteryStatus)
 							let service=FSAccessory.getService(Service.Battery)
 							if(!service){
 								FSAccessory.addService(batteryStatus)
 								this.api.updatePlatformAccessories([FSAccessory])
 							}
+							/*
 							// Refresh battery status every so often for flood sensors
 							setInterval(async()=>{
 								try{
 									let sensorResponse=(await this.orbitapi.getDevice(this.token, newDevice.id).catch(err=>{this.log.error('Failed to get device response %s', err)}))
-									this.log.debug('check battery status %s %s',sensorResponse.location_name, sensorResponse.name)
+									this.log.debug('check sensor battery status %s %s',sensorResponse.location_name, sensorResponse.name)
 									sensorResponse.device_id=sensorResponse.id
 									sensorResponse.event='battery_status'
 									this.orbit.updateService.bind(this)(JSON.stringify(sensorResponse))
 								}catch(err){this.log.error('Failed to read each sensor', err)}
 							}, 4*60*60*1000) //4 hours in ms
+							*/
 						}
 						else{
 							if(this.accessories[uuid]){

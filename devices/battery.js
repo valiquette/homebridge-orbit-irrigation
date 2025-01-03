@@ -1,4 +1,4 @@
-let OrbitAPI=require('../orbitapi')
+let OrbitAPI = require('../orbitapi')
 
 class battery {
 	constructor(platform, log) {

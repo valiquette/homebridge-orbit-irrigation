@@ -1,5 +1,5 @@
-let packageJson=require('../package.json')
-let OrbitAPI=require('../orbitapi')
+let packageJson = require('../package.json')
+let OrbitAPI = require('../orbitapi')
 
 class basicSwitch {
 	constructor(platform, log) {

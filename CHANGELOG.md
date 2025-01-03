@@ -1,11 +1,15 @@
 # Changes
 
+## 1.2.37
+update
+-  code cleanup
+-  fixed an issue with battery status updates for flood sensors
+
 ## 1.2.36
 update
 -  code cleanup
 -  adjust timeouts
 -  corrected a naming issue in logging
-
 
 ## 1.2.35
 update

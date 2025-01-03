@@ -1,6 +1,6 @@
-let packageJson=require('../package.json')
-let OrbitAPI=require('../orbitapi')
-let OrbitUpdate=require('../orbitupdate')
+let packageJson = require('../package.json')
+let OrbitAPI = require('../orbitapi')
+let OrbitUpdate = require('../orbitupdate')
 
 class irrigation {
 	constructor(platform, log, config) {
