@@ -1,7 +1,7 @@
 const OrbitPlatform = require('./orbitplatform')
 const packageJson = require('./package')
 
-module.exports = (homebridge) => {
+module.exports = homebridge => {
 	PlatformAccessory = homebridge.platformAccessory
 	Service = homebridge.hap.Service
 	Characteristic = homebridge.hap.Characteristic

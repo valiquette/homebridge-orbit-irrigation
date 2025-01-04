@@ -29,15 +29,15 @@ class OrbitAPI {
 				headers: {
 					'Content-Type': 'application/json',
 					'User-Agent': `${PluginName}/${PluginVersion}`,
-					'orbit-app-id': 'Bhyve Dashboard',
+					'orbit-app-id': 'Bhyve Dashboard'
 				},
 				data: {
 					session: {
 						email: email,
-						password: password,
-					},
+						password: password
+					}
 				},
-				responseType: 'json',
+				responseType: 'json'
 			}).catch(err => {
 				this.log.error('Error getting API key %s', err.message)
 				this.log.debug(JSON.stringify(err, null, 2))
@@ -69,9 +69,9 @@ class OrbitAPI {
 					'Content-Type': 'application/json',
 					'User-Agent': `${PluginName}/${PluginVersion}`,
 					'orbit-api-key': token,
-					'orbit-app-id': 'Bhyve Dashboard',
+					'orbit-app-id': 'Bhyve Dashboard'
 				},
-				responseType: 'json',
+				responseType: 'json'
 			}).catch(err => {
 				this.log.error('Error getting devices %s', err.message)
 				this.log.debug(JSON.stringify(err, null, 2))
@@ -103,9 +103,9 @@ class OrbitAPI {
 					'Content-Type': 'application/json',
 					'User-Agent': `${PluginName}/${PluginVersion}`,
 					'orbit-api-key': token,
-					'orbit-app-id': 'Bhyve Dashboard',
+					'orbit-app-id': 'Bhyve Dashboard'
 				},
-				responseType: 'json',
+				responseType: 'json'
 			}).catch(err => {
 				this.log.error('Error getting device %s', err.message)
 				this.log.debug(JSON.stringify(err, null, 2))
@@ -137,9 +137,9 @@ class OrbitAPI {
 					'Content-Type': 'application/json',
 					'User-Agent': `${PluginName}/${PluginVersion}`,
 					'orbit-api-key': token,
-					'orbit-app-id': 'Bhyve Dashboard',
+					'orbit-app-id': 'Bhyve Dashboard'
 				},
-				responseType: 'json',
+				responseType: 'json'
 			}).catch(err => {
 				this.log.error('Error getting mesh info %s', err.message)
 				this.log.debug(JSON.stringify(err, null, 2))
@@ -171,9 +171,9 @@ class OrbitAPI {
 					'Content-Type': 'application/json',
 					'User-Agent': `${PluginName}/${PluginVersion}`,
 					'orbit-api-key': token,
-					'orbit-app-id': 'Bhyve Dashboard',
+					'orbit-app-id': 'Bhyve Dashboard'
 				},
-				responseType: 'json',
+				responseType: 'json'
 			}).catch(err => {
 				this.log.error('Error getting network topologies info %s', err.message)
 				this.log.debug(JSON.stringify(err, null, 2))
@@ -205,13 +205,13 @@ class OrbitAPI {
 					'Content-Type': 'application/json',
 					'User-Agent': `${PluginName}/${PluginVersion}`,
 					'orbit-api-key': token,
-					'orbit-app-id': 'Bhyve Dashboard',
+					'orbit-app-id': 'Bhyve Dashboard'
 				},
 				data: {
 					query: [
 						'devices',
 						{
-							user_id: userId,
+							user_id: userId
 						},
 						'id',
 						'name',
@@ -222,10 +222,10 @@ class OrbitAPI {
 						'firmware_version',
 						'mac_address',
 						'is_connected',
-						'mesh_id',
-					],
+						'mesh_id'
+					]
 				},
-				responseType: 'json',
+				responseType: 'json'
 			}).catch(err => {
 				this.log.error('Error getting graph %s', err.message)
 				this.log.debug(JSON.stringify(err, null, 2))
@@ -257,12 +257,12 @@ class OrbitAPI {
 					'Content-Type': 'application/json',
 					'User-Agent': `${PluginName}/${PluginVersion}`,
 					'orbit-api-key': token,
-					'orbit-app-id': 'Bhyve Dashboard',
+					'orbit-app-id': 'Bhyve Dashboard'
 				},
 				params: {
-					device_id: device.id,
+					device_id: device.id
 				},
-				responseType: 'json',
+				responseType: 'json'
 			}).catch(err => {
 				this.log.error('Error getting scheduled %s', err.message)
 				this.log.debug(JSON.stringify(err, null, 2))
@@ -293,9 +293,9 @@ class OrbitAPI {
 					stations: [
 						{
 							station: station,
-							run_time: runTime,
-						},
-					],
+							run_time: runTime
+						}
+					]
 				})
 			)
 		} catch (err) {
@@ -311,7 +311,7 @@ class OrbitAPI {
 					event: 'change_mode',
 					mode: 'manual',
 					device_id: device.id,
-					program: program,
+					program: program
 				})
 			)
 		} catch (err) {
@@ -327,7 +327,7 @@ class OrbitAPI {
 					event: 'change_mode',
 					mode: 'manual',
 					device_id: device.id,
-					timestamp: new Date().toISOString(),
+					timestamp: new Date().toISOString()
 				})
 			)
 		} catch (err) {
@@ -343,7 +343,7 @@ class OrbitAPI {
 				if (zone.enabled) {
 					body.push({
 						station: zone.station,
-						run_time: runTime,
+						run_time: runTime
 					})
 				}
 			})
@@ -353,7 +353,7 @@ class OrbitAPI {
 					event: 'change_mode',
 					mode: 'manual',
 					device_id: device.id,
-					stations: body,
+					stations: body
 				})
 			)
 		} catch (err) {
@@ -370,7 +370,7 @@ class OrbitAPI {
 					mode: 'manual',
 					device_id: device.id,
 					//stations: [],
-					timestamp: new Date().toISOString(),
+					timestamp: new Date().toISOString()
 				})
 			)
 		} catch (err) {
@@ -386,7 +386,7 @@ class OrbitAPI {
 					event: 'change_mode',
 					mode: mode,
 					device_id: device.id,
-					timestamp: new Date().toISOString(),
+					timestamp: new Date().toISOString()
 				})
 			)
 		} catch (err) {
@@ -401,7 +401,7 @@ class OrbitAPI {
 					event: 'app_connection',
 					name: device.name,
 					id: device.id,
-					orbit_session_token: token,
+					orbit_session_token: token
 				})
 			)
 			/* also works
@@ -435,7 +435,7 @@ class OrbitAPI {
 			this.wsp.connect(token, device).then(ws =>
 				ws.send({
 					event: 'sync',
-					device_id: device.id,
+					device_id: device.id
 				})
 			)
 		} catch (err) {
@@ -449,7 +449,7 @@ class OrbitAPI {
 				ws.send({
 					event: 'fs_identify',
 					device_id: device.id,
-					identify_time_ms: 5000,
+					identify_time_ms: 5000
 				})
 			)
 		} catch (err) {
@@ -484,7 +484,7 @@ class WebSocketProxy {
 					maxRetries: Infinity,
 					maxEnqueuedMessages: 1, //Infinity
 					startClosed: false,
-					debug: false,
+					debug: false
 				}
 				this.rws = new reconnectingwebsocket(WS_endpoint, [], options)
 				// Intercept send events for logging
@@ -511,13 +511,13 @@ class WebSocketProxy {
 						name: device.name,
 						id: device.id,
 						event: 'app_connection',
-						orbit_session_token: token,
+						orbit_session_token: token
 					})
 					this.log.debug(
 						'connection open',
 						JSON.stringify(
 							{
-								type: event.type,
+								type: event.type
 							},
 							null,
 							2
@@ -548,7 +548,7 @@ class WebSocketProxy {
 								type: event.type,
 								wasClean: event.wasClean,
 								code: event.code,
-								reason: event.reason,
+								reason: event.reason
 							},
 							null,
 							2

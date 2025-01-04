@@ -113,7 +113,7 @@ class OrbitPlatform {
 							line_2: '',
 							city: '',
 							state: '',
-							country: '',
+							country: ''
 						}
 						this.log.debug('No location address defined, adding dummy location %s', device.address)
 					}
