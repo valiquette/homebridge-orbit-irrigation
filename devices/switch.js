@@ -1,4 +1,3 @@
-let packageJson = require('../package.json')
 let OrbitAPI = require('../orbitapi')
 
 class basicSwitch {
@@ -9,14 +8,14 @@ class basicSwitch {
 	}
 
 	createScheduleSwitchService(device, schedule) {
-		this.log.debug("Created service for %s with id %s and program %s", schedule.name, schedule.id, schedule.program)
-		let switchService = new Service.Switch(device.name +' '+ schedule.name, schedule.program)
+		this.log.debug('Created service for %s with id %s and program %s', schedule.name, schedule.id, schedule.program)
+		let switchService = new Service.Switch(device.name + ' ' + schedule.name, schedule.program)
 		switchService.addCharacteristic(Characteristic.ConfiguredName)
 		switchService.addCharacteristic(Characteristic.SerialNumber)
 		switchService
 			.setCharacteristic(Characteristic.On, false)
-			.setCharacteristic(Characteristic.Name, device.name +' '+ schedule.name)
-			.setCharacteristic(Characteristic.ConfiguredName, schedule.name +' '+ device.name)
+			.setCharacteristic(Characteristic.Name, device.name + ' ' + schedule.name)
+			.setCharacteristic(Characteristic.ConfiguredName, schedule.name + ' ' + device.name)
 			.setCharacteristic(Characteristic.SerialNumber, schedule.id)
 			.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
 		return switchService
@@ -29,50 +28,43 @@ class basicSwitch {
 		switchService.addCharacteristic(Characteristic.ConfiguredName)
 		switchService
 			.setCharacteristic(Characteristic.On, false)
-			.setCharacteristic(Characteristic.Name, device.name +' '+ switchType)
-			.setCharacteristic(Characteristic.ConfiguredName, switchType +' '+ device.name)
+			.setCharacteristic(Characteristic.Name, device.name + ' ' + switchType)
+			.setCharacteristic(Characteristic.ConfiguredName, switchType + ' ' + device.name)
 			.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
 		return switchService
 	}
 
 	configureSwitchService(device, switchService) {
-		this.log.info("Configured switch for program %s %s", switchService.subtype, switchService.getCharacteristic(Characteristic.Name).value)
-		switchService
-			.getCharacteristic(Characteristic.On)
-			.on('get', this.getSwitchValue.bind(this, switchService))
-			.on('set', this.setSwitchValue.bind(this, device, switchService))
+		this.log.info('Configured switch for program %s %s', switchService.subtype, switchService.getCharacteristic(Characteristic.Name).value)
+		switchService.getCharacteristic(Characteristic.On).on('get', this.getSwitchValue.bind(this, switchService)).on('set', this.setSwitchValue.bind(this, device, switchService))
 	}
 
 	setSwitchValue(device, switchService, value, callback) {
 		this.log.debug('toggle switch state %s', switchService.getCharacteristic(Characteristic.Name).value)
 		switch (switchService.getCharacteristic(Characteristic.Name).value) {
-			case device.name +' '+ 'Standby':
+			case device.name + ' ' + 'Standby':
 				if (switchService.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
 					callback('error')
-				}
-				else {
+				} else {
 					if (!value) {
 						switchService.getCharacteristic(Characteristic.On).updateValue(true)
 						this.orbitapi.deviceStandby(this.platform.token, device, 'auto')
-					}
-					else {
+					} else {
 						switchService.getCharacteristic(Characteristic.On).updateValue(false)
 						this.orbitapi.deviceStandby(this.platform.token, device, 'off')
 					}
 					callback()
 				}
 				break
-			case device.name +' '+ 'Run All':
+			case device.name + ' ' + 'Run All':
 				if (switchService.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
 					callback('error')
-				}
-				else {
+				} else {
 					if (value) {
 						switchService.getCharacteristic(Characteristic.On).updateValue(true)
 						this.orbitapi.startMultipleZone(this.platform.token, device, this.platform.defaultRuntime / 60)
 						this.log.info('Running all zones for %s min each', this.platform.defaultRuntime / 60)
-					}
-					else {
+					} else {
 						switchService.getCharacteristic(Characteristic.On).updateValue(false)
 						this.orbitapi.stopDevice(this.platform.token, device)
 					}
@@ -82,13 +74,11 @@ class basicSwitch {
 			default:
 				if (switchService.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
 					callback('error')
-				}
-				else {
+				} else {
 					if (value) {
 						switchService.getCharacteristic(Characteristic.On).updateValue(true)
 						this.orbitapi.startSchedule(this.platform.token, device, switchService.subtype)
-					}
-					else {
+					} else {
 						switchService.getCharacteristic(Characteristic.On).updateValue(false)
 						this.orbitapi.stopDevice(this.platform.token, device)
 					}
@@ -102,8 +92,7 @@ class basicSwitch {
 		//this.log.debug("%s=%s", switchService.getCharacteristic(Characteristic.Name).value,switchService.getCharacteristic(Characteristic.On).value)
 		if (switchService.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
 			callback('error')
-		}
-		else {
+		} else {
 			callback(null, switchService.getCharacteristic(Characteristic.On).value)
 		}
 	}

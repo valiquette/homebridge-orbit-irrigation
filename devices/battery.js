@@ -10,23 +10,20 @@ class battery {
 	createBatteryService(device, uuid) {
 		let batteryStatus
 		if (device.location_name) {
-			this.log.debug("create battery service for %s", device.location_name + ' ' + device.name)
+			this.log.debug('create battery service for %s', device.location_name + ' ' + device.name)
 			batteryStatus = new Service.Battery(device.location_name + ' ' + device.name, device.id)
-		}
-		else {
-			this.log.debug("create battery service for %s", device.name)
+		} else {
+			this.log.debug('create battery service for %s', device.name)
 			batteryStatus = new Service.Battery(device.name, device.id)
 		}
-		let percent=100
-		if(device.battery.percent){
-			percent=device.battery.percent
-		}
-		else if(device.battery.mv){
-			if(device.hardware_version.includes("HT32"))
-			{
+		let percent = 100
+		if (device.battery.percent) {
+			percent = device.battery.percent
+		} else if (device.battery.mv) {
+			if (device.hardware_version.includes('HT32')) {
 				this.log.debug(device.hardware_version)
 			}
-			percent=device.battery.mv/3815*100 > 100 ? 100 : device.battery.mv/3815*100 //not sure why not 3000 for 2 AA batteries
+			percent = (device.battery.mv / 3815) * 100 > 100 ? 100 : (device.battery.mv / 3815) * 100 //not sure why not 3000 for 2 AA batteries
 		}
 		batteryStatus
 			.setCharacteristic(Characteristic.ChargingState, Characteristic.ChargingState.NOT_CHARGEABLE)
@@ -36,10 +33,8 @@ class battery {
 	}
 
 	configureBatteryService(batteryStatus) {
-		this.log.debug("configured battery service for %s", batteryStatus.getCharacteristic(Characteristic.Name).value)
-		batteryStatus
-			.getCharacteristic(Characteristic.StatusLowBattery)
-			.on('get', this.getStatusLowBattery.bind(this, batteryStatus))
+		this.log.debug('configured battery service for %s', batteryStatus.getCharacteristic(Characteristic.Name).value)
+		batteryStatus.getCharacteristic(Characteristic.StatusLowBattery).on('get', this.getStatusLowBattery.bind(this, batteryStatus))
 	}
 
 	getStatusLowBattery(batteryStatus, callback) {
