@@ -1,5 +1,10 @@
 # Changes
 
+## 1.2.38
+update
+-  code cleanup
+-  bumpped dependencies
+
 ## 1.2.37
 update
 -  code cleanup
