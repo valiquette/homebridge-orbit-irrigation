@@ -204,6 +204,15 @@ class Orbit {
 									activeService = valveAccessory.getServiceById(Service.Battery, jsonBody.device_id)
 									if (activeService) {
 										activeService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)
+										activeService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.percent_remaining)
+									}
+									break
+								case 'clear_low_battery':
+									this.log.info('%s battery good', deviceName)
+									activeService = valveAccessory.getServiceById(Service.Battery, jsonBody.device_id)
+									if (activeService) {
+										activeService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL)
+										activeService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.percent_remaining)
 									}
 									break
 								case 'device_status':
@@ -392,7 +401,7 @@ class Orbit {
 											}
 											break
 										case 'manual':
-											irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).updateValue(Characteristic.ProgramMode.PROGRAM_SCHEDULED_MANUAL_MODE_)
+											irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).updateValue(Characteristic.ProgramMode.PROGRAM_SCHEDULED_MANUAL_MODE)
 											if (this.showStandby && switchServiceStandby) {
 												switchServiceStandby.getCharacteristic(Characteristic.On).updateValue(false)
 											}
@@ -459,6 +468,15 @@ class Orbit {
 									activeService = irrigationAccessory.getServiceById(Service.Battery, jsonBody.device_id)
 									if (activeService) {
 										activeService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)
+										activeService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.percent_remaining)
+									}
+									break
+								case 'clear_low_battery':
+									this.log.info('%s battery good', deviceName)
+									activeService = irrigationAccessory.getServiceById(Service.Battery, jsonBody.device_id)
+									if (activeService) {
+										activeService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL)
+										activeService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.percent_remaining)
 									}
 									break
 								case 'device_status':

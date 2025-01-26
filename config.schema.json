@@ -3,6 +3,7 @@
 	"headerDisplay": "Homebridge plugin for Orbit BHyve Hose & Water Timers",
 	"pluginType": "platform",
 	"singular": true,
+	"strictValidation": true,
 	"schema": {
 		"type": "object",
 		"properties": {

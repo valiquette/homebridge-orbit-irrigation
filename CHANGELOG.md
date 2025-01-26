@@ -1,5 +1,9 @@
 # Changes
 
+## 1.2.39
+fix
+-  fixed issue with clearing low battery events for hose timers
+
 ## 1.2.38
 update
 -  code cleanup
