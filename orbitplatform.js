@@ -649,19 +649,6 @@ class OrbitPlatform {
 									FSAccessory.addService(batteryStatus)
 									this.api.updatePlatformAccessories([FSAccessory])
 								}
-								/*
-							// Refresh battery status every so often for flood sensors
-							setInterval(async() => {
-								try{
-									let sensorResponse = (await this.orbitapi.getDevice(this.token, newDevice.id).catch(err=>{this.log.error('Failed to get device response %s', err)}))
-									this.log.debug('check sensor battery status %s %s',sensorResponse.location_name, sensorResponse.name)
-									sensorResponse.device_id=sensorResponse.id
-									sensorResponse.event='battery_status'
-									this.orbit.updateService.bind(this)(JSON.stringify(sensorResponse))
-								}catch(err){this.log.error('Failed to read each sensor', err)}
-							}, 4*60*60*1000) //4 hours in ms
-							// moved logic to refresh on sensor get
-							*/
 							} else {
 								if (this.accessories[uuid]) {
 									this.log.debug('Removed cached device', device.id)
@@ -751,7 +738,7 @@ class OrbitPlatform {
 					}, 2000)
 				})
 			setTimeout(() => {
-				this.log.info('Orbit Platform finished loading')
+				this.log.success('Orbit Platform finished loading')
 			}, 2000)
 		} catch (err) {
 			if (this.retryAttempt < this.retryMax) {

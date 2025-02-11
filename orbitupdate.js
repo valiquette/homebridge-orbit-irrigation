@@ -208,7 +208,7 @@ class Orbit {
 									}
 									break
 								case 'clear_low_battery':
-									this.log.info('%s battery good', deviceName)
+									this.log.debug('%s battery good', deviceName)
 									activeService = valveAccessory.getServiceById(Service.Battery, jsonBody.device_id)
 									if (activeService) {
 										activeService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL)
@@ -472,7 +472,7 @@ class Orbit {
 									}
 									break
 								case 'clear_low_battery':
-									this.log.info('%s battery good', deviceName)
+									this.log.debug('%s battery good', deviceName)
 									activeService = irrigationAccessory.getServiceById(Service.Battery, jsonBody.device_id)
 									if (activeService) {
 										activeService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL)

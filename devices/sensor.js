@@ -112,7 +112,7 @@ class sensor {
 
 	createOccupancyService(device) {
 		this.log.debug('create Occupancy service for %s', device.location_name + ' ' + device.name)
-		let occupancyStatus = new Service.OccupancySensor(device.location_name + ' ' + device.name + ' high-low', device.id)
+		let occupancyStatus = new Service.OccupancySensor(device.location_name + ' ' + device.name + ' Limits', device.id)
 		occupancyStatus
 			.setCharacteristic(Characteristic.StatusActive, true)
 			.setCharacteristic(Characteristic.OccupancyDetected, Characteristic.OccupancyDetected.OCCUPANCY_NOT_DETECTED)
@@ -127,6 +127,16 @@ class sensor {
 	}
 
 	async getStatusLowBattery(batteryStatus, callback) {
+		let name = batteryStatus.getCharacteristic(Characteristic.Name).value
+		let batteryValue = batteryStatus.getCharacteristic(Characteristic.BatteryLevel).value
+		let currentValue = batteryStatus.getCharacteristic(Characteristic.StatusLowBattery).value
+		if (batteryValue <= this.platform.lowBattery) {
+			this.log.warn('%s Battery Status Low %s% Remaining', name, batteryValue)
+			batteryStatus.setCharacteristic(Characteristic.StatusLowBattery, Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)
+			currentValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW
+		}
+		callback(null, currentValue)
+
 		try {
 			let sensorResponse = await this.orbitapi.getDevice(this.platform.token, batteryStatus.subtype).catch(err => {
 				this.log.error('Failed to get device response %s', err)
@@ -138,16 +148,6 @@ class sensor {
 		} catch (err) {
 			this.log.error('Failed to read sensor', err)
 		}
-
-		let name = batteryStatus.getCharacteristic(Characteristic.Name).value
-		let batteryValue = batteryStatus.getCharacteristic(Characteristic.BatteryLevel).value
-		let currentValue = batteryStatus.getCharacteristic(Characteristic.StatusLowBattery).value
-		if (batteryValue <= this.platform.lowBattery) {
-			this.log.warn('%s Battery Status Low %s% Remaining', name, batteryValue)
-			batteryStatus.setCharacteristic(Characteristic.StatusLowBattery, Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)
-			currentValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW
-		}
-		callback(null, currentValue)
 	}
 
 	getLeakStatus(leakSensor, callback) {

@@ -1,5 +1,9 @@
 # Changes
 
+## 1.2.40
+fix
+-  fixed issue with homebridge 2.0 invalid character, may need to remove and re-add accessory
+
 ## 1.2.39
 fix
 -  fixed issue with clearing low battery events for hose timers

@@ -36,7 +36,9 @@ class basicSwitch {
 
 	configureSwitchService(device, switchService) {
 		this.log.info('Configured switch for program %s %s', switchService.subtype, switchService.getCharacteristic(Characteristic.Name).value)
-		switchService.getCharacteristic(Characteristic.On).on('get', this.getSwitchValue.bind(this, switchService)).on('set', this.setSwitchValue.bind(this, device, switchService))
+		switchService.getCharacteristic(Characteristic.On)
+		.on('get', this.getSwitchValue.bind(this, switchService))
+		.on('set', this.setSwitchValue.bind(this, device, switchService))
 	}
 
 	setSwitchValue(device, switchService, value, callback) {
@@ -89,7 +91,6 @@ class basicSwitch {
 	}
 
 	getSwitchValue(switchService, callback) {
-		//this.log.debug("%s=%s", switchService.getCharacteristic(Characteristic.Name).value,switchService.getCharacteristic(Characteristic.On).value)
 		if (switchService.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
 			callback('error')
 		} else {
