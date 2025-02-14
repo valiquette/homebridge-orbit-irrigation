@@ -207,7 +207,7 @@ class irrigation {
 			// Turn on/idle the valve
 			this.log.info('Starting zone-%s %s for %s mins', valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value, valveService.getCharacteristic(Characteristic.Name).value, runTime / 60)
 			let station = valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value
-			this.orbitapi.startZone(this.platform.token, device, station, runTime / 60)
+			this.orbitapi.startZone(device, station, runTime / 60)
 			irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.Active.ACTIVE)
 			valveService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
 			//json start stuff
@@ -255,7 +255,7 @@ class irrigation {
 		} else {
 			// Turn off/stopping the valve
 			this.log.info('Stopping Zone', valveService.getCharacteristic(Characteristic.Name).value)
-			this.orbitapi.stopZone(this.platform.token, device)
+			this.orbitapi.stopZone(device)
 			irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.Active.INACTIVE)
 			valveService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
 			//json stop stuff
