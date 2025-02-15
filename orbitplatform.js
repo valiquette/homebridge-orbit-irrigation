@@ -57,6 +57,7 @@ class OrbitPlatform {
 		this.networkTopologyId
 		this.deviceGraph
 		this.accessories = []
+		this.accessoryDeviceList = []
 
 		if (!config.email || !config.password) {
 			this.log.error('Valid email and password are required in order to communicate with the b-hyve, please check the plugin config')
@@ -160,6 +161,7 @@ class OrbitPlatform {
 						this.log.error('Failed to get devices for build %s', err)
 					})
 					let uuid = UUIDGen.generate(newDevice.id)
+					this.accessoryDeviceList.push(newDevice.id)
 
 					switch (newDevice.type) {
 						//Handle Water accessories
@@ -567,7 +569,6 @@ class OrbitPlatform {
 							break
 						// Handle Bridge accessories
 						case 'bridge':
-							return
 							let bridgeAccessory
 							let bridgeService
 							let service
@@ -594,12 +595,12 @@ class OrbitPlatform {
 									})
 									this.log.debug('Creating and configuring new bridge')
 									bridgeAccessory = this.bridge.createBridgeAccessory(newDevice, uuid, this.accessories[uuid])
-									bridgeService = bridgeAccessory.getService(Service.Tunnel)
+									bridgeService = bridgeAccessory.getService(Service.WiFiTransport)
 									bridgeService = this.bridge.createBridgeService(newDevice, meshNetwork, false)
 									this.bridge.configureBridgeService(bridgeService)
 									// Set current device status
 									bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
-									service = bridgeAccessory.getService(Service.Tunnel)
+									service = bridgeAccessory.getService(Service.WiFiTransport)
 									if (!service) {
 										bridgeAccessory.addService(bridgeService)
 									}
@@ -614,12 +615,12 @@ class OrbitPlatform {
 									})
 									this.log.debug('Creating and configuring new bridge')
 									bridgeAccessory = this.bridge.createBridgeAccessory(newDevice, uuid, this.accessories[uuid])
-									bridgeService = bridgeAccessory.getService(Service.Tunnel)
+									bridgeService = bridgeAccessory.getService(Service.WiFiTransport)
 									bridgeService = this.bridge.createBridgeService(newDevice, networkTopology, true)
 									this.bridge.configureBridgeService(bridgeService)
 									// set current device status
 									bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
-									service = bridgeAccessory.getService(Service.Tunnel)
+									service = bridgeAccessory.getService(Service.WiFiTransport)
 									if (!service) {
 										bridgeAccessory.addService(bridgeService)
 									}

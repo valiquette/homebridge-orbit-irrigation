@@ -2,10 +2,11 @@
 
 ## 1.2.40
 fix
--  fixed issue with homebridge 2.0 invalid character warning, may need to remove limit sensor accessory from homebridge so it van re add on restart
+-  fixed issue with homebridge 2.0 invalid character warning. May need to remove limit sensor accessory from homebridge so it can re added on restart.
 -  adjustments to battery percent calulations for multizone timers
 -  refactored WebSocket connectivity
--  fixed Error: This callback function has already been called by someone else. Which may have been seen in certian use cases with default schedule names
+-  fixed Error: This callback function has already been called by someone else. Which may have been seen in certian use cases with default schedule names. Will require the accessory to be removed and re adding of extra switches.
+-  fixed crash when exposing bridge
 
 ## 1.2.39
 fix

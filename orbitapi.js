@@ -445,18 +445,18 @@ class OrbitAPI {
 		}
 	}
 
-  openConnection(token, device, listener) {
-    try {
-      //ws = new WebSocket(WS_endpoint)
-      //let clientSend = ws.send.bind(ws)
+	openConnection(token, device, listener) {
+		try {
+			//ws = new WebSocket(WS_endpoint)
+			//let clientSend = ws.send.bind(ws)
 
 			let options = {
 				WebSocket: WebSocket,
-				maxReconnectionDelay: 10000, //64000
+				maxReconnectionDelay: 10000,
 				minReconnectionDelay: Math.floor(1000 + Math.random() * 4000),
 				reconnectionDelayGrowFactor: 1.3,
 				minUptime: 5000,
-				connectionTimeout: 4000, //10000
+				connectionTimeout: 4000,
 				maxRetries: Infinity,
 				maxEnqueuedMessages: 1, //Infinity
 				startClosed: false,
@@ -466,59 +466,59 @@ class OrbitAPI {
 			let clientSend = ws.send.bind(ws)
 
 			//capture data to send
-      ws.send = (data, callback) => {
+			ws.send = (data, callback) => {
 				switch (ws.readyState) {
-          case ws.CONNECTING:
-            setTimeout(() => {
-              ws.send(data)
-            }, 2000);
-            break
-          case ws.OPEN:
-            if (typeof data === 'object') {
-              data = JSON.stringify(data, null, 2)
-            }
+					case ws.CONNECTING:
+						setTimeout(() => {
+							ws.send(data)
+						}, 2000)
+						break
+					case ws.OPEN:
+						if (typeof data === 'object') {
+							data = JSON.stringify(data, null, 2)
+						}
 						if (this.platform.showOutgoingMessages) {
-              //this.log.debug(JSON.parse(data).event)
-              if (JSON.parse(data).event != 'ping') {
-                this.log.debug('sending outgoing message %s', data)
-              }
+							//this.log.debug(JSON.parse(data).event)
+							if (JSON.parse(data).event != 'ping') {
+								this.log.debug('sending outgoing message %s', data)
+							}
 						}
 						clientSend(data, callback)
-            break
-          case ws.CLOSING:
+						break
+					case ws.CLOSING:
 						this.log.warn('connection is closing')
-            break
-          case ws.CLOSED:
-            this.log.warn('connection is closed')
-            break
-        }
+						break
+					case ws.CLOSED:
+						this.log.warn('connection is closed')
+						break
+				}
 			}
 
-      ws.onopen = event => {
-        try {
-          ws.send({
-            name: device.name,
-            id: device.id,
-            event: 'app_connection',
-            orbit_session_token: token
-          })
-          this.log.debug(
-            'connection open',
-            JSON.stringify(
-              {
-                type: event.type
-              },
-              null,
-              2
-            )
-          )
+			ws.onopen = event => {
+				try {
+					ws.send({
+						name: device.name,
+						id: device.id,
+						event: 'app_connection',
+						orbit_session_token: token
+					})
+					this.log.debug(
+						'connection open',
+						JSON.stringify(
+							{
+								type: event.type
+							},
+							null,
+							2
+						)
+					)
 					keepAlive = setInterval(() => {
 						switch (ws.readyState) {
 							case ws.CONNECTING:
 								this.log.debug('readyState connecting')
 								break
 							case ws.OPEN:
-								this.log.debug('readyState open')
+								//this.log.debug('readyState open')
 								ws.send({event: 'ping'})
 								break
 							case ws.CLOSING:
@@ -529,67 +529,90 @@ class OrbitAPI {
 								break
 						}
 					}, Math.floor(Math.random() * (maxPingInterval - minPingInterval)) + minPingInterval)
-          this.log.info('WebSocket connection opened')
-        } catch (err) {
-          this.log.error('Error with open event \n%s', err)
-        }
-      }
+					this.log.info('WebSocket connection opened')
+					this.platform.accessoryDeviceList.forEach(device => {
+						let msg = {
+							source: 'local',
+							event: 'device_connected',
+							device_id: device,
+							timestamp: new Date().toISOString()
+						}
+						listener(JSON.stringify(msg), device)
+					})
+				} catch (err) {
+					this.log.error('Error with open event \n%s', err)
+				}
+			}
 
-      ws.onclose = event => {
-        try {
+			ws.onclose = event => {
+				try {
 					//event.target = 'ReconnectingWebSocket'
-          this.log.debug(
-            'connection closed',
-            JSON.stringify(
-              {
-                type: event.type,
-                wasClean: event.wasClean,
-                code: event.code,
-                reason: event.reason
-              },
-              null,
-              2
-            )
-          )
+					if (event.wasClean == false) {
+						this.log.debug(
+							'connection closed',
+							JSON.stringify(
+								{
+									type: event.type,
+									wasClean: event.wasClean,
+									code: event.code,
+									reason: event.reason
+								},
+								null,
+								2
+							)
+						)
+					}
 					clearInterval(keepAlive)
-          this.log.info('WebSocket connection closed')
-        } catch (err) {
-          this.log.error('Error with open event \n%s', err)
-        }
-      }
+					if (ws.readyState == 3) {
+						this.log.info('WebSocket connection closed')
+						this.platform.accessoryDeviceList.forEach(device => {
+							let msg = {
+								source: 'local',
+								event: 'device_disconnected',
+								device_id: device,
+								timestamp: new Date().toISOString()
+							}
+							listener(JSON.stringify(msg), device)
+						})
+					}
+				} catch (err) {
+					this.log.error('Error with open event \n%s', err)
+				}
+			}
 
-      ws.onmessage = msg => {
-        try {
-          if (this.platform.showIncomingMessages) {
-            this.log.debug('incoming %s %s', msg.type, JSON.parse(msg.data))
+			ws.onmessage = msg => {
+				try {
+					if (this.platform.showIncomingMessages) {
+						this.log.debug('incoming %s %s', msg.type, JSON.parse(msg.data))
 						listener(msg.data, msg.device_id)
-          }
-        } catch (err) {
-          this.log.error('Error with message event \n%s', err)
-        }
+					}
+				} catch (err) {
+					this.log.error('Error with message event \n%s', err)
+				}
 			}
 
 			ws.onerror = event => {
 				try {
-					this.log.error('error',event.type)
-					this.log.debug(
-            'connection error',
-            JSON.stringify(
-              {
-                type: event.type
-              },
-              null,
-              2
-            )
-          )
+					if (ws.readyState != 2) {
+						this.log.error('error', event.type)
+						this.log.debug(
+							'connection error',
+							JSON.stringify(
+								{
+									type: event.type
+								},
+								null,
+								2
+							)
+						)
+					}
 				} catch (err) {
 					this.log.error('Error event \n%s', err)
 				}
 			}
-
 		} catch (err) {
 			this.log.error('something went wrong \n%s', err)
-			}
+		}
 	}
 }
 module.exports = OrbitAPI
