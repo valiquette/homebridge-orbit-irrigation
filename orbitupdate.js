@@ -215,11 +215,16 @@ class Orbit {
 								case 'rain_delay':
 									this.log.debug('%s rain delay for %s', deviceName, jsonBody.rain_delay_weather_type)
 									break
+								case 'firmware_update_progress':
+									//do nothing
+									let progress = jsonBody.offset / jsonBody.size
+									this.log.info('Firmware update in progress for %s to version %s - %s% ', deviceName, jsonBody.version, progress)
+									break
 								case 'fault':
 									this.log.debug('Message received: %s for device id %s stations %s', jsonBody.event, jsonBody.device_id, jsonBody.stations)
 									break
 								default:
-									this.log.warn('Unknown faucet device message received: %s', jsonBody.event)
+									this.log.warn('%s Unknown faucet device message received: %s', deviceName, jsonBody.event)
 									break
 							}
 						} else {
@@ -477,11 +482,16 @@ class Orbit {
 								case 'rain_delay':
 									this.log.debug('%s rain delay for %s', deviceName, jsonBody.rain_delay_weather_type)
 									break
+								case 'firmware_update_progress':
+									//do nothing
+									let progress = jsonBody.offset / jsonBody.size
+									this.log.info('Firmware update in progress for %s to version %s - %s% ', deviceName, jsonBody.version, progress)
+									break
 								case 'fault':
 									this.log.debug('Message received: %s for device id %s stations %s', jsonBody.event, jsonBody.device_id, jsonBody.stations)
 									break
 								default:
-									this.log.warn('Unknown sprinkler device message received: %s', jsonBody.event)
+									this.log.warn('%s Unknown sprinkler device message received: %s', deviceName, jsonBody.event)
 									break
 							}
 						}
@@ -490,12 +500,11 @@ class Orbit {
 				case 'bridge':
 					let bridgeAccessory
 					if (this.showBridge) {
-						return
 						bridgeAccessory = this.accessories[uuid]
 						if (!bridgeAccessory) {
 							return
 						}
-						activeService = bridgeAccessory.getServiceById(Service.Tunnel, jsonBody.device_id)
+						activeService = bridgeAccessory.getServiceById(Service.WiFiTransport, jsonBody.device_id)
 					}
 					switch (jsonBody.event) {
 						case 'device_connected':
@@ -520,8 +529,13 @@ class Orbit {
 							//do nothing
 							this.log.debug('Message received: %s for bridge device id %s', jsonBody.event, jsonBody.device_id)
 							break
+						case 'firmware_update_progress':
+							//do nothing
+							let progress = jsonBody.offset / jsonBody.size
+							this.log.info('Firmware update in progress for %s to version %s - %s% ', deviceName, jsonBody.version, progress)
+							break
 						default:
-							this.log.warn('Unknown bridge device message received: %s', jsonBody.event)
+							this.log.warn('%s Unknown bridge device message received: %s', deviceName, jsonBody.event)
 							break
 					}
 					break
@@ -614,13 +628,13 @@ class Orbit {
 								//do nothing
 								break
 							default:
-								this.log.warn('Unknown flood sensor device message received: %s', jsonBody.event)
+								this.log.warn('%s Unknown flood sensor device message received: %s', deviceName, jsonBody.event)
 								break
 						}
 					}
 					break
 				default:
-					this.log.warn('Unknown irrigation device message received: %s', jsonBody.event)
+					this.log.warn('%s Unknown irrigation device message received: %s', deviceName, jsonBody.event)
 					break
 			}
 			return
