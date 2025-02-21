@@ -1,4 +1,5 @@
 'use strict'
+
 let OrbitAPI = require('./orbitapi')
 let OrbitUpdate = require('./orbitupdate')
 let battery = require('./devices/battery')

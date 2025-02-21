@@ -8,7 +8,7 @@ let endpoint = 'https://api.orbitbhyve.com/v1'
 let WS_endpoint = 'wss://api.orbitbhyve.com/v1/events'
 let keepAlive
 
-let maxPingInterval = 30000 // Websocket get's timed out after 30s, will set a random value between 20 and 30
+let maxPingInterval = 30000 // Websocket times out after 30s, will set a random value between 20 and 30
 let minPingInterval = 20000
 
 class OrbitAPI {

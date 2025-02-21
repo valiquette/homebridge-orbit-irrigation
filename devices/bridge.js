@@ -12,7 +12,7 @@ class bridge {
 		if (!platformAccessory) {
 			this.log.debug('Create Bridge Accessory %s %s', device.id, device.name)
 			platformAccessory = new PlatformAccessory(device.name, uuid)
-			platformAccessory.addService(Service.IrrigationSystem, device.name) ///question this
+			platformAccessory.addService(Service.IrrigationSystem, device.name) ////question this
 		} else {
 			this.log.debug('Update Bridge Accessory %s %s', device.id, device.name)
 		}
