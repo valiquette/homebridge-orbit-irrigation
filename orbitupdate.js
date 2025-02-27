@@ -13,7 +13,7 @@ class Orbit {
 		//process incoming messages
 		try {
 			let jsonBody = JSON.parse(message)
-			if (jsonBody.source == 'local') this.log('local source')
+			if (jsonBody.source == 'local') this.log.debug('simulated message')
 			let deviceName = this.deviceGraph.devices.filter(result => result.id == jsonBody.device_id)[0].name
 			let deviceModel = this.deviceGraph.devices.filter(result => result.id == jsonBody.device_id)[0].hardware_version
 			let eventType = this.deviceGraph.devices.filter(result => result.id == jsonBody.device_id)[0].type
@@ -66,7 +66,8 @@ class Orbit {
 										if (jsonBody.program != 'manual') {
 											if (!this.activeProgram) {
 												if (this.showSchedules) {
-													this.log.info('Running Program %s, %s', jsonBody.program, valveAccessory.getServiceById(Service.Switch, jsonBody.program).getCharacteristic(Characteristic.Name).value)
+													let switchServiceSchedule = valveAccessory.getServiceById(Service.Switch, UUIDGen.generate(jsonBody.device_id + jsonBody.program))
+													this.log.info('Running Program %s, %s', jsonBody.program, switchServiceSchedule.getCharacteristic(Characteristic.Name).value)
 												} else {
 													this.log.info('Running Program %s', jsonBody.program)
 												}
@@ -161,12 +162,6 @@ class Orbit {
 												service.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.NO_FAULT)
 											}
 										}
-										if (Service.Valve.UUID == service.UUID) {
-											service.getCharacteristic(Characteristic.Active).value
-										}
-										if (Service.Switch.UUID == service.UUID) {
-											service.getCharacteristic(Characteristic.On).value
-										}
 									})
 									break
 								case 'device_disconnected':
@@ -177,12 +172,6 @@ class Orbit {
 												service.getCharacteristic(Characteristic.StatusFault).updateValue(Characteristic.StatusFault.GENERAL_FAULT)
 											}
 										}
-										if (Service.Valve.UUID == service.UUID) {
-											service.getCharacteristic(Characteristic.Active).value
-										}
-										if (Service.Switch.UUID == service.UUID) {
-											service.getCharacteristic(Characteristic.On).value
-										}
 									})
 									break
 								case 'battery_status':
@@ -190,7 +179,7 @@ class Orbit {
 									if (jsonBody.percent) {
 										percent = jsonBody.percent
 									} else if (jsonBody.mv) {
-										percent = (jsonBody.mv / 3815) * 100 > 100 ? 100 : (jsonBody.mv / 3815) * 100
+										percent = ((jsonBody.mv-2000) / (3400-2000)) * 100 > 100 ? 100 : ((jsonBody.mv-2000) /(3400-2000)) * 100
 									}
 									if (jsonBody.charging == undefined) {
 										jsonBody.charging = false
@@ -204,15 +193,15 @@ class Orbit {
 									activeService = valveAccessory.getServiceById(Service.Battery, jsonBody.device_id)
 									if (activeService) {
 										activeService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)
-										activeService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.percent_remaining)
+										//activeService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.percent_remaining)
 									}
 									break
 								case 'clear_low_battery':
-									this.log.info('%s battery good', deviceName)
+									this.log.debug('%s battery good', deviceName)
 									activeService = valveAccessory.getServiceById(Service.Battery, jsonBody.device_id)
 									if (activeService) {
 										activeService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL)
-										activeService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.percent_remaining)
+										//activeService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.percent_remaining)
 									}
 									break
 								case 'device_status':
@@ -226,11 +215,16 @@ class Orbit {
 								case 'rain_delay':
 									this.log.debug('%s rain delay for %s', deviceName, jsonBody.rain_delay_weather_type)
 									break
+								case 'firmware_update_progress':
+									//do nothing
+									let progress = jsonBody.offset / jsonBody.size
+									this.log.info('Firmware update in progress for %s to version %s - %s% ', deviceName, jsonBody.version, progress)
+									break
 								case 'fault':
-									this.log.debug('Message received: %s for device id %s', jsonBody.event, jsonBody.device_id)
+									this.log.debug('Message received: %s for device id %s stations %s', jsonBody.event, jsonBody.device_id, jsonBody.stations)
 									break
 								default:
-									this.log.warn('Unknown faucet device message received: %s', jsonBody.event)
+									this.log.warn('%s Unknown faucet device message received: %s', deviceName, jsonBody.event)
 									break
 							}
 						} else {
@@ -252,7 +246,8 @@ class Orbit {
 										if (jsonBody.program != 'manual') {
 											if (!this.activeProgram) {
 												if (this.showSchedules) {
-													this.log.info('Program %s, %s started', jsonBody.program, irrigationAccessory.getServiceById(Service.Switch, jsonBody.program).getCharacteristic(Characteristic.Name).value)
+													let switchServiceSchedule = irrigationAccessory.getServiceById(Service.Switch, UUIDGen.generate(jsonBody.device_id + jsonBody.program))
+													this.log.info('Program %s, %s started', jsonBody.program, switchServiceSchedule.getCharacteristic(Characteristic.Name).value)
 												} else {
 													this.log.info('Program %s started', jsonBody.program)
 												}
@@ -451,10 +446,7 @@ class Orbit {
 									if (jsonBody.percent) {
 										percent = jsonBody.percent
 									} else if (jsonBody.mv) {
-										if (deviceModel.includes('HT32')) {
-											this.log.debug(deviceModel)
-										}
-										percent = (jsonBody.mv / 3367) * 100 > 100 ? 100 : (jsonBody.mv / 3367) * 100 //not sure why not 3000 for 2 AA batteries
+										percent = ((jsonBody.mv-2000) / (3400-2000)) * 100 > 100 ? 100 : ((jsonBody.mv-2000) /(3400-2000)) * 100
 									}
 									if (jsonBody.charging == undefined) {
 										jsonBody.charging = false
@@ -468,15 +460,15 @@ class Orbit {
 									activeService = irrigationAccessory.getServiceById(Service.Battery, jsonBody.device_id)
 									if (activeService) {
 										activeService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)
-										activeService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.percent_remaining)
+										//activeService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.percent_remaining)
 									}
 									break
 								case 'clear_low_battery':
-									this.log.info('%s battery good', deviceName)
+									this.log.debug('%s battery good', deviceName)
 									activeService = irrigationAccessory.getServiceById(Service.Battery, jsonBody.device_id)
 									if (activeService) {
 										activeService.getCharacteristic(Characteristic.StatusLowBattery).updateValue(Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL)
-										activeService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.percent_remaining)
+										//activeService.getCharacteristic(Characteristic.BatteryLevel).updateValue(jsonBody.percent_remaining)
 									}
 									break
 								case 'device_status':
@@ -490,11 +482,16 @@ class Orbit {
 								case 'rain_delay':
 									this.log.debug('%s rain delay for %s', deviceName, jsonBody.rain_delay_weather_type)
 									break
+								case 'firmware_update_progress':
+									//do nothing
+									let progress = jsonBody.offset / jsonBody.size
+									this.log.info('Firmware update in progress for %s to version %s - %s% ', deviceName, jsonBody.version, progress)
+									break
 								case 'fault':
-									this.log.debug('Message received: %s for device id %s', jsonBody.event, jsonBody.device_id)
+									this.log.debug('Message received: %s for device id %s stations %s', jsonBody.event, jsonBody.device_id, jsonBody.stations)
 									break
 								default:
-									this.log.warn('Unknown sprinkler device message received: %s', jsonBody.event)
+									this.log.warn('%s Unknown sprinkler device message received: %s', deviceName, jsonBody.event)
 									break
 							}
 						}
@@ -507,7 +504,7 @@ class Orbit {
 						if (!bridgeAccessory) {
 							return
 						}
-						activeService = bridgeAccessory.getServiceById(Service.Tunnel, jsonBody.device_id)
+						activeService = bridgeAccessory.getServiceById(Service.WiFiTransport, jsonBody.device_id)
 					}
 					switch (jsonBody.event) {
 						case 'device_connected':
@@ -532,8 +529,13 @@ class Orbit {
 							//do nothing
 							this.log.debug('Message received: %s for bridge device id %s', jsonBody.event, jsonBody.device_id)
 							break
+						case 'firmware_update_progress':
+							//do nothing
+							let progress = jsonBody.offset / jsonBody.size
+							this.log.info('Firmware update in progress for %s to version %s - %s% ', deviceName, jsonBody.version, progress)
+							break
 						default:
-							this.log.warn('Unknown bridge device message received: %s', jsonBody.event)
+							this.log.warn('%s Unknown bridge device message received: %s', deviceName, jsonBody.event)
 							break
 					}
 					break
@@ -626,13 +628,13 @@ class Orbit {
 								//do nothing
 								break
 							default:
-								this.log.warn('Unknown flood sensor device message received: %s', jsonBody.event)
+								this.log.warn('%s Unknown flood sensor device message received: %s', deviceName, jsonBody.event)
 								break
 						}
 					}
 					break
 				default:
-					this.log.warn('Unknown irrigation device message received: %s', jsonBody.event)
+					this.log.warn('%s Unknown irrigation device message received: %s', deviceName, jsonBody.event)
 					break
 			}
 			return
