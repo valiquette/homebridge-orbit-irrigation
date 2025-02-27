@@ -4,7 +4,7 @@
 fix
 -  fixed issue with homebridge 2.0 invalid character warning. May need to remove limit sensor accessory from homebridge so it can re added on restart.
 -  adjustments to battery percent calulations for multizone timers
--  refactored WebSocket connectivity
+-  refactored WebSocket connectivity 
 -  fixed "Error: This callback function has already been called by someone else". Which may have been seen in certian use cases with default schedule names. Will require the extra switch accessories to be removed and re added.
 -  fixed crash when exposing bridge
 -  bumped dependencies

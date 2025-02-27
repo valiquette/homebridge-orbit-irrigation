@@ -100,7 +100,7 @@ class OrbitPlatform {
 			this.userId = signinResponse.user_id
 			//open Wesocket
 			this.log.debug('Establish connection for %s', 'my location')
-			this.orbitapi.openConnection(this.token, {name:'my location', id:''}, this.orbit.updateService.bind(this))
+			this.orbitapi.openConnection(this.token, { name: 'my location', id: '' }, this.orbit.updateService.bind(this))
 			//get device graph
 			this.deviceGraph = await this.orbitapi.getDeviceGraph(this.token, this.userId).catch(err => {
 				this.log.error('Failed to get graph info %s', err)
@@ -586,7 +586,7 @@ class OrbitPlatform {
 							this.log.debug('Found device %s', newDevice.name)
 							//switch (newDevice.hardware_version){
 							switch (
-								newDevice.hardware_version.split('-')[0] //look for any rev
+							newDevice.hardware_version.split('-')[0] //look for any rev
 							) {
 								//case "BH1-0001":
 								case 'BH1':

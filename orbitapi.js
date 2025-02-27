@@ -519,7 +519,7 @@ class OrbitAPI {
 								break
 							case ws.OPEN:
 								//this.log.debug('readyState open')
-								ws.send({event: 'ping'})
+								ws.send({ event: 'ping' })
 								break
 							case ws.CLOSING:
 								this.log.debug('readyState closing')
