@@ -261,7 +261,7 @@ class OrbitPlatform {
 											this.api.updatePlatformAccessories([valveAccessory])
 										} else {
 											//skip
-											this.log.warn('Skipping switch for disabled program %s', schedule.name)
+											this.log.warn('Skipping switch for disabled program %s %s', schedule.program, schedule.name)
 											let switchService = valveAccessory.getServiceById(Service.Switch, schedule.program)
 											if (switchService) {
 												valveAccessory.removeService(switchService)
@@ -287,7 +287,8 @@ class OrbitPlatform {
 								if (this.showStandby) {
 									let switchType = 'Standby'
 									this.log.debug('adding new standby switch')
-									let switchService = valveAccessory.getService(Service.Switch)
+									let uuid = UUIDGen.generate(newDevice.id + switchType)
+									let switchService = valveAccessory.getServiceById(Service.Switch, uuid)
 									if (switchService) {
 										//update
 										switchService
@@ -451,7 +452,7 @@ class OrbitPlatform {
 											this.api.updatePlatformAccessories([irrigationAccessory])
 										} else {
 											//skip
-											this.log.warn('Skipping switch for disabled program %s', schedule.name)
+											this.log.warn('Skipping switch for disabled program %s %s', schedule.program, schedule.name)
 											let switchService = irrigationAccessory.getServiceById(Service.Switch, schedule.program)
 											if (switchService) {
 												irrigationAccessory.removeService(switchService)

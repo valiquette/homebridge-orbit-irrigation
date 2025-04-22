@@ -35,7 +35,11 @@ class basicSwitch {
 	}
 
 	configureSwitchService(device, switchService) {
-		this.log.info('Configured switch for program %s %s', switchService.subtype, switchService.getCharacteristic(Characteristic.Name).value)
+		if(switchService.subtype.length == 1) {
+			this.log.info('Configured switch for program %s %s', switchService.subtype, switchService.getCharacteristic(Characteristic.Name).value)
+		} else {
+			this.log.info('Configured switch for %s', switchService.getCharacteristic(Characteristic.Name).value)
+		}
 		switchService.getCharacteristic(Characteristic.On)
 		.on('get', this.getSwitchValue.bind(this, switchService))
 		.on('set', this.setSwitchValue.bind(this, device, switchService))

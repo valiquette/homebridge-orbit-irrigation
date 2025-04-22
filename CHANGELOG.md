@@ -1,5 +1,9 @@
 # Changes
 
+## 1.2.41
+fix
+-  fixed warning message when showing switches when both schedules and standby are selected
+
 ## 1.2.40
 fix
 -  fixed issue with homebridge 2.0 invalid character, may need to remove and re-add accessory

@@ -23,7 +23,7 @@ class valve {
 		}
 		if (!platformAccessory) {
 			// Create new Valve System Service
-			this.log.warn('Create valve accessory %s station-%s %s', device.name, zone.station, zone.name)
+			this.log.info('Create valve accessory %s station-%s %s', device.name, zone.station, zone.name)
 			platformAccessory = new PlatformAccessory(zone.name, uuid)
 			valveService = platformAccessory.addService(Service.Valve, zone.station)
 			//valveService = new Service.Valve(zone.name, zone.station)
