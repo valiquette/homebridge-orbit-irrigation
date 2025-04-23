@@ -20,10 +20,7 @@ class battery {
 		if (device.battery.percent) {
 			percent = device.battery.percent
 		} else if (device.battery.mv) {
-			if (device.hardware_version.includes('HT32')) {
-				this.log.debug(device.hardware_version)
-			}
-			percent = (device.battery.mv / 3815) * 100 > 100 ? 100 : (device.battery.mv / 3815) * 100 //not sure why not 3000 for 2 AA batteries
+			percent = ((jsonBody.mv-2000) / (3400-2000)) * 100 > 100 ? 100 : ((jsonBody.mv-2000) /(3400-2000)) * 100
 		}
 		batteryStatus
 			.setCharacteristic(Characteristic.ChargingState, Characteristic.ChargingState.NOT_CHARGEABLE)

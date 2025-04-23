@@ -28,7 +28,7 @@ class sensor {
 			.setCharacteristic(Characteristic.FirmwareRevision, device.firmware_version)
 			.setCharacteristic(Characteristic.HardwareRevision, device.hardware_version)
 			.setCharacteristic(Characteristic.SoftwareRevision, packageJson.version)
-		platformAccessory.getService(Service.AccessoryInformation).getCharacteristic(Characteristic.Identify).on('set', this.orbitapi.identify.bind(this.platform.token, device))
+		platformAccessory.getService(Service.AccessoryInformation).getCharacteristic(Characteristic.Identify).on('set', this.orbitapi.identify.bind(device))
 		return platformAccessory
 	}
 
