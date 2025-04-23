@@ -23,7 +23,7 @@ class valve {
 		}
 		if (!platformAccessory) {
 			// Create new Valve System Service
-			this.log.debug('Create valve accessory %s station-%s %s', device.name, zone.station, zone.name)
+			this.log.info('Create valve accessory %s station-%s %s', device.name, zone.station, zone.name)
 			platformAccessory = new PlatformAccessory(zone.name, uuid)
 			valveService = platformAccessory.addService(Service.Valve, zone.station)
 			//valveService = new Service.Valve(zone.name, zone.station)
@@ -76,6 +76,7 @@ class valve {
 	updateValveService(device, zone, valve) {
 		let defaultRuntime = this.platform.defaultRuntime
 		zone.enabled = true // need orbit version of enabled
+		this.log.debug(zone)
 		try {
 			switch (this.platform.runtimeSource) {
 				case 0:
@@ -213,7 +214,7 @@ class valve {
 			// Turn on/idle the valve
 			this.log.info('Starting zone-%s %s for %s mins', valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value, valveService.getCharacteristic(Characteristic.Name).value, runTime / 60)
 			let station = valveService.getCharacteristic(Characteristic.ServiceLabelIndex).value
-			this.orbitapi.startZone(device, station, runTime / 60)
+			this.orbitapi.startZone(this.platform.token, device, station, runTime / 60)
 			valveService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.Active.ACTIVE)
 			valveService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
 			//json start stuff
@@ -261,7 +262,7 @@ class valve {
 		} else {
 			// Turn off/stopping the valve
 			this.log.info('Stopping Zone', valveService.getCharacteristic(Characteristic.Name).value)
-			this.orbitapi.stopZone(device)
+			this.orbitapi.stopZone(this.platform.token, device)
 			valveService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.Active.INACTIVE)
 			valveService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
 			//json stop stuff

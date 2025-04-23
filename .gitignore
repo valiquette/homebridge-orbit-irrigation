@@ -1,0 +1,22 @@
+# Ignore compiled code
+dist
+
+# System Files
+.DS_Store
+Thumbs.db
+.vscode
+.prettierrc
+.npmignore
+.gitignore
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# ignore file
+package-lock.json
+eslint.config.js
+nodemon.json
+
+# Optional npm cache directory
+.npm

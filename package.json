@@ -1,16 +1,17 @@
 {
 	"name": "homebridge-orbit-irrigation",
 	"displayName": "Orbit",
-	"version": "1.2.40",
+	"version": "1.2.41",
 	"description": "Orbit Irrigation System platform plugin for [Homebridge](https://github.com/nfarina/homebridge).",
 	"main": "index.js",
 	"dependencies": {
-		"axios": "^1.8.1",
+		"axios": "^1.8.4",
+		"ws": "^8.18.1",
 		"reconnecting-websocket": "^4.4.0"
 	},
 	"engines": {
-		"homebridge": "^1.8.0 || ^1.9.0 || ^2.0.0-beta.0",
-		"node": "^18.20.0 || ^20.18.0 || ^22.14.0"
+		"homebridge": "^1.8.0 || ^2.0.0-beta.0",
+		"node": "^18.20.0 || ^20.18.0 || ^22.12.0"
 	},
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"

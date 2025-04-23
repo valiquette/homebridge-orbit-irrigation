@@ -1,5 +1,4 @@
 'use strict'
-
 let OrbitAPI = require('./orbitapi')
 let OrbitUpdate = require('./orbitupdate')
 let battery = require('./devices/battery')
@@ -58,7 +57,6 @@ class OrbitPlatform {
 		this.networkTopologyId
 		this.deviceGraph
 		this.accessories = []
-		this.accessoryDeviceList = []
 
 		if (!config.email || !config.password) {
 			this.log.error('Valid email and password are required in order to communicate with the b-hyve, please check the plugin config')
@@ -98,9 +96,6 @@ class OrbitPlatform {
 			this.log.debug('Found api key %s********************%s', signinResponse.orbit_api_key.substring(0, 35), signinResponse.orbit_api_key.substring(signinResponse.orbit_api_key.length - 35))
 			this.token = signinResponse.orbit_api_key
 			this.userId = signinResponse.user_id
-			//open Wesocket
-			this.log.debug('Establish connection for %s', 'my location')
-			this.orbitapi.openConnection(this.token, { name: 'my location', id: '' }, this.orbit.updateService.bind(this))
 			//get device graph
 			this.deviceGraph = await this.orbitapi.getDeviceGraph(this.token, this.userId).catch(err => {
 				this.log.error('Failed to get graph info %s', err)
@@ -124,7 +119,7 @@ class OrbitPlatform {
 					}
 					if (!this.locationAddress || this.locationAddress == device.address.line_1) {
 						if (device.is_connected) {
-							this.log.info('Online device %s %s found at location address: %s', device.hardware_version, device.name, device.address.line_1)
+							this.log.info('Online device %s %s found at the configured location address: %s', device.hardware_version, device.name, device.address.line_1)
 							if (device.network_topology_id) {
 								this.networkTopologyId = device.network_topology_id
 								this.networkTopology = this.orbitapi.getNetworkTopologies(this.token, device.network_topology_id).catch(err => {
@@ -138,20 +133,20 @@ class OrbitPlatform {
 								})
 							}
 						} else {
-							this.log.info('Offline device %s %s found at location: %s', device.hardware_version, device.name, device.address.line_1)
+							this.log.info('Offline device %s %s found at the configured location address: %s', device.hardware_version, device.name, device.address.line_1)
 							this.log.warn('%s is disconnected! This will show as non-responding in Homekit until the connection is restored.', device.name)
 						}
 						locationMatch = true
 					} else if (device.address.line_1 == 'undefined location' && (this.networkTopologyId == device.network_topology_id || this.meshId == device.mesh_id)) {
 						if (device.is_connected) {
-							this.log.info('Online device %s %s found at location: %s', device.hardware_version, device.name, device.location_name)
+							this.log.info('Online device %s %s found for the location: %s', device.hardware_version, device.name, device.location_name)
 						} else {
-							this.log.info('Offline device %s %s found at location: %s', device.hardware_version, device.name, device.location_name)
+							this.log.info('Offline device %s %s found for the location: %s', device.hardware_version, device.name, device.location_name)
 							this.log.warn('%s is disconnected! This will show as non-responding in Homekit until the connection is restored.', device.name)
 						}
 						locationMatch = true
 					} else {
-						this.log.info('Skipping device %s %s at %s, not found at location: %s', device.hardware_version, device.name, device.address.line_1, this.locationAddress)
+						this.log.info('Skipping device %s %s at %s, not found at the configured location address: %s', device.hardware_version, device.name, device.address.line_1, this.locationAddress)
 						locationMatch = false
 					}
 					return locationMatch
@@ -162,7 +157,6 @@ class OrbitPlatform {
 						this.log.error('Failed to get devices for build %s', err)
 					})
 					let uuid = UUIDGen.generate(newDevice.id)
-					this.accessoryDeviceList.push(newDevice.id)
 
 					switch (newDevice.type) {
 						//Handle Water accessories
@@ -215,7 +209,6 @@ class OrbitPlatform {
 											.setCharacteristic(Characteristic.ChargingState, Characteristic.ChargingState.NOT_CHARGEABLE)
 											.setCharacteristic(Characteristic.StatusLowBattery, Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL)
 											.setCharacteristic(Characteristic.BatteryLevel, newDevice.battery.percent)
-										this.battery.configureBatteryService(batteryStatus)
 									} else {
 										//add new
 										batteryStatus = this.battery.createBatteryService(newDevice, uuid)
@@ -246,17 +239,15 @@ class OrbitPlatform {
 									scheduleResponse.forEach(schedule => {
 										if (schedule.enabled) {
 											this.log.debug('adding schedules %s program %s', schedule.name, schedule.program)
-											let uuid = UUIDGen.generate(newDevice.id + schedule.program)
-											let switchService = valveAccessory.getServiceById(Service.Switch, uuid)
+											let switchService = valveAccessory.getServiceById(Service.Switch, schedule.program)
 											if (switchService) {
 												//update
 												switchService
 													.setCharacteristic(Characteristic.On, false)
-													.setCharacteristic(Characteristic.Name, newDevice.name + ' ' + schedule.name)
-													.setCharacteristic(Characteristic.ConfiguredName, schedule.name + ' ' + newDevice.name)
+													.setCharacteristic(Characteristic.Name, device.name + ' ' + schedule.name)
+													.setCharacteristic(Characteristic.ConfiguredName, schedule.name + ' ' + device.name)
 													.setCharacteristic(Characteristic.SerialNumber, schedule.id)
-													.setCharacteristic(Characteristic.ServiceLabelIndex, schedule.program.charCodeAt(0))
-													.setCharacteristic(Characteristic.StatusFault, !newDevice.is_connected)
+													.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
 												this.basicSwitch.configureSwitchService(newDevice, switchService)
 												this.api.updatePlatformAccessories([valveAccessory])
 											} else {
@@ -270,7 +261,7 @@ class OrbitPlatform {
 											this.api.updatePlatformAccessories([valveAccessory])
 										} else {
 											//skip
-											this.log.warn('Skipping switch for disabled program %s', schedule.name)
+											this.log.warn('Skipping switch for disabled program %s %s', schedule.program, schedule.name)
 											let switchService = valveAccessory.getServiceById(Service.Switch, schedule.program)
 											if (switchService) {
 												valveAccessory.removeService(switchService)
@@ -285,8 +276,7 @@ class OrbitPlatform {
 									})
 									scheduleResponse.forEach(schedule => {
 										this.log.debug('removed schedule switch')
-										let uuid = UUIDGen.generate(newDevice.id + schedule.program)
-										let switchService = valveAccessory.getServiceById(Service.Switch, uuid)
+										let switchService = valveAccessory.getServiceById(Service.Switch, schedule.program)
 										if (switchService) {
 											valveAccessory.removeService(switchService)
 											this.api.updatePlatformAccessories([valveAccessory])
@@ -295,8 +285,8 @@ class OrbitPlatform {
 								}
 
 								if (this.showStandby) {
-									this.log.debug('adding new standby switch')
 									let switchType = 'Standby'
+									this.log.debug('adding new standby switch')
 									let uuid = UUIDGen.generate(newDevice.id + switchType)
 									let switchService = valveAccessory.getServiceById(Service.Switch, uuid)
 									if (switchService) {
@@ -319,9 +309,7 @@ class OrbitPlatform {
 								} else {
 									//remove
 									this.log.debug('removed standby switch')
-									let switchType = 'Standby'
-									let uuid = UUIDGen.generate(newDevice.id + switchType)
-									let switchService = valveAccessory.getServiceById(Service.Switch, uuid)
+									let switchService = valveAccessory.getService(Service.Switch)
 									if (switchService) {
 										valveAccessory.removeService(switchService)
 										this.api.updatePlatformAccessories([valveAccessory])
@@ -366,7 +354,6 @@ class OrbitPlatform {
 											.setCharacteristic(Characteristic.ChargingState, Characteristic.ChargingState.NOT_CHARGEABLE)
 											.setCharacteristic(Characteristic.StatusLowBattery, Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL)
 											.setCharacteristic(Characteristic.BatteryLevel, newDevice.battery.percent)
-										this.battery.configureBatteryService(batteryStatus)
 									} else {
 										//add new
 										batteryStatus = this.battery.createBatteryService(newDevice, uuid)
@@ -443,17 +430,15 @@ class OrbitPlatform {
 									scheduleResponse.forEach(schedule => {
 										if (schedule.enabled) {
 											this.log.debug('adding schedules %s program %s', schedule.name, schedule.program)
-											let uuid = UUIDGen.generate(newDevice.id + schedule.program)
-											let switchService = irrigationAccessory.getServiceById(Service.Switch, uuid)
+											let switchService = irrigationAccessory.getServiceById(Service.Switch, schedule.program)
 											if (switchService) {
 												//update
 												switchService
 													.setCharacteristic(Characteristic.On, false)
-													.setCharacteristic(Characteristic.Name, newDevice.name + ' ' + schedule.name)
+													.setCharacteristic(Characteristic.Name, device.name + ' ' + schedule.name)
 													.setCharacteristic(Characteristic.ConfiguredName, schedule.name + ' ' + device.name)
 													.setCharacteristic(Characteristic.SerialNumber, schedule.id)
-													.setCharacteristic(Characteristic.ServiceLabelIndex, schedule.program.charCodeAt(0))
-													.setCharacteristic(Characteristic.StatusFault, !newDevice.is_connected)
+													.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
 												this.basicSwitch.configureSwitchService(newDevice, switchService)
 												irrigationAccessory.getService(Service.IrrigationSystem).addLinkedService(switchService)
 											} else {
@@ -467,8 +452,8 @@ class OrbitPlatform {
 											this.api.updatePlatformAccessories([irrigationAccessory])
 										} else {
 											//skip
-											this.log.warn('Skipping switch for disabled program %s', schedule.name)
-											let switchService = irrigationAccessory.getServiceById(Service.Switch, uuid)
+											this.log.warn('Skipping switch for disabled program %s %s', schedule.program, schedule.name)
+											let switchService = irrigationAccessory.getServiceById(Service.Switch, schedule.program)
 											if (switchService) {
 												irrigationAccessory.removeService(switchService)
 												this.api.updatePlatformAccessories([irrigationAccessory])
@@ -482,8 +467,7 @@ class OrbitPlatform {
 									})
 									scheduleResponse.forEach(schedule => {
 										this.log.debug('removed schedule switch')
-										let uuid = UUIDGen.generate(newDevice.id + schedule.program)
-										let switchService = irrigationAccessory.getServiceById(Service.Switch, uuid)
+										let switchService = irrigationAccessory.getServiceById(Service.Switch, schedule.program)
 										if (switchService) {
 											irrigationAccessory.removeService(switchService)
 											this.api.updatePlatformAccessories([irrigationAccessory])
@@ -526,8 +510,8 @@ class OrbitPlatform {
 								}
 
 								if (this.showStandby) {
-									this.log.debug('adding new standby switch')
 									let switchType = 'Standby'
+									this.log.debug('adding new standby switch')
 									let uuid = UUIDGen.generate(newDevice.id + switchType)
 									let switchService = irrigationAccessory.getServiceById(Service.Switch, uuid)
 									if (switchService) {
@@ -549,8 +533,8 @@ class OrbitPlatform {
 									this.api.updatePlatformAccessories([irrigationAccessory])
 								} else {
 									//remove
-									this.log.debug('removed standby switch')
 									let switchType = 'Standby'
+									this.log.debug('removed standby switch')
 									let uuid = UUIDGen.generate(newDevice.id + switchType)
 									let switchService = irrigationAccessory.getServiceById(Service.Switch, uuid)
 									if (switchService) {
@@ -558,7 +542,6 @@ class OrbitPlatform {
 										this.api.updatePlatformAccessories([irrigationAccessory])
 									}
 								}
-
 								// Register platform accessory
 								if (!this.accessories[uuid]) {
 									this.log.debug('Registering platform accessory')
@@ -586,7 +569,7 @@ class OrbitPlatform {
 							this.log.debug('Found device %s', newDevice.name)
 							//switch (newDevice.hardware_version){
 							switch (
-							newDevice.hardware_version.split('-')[0] //look for any rev
+								newDevice.hardware_version.split('-')[0] //look for any rev
 							) {
 								//case "BH1-0001":
 								case 'BH1':
@@ -596,12 +579,12 @@ class OrbitPlatform {
 									})
 									this.log.debug('Creating and configuring new bridge')
 									bridgeAccessory = this.bridge.createBridgeAccessory(newDevice, uuid, this.accessories[uuid])
-									bridgeService = bridgeAccessory.getService(Service.WiFiTransport)
+									bridgeService = bridgeAccessory.getService(Service.Tunnel)
 									bridgeService = this.bridge.createBridgeService(newDevice, meshNetwork, false)
 									this.bridge.configureBridgeService(bridgeService)
 									// Set current device status
 									bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
-									service = bridgeAccessory.getService(Service.WiFiTransport)
+									service = bridgeAccessory.getService(Service.Tunnel)
 									if (!service) {
 										bridgeAccessory.addService(bridgeService)
 									}
@@ -616,12 +599,12 @@ class OrbitPlatform {
 									})
 									this.log.debug('Creating and configuring new bridge')
 									bridgeAccessory = this.bridge.createBridgeAccessory(newDevice, uuid, this.accessories[uuid])
-									bridgeService = bridgeAccessory.getService(Service.WiFiTransport)
+									bridgeService = bridgeAccessory.getService(Service.Tunnel)
 									bridgeService = this.bridge.createBridgeService(newDevice, networkTopology, true)
 									this.bridge.configureBridgeService(bridgeService)
 									// set current device status
 									bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
-									service = bridgeAccessory.getService(Service.WiFiTransport)
+									service = bridgeAccessory.getService(Service.Tunnel)
 									if (!service) {
 										bridgeAccessory.addService(bridgeService)
 									}
@@ -642,7 +625,7 @@ class OrbitPlatform {
 							if (!this.showFloodSensor && !this.showTempSensor && !this.showLimitsSensor) {
 								this.log.info('Skipping Flood Sensor %s %s based on config', newDevice.hardware_version, newDevice.name)
 								if (this.accessories[uuid]) {
-									this.log.debug('Removed cached device', newDevice.id)
+									this.log.debug('Removed cached device', device.id)
 									this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
 									delete this.accessories[uuid]
 								}
@@ -669,7 +652,7 @@ class OrbitPlatform {
 								}
 							} else {
 								if (this.accessories[uuid]) {
-									this.log.debug('Removed cached device', newDevice.id)
+									this.log.debug('Removed cached device', device.id)
 									this.api.unregisterPlatformAccessories(PluginName, PlatformName, [this.accessories[uuid]])
 									delete this.accessories[uuid]
 								}
@@ -744,12 +727,16 @@ class OrbitPlatform {
 						default:
 						// do nothing
 					}
-					//moved before device loop to have just one websocket
-					//this.log.debug('Establish connection for %s', newDevice.name)
-					//this.orbitapi.openConnection(this.token, newDevice, this.orbit.updateService.bind(this))
+
+					this.log.debug('Establish connection for %s', newDevice.name)
+					this.orbitapi.openConnection(this.token, newDevice)
+					this.orbitapi.onMessage(this.token, newDevice, this.orbit.updateService.bind(this))
 					this.irrigation.localMessage(this.orbit.updateService.bind(this))
 					this.valve.localMessage(this.orbit.updateService.bind(this))
-					this.orbitapi.sync(newDevice)
+					// Send Sync after 2 sec delay, match state to bhyve state
+					setTimeout(() => {
+						this.orbitapi.sync(this.token, newDevice)
+					}, 2000)
 				})
 			setTimeout(() => {
 				this.log.success('Orbit Platform finished loading')
