@@ -56,10 +56,10 @@ class basicSwitch {
 				} else {
 					if (!value) {
 						switchService.getCharacteristic(Characteristic.On).updateValue(true)
-						this.orbitapi.deviceStandby(device, 'auto')
+						this.orbitapi.deviceStandby(this.platform.token, device, 'auto')
 					} else {
 						switchService.getCharacteristic(Characteristic.On).updateValue(false)
-						this.orbitapi.deviceStandby(device, 'off')
+						this.orbitapi.deviceStandby(this.platform.token, device, 'off')
 					}
 					callback()
 				}
@@ -70,11 +70,11 @@ class basicSwitch {
 				} else {
 					if (value) {
 						switchService.getCharacteristic(Characteristic.On).updateValue(true)
-						this.orbitapi.startMultipleZone(device, this.platform.defaultRuntime / 60)
+						this.orbitapi.startMultipleZone(this.platform.token, device, this.platform.defaultRuntime / 60)
 						this.log.info('Running all zones for %s min each', this.platform.defaultRuntime / 60)
 					} else {
 						switchService.getCharacteristic(Characteristic.On).updateValue(false)
-						this.orbitapi.stopDevice(device)
+						this.orbitapi.stopDevice(this.platform.token, device)
 					}
 					callback()
 				}
@@ -86,10 +86,10 @@ class basicSwitch {
 					if (value) {
 						switchService.getCharacteristic(Characteristic.On).updateValue(true)
 						let program = String.fromCharCode(switchService.getCharacteristic(Characteristic.ServiceLabelIndex).value)
-						this.orbitapi.startSchedule(device, program)
+						this.orbitapi.startSchedule(this.platform.token, device, program)
 					} else {
 						switchService.getCharacteristic(Characteristic.On).updateValue(false)
-						this.orbitapi.stopDevice(device)
+						this.orbitapi.stopDevice(this.platform.token, device)
 					}
 					callback()
 				}
