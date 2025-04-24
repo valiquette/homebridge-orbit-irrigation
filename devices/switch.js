@@ -13,6 +13,7 @@ class basicSwitch {
 		let switchService = new Service.Switch(device.name + ' ' + schedule.name, uuid)
 		switchService.addCharacteristic(Characteristic.ConfiguredName)
 		switchService.addCharacteristic(Characteristic.SerialNumber)
+		switchService.addCharacteristic(Characteristic.ServiceLabelIndex)
 		switchService
 			.setCharacteristic(Characteristic.On, false)
 			.setCharacteristic(Characteristic.Name, device.name + ' ' + schedule.name)
