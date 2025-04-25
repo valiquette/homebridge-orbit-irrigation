@@ -1,9 +1,17 @@
 # Changes
 
+## 1.2.42
+fix
+-  fixed websocket issue sending messages for irrigation device
+-  fixed charateristic warning
+-  fixed issue with schedules switches
+-  code cleanup
+-  bumped dependencies
+
 ## 1.2.41
 fix
 -  fixed warning message when showing switches when both schedules and standby are selected
--  fixed websocket issue that prevented incoming message from being recieved
+-  fixed websocket issue that was preventing some incoming message from being recieved
 
 ## 1.2.40
 fix

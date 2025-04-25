@@ -465,20 +465,15 @@ class OrbitAPI {
 
 	openConnection(token, device) {
 		try {
-			this.log.debug('Opening WebSocket Connection for %s', device.name)
+			this.log.debug('Opening WebSocket Connection')
 			this.wsp
 				.connect(token, device)
-				.then(ws =>
-					ws.send({
-						//event: 'app_connection',
-						//orbit_session_token: token,
-						//subscribe_device_id: device.id, //stopped working
-						event: 'app_connection',
-						name: device.name,
-						id: device.id,
-						orbit_session_token: token
-					})
-				)
+				//.then(ws =>
+				//	ws.send({
+				//		event: 'app_connection',
+				//		orbit_session_token: token
+				//	})
+				//)
 				.catch(err => {
 					this.log.error('Error opening connection \n%s', err)
 				})
@@ -560,15 +555,15 @@ class WebSocketProxy {
 				this.log.debug('ready state', this.rws.readyState)
 				switch (this.rws.readyState) {
 					case ws.CONNECTING:
-						return Promise.resolve(this.rws)
+						return this.rws
 					case ws.OPEN:
-						return Promise.resolve(this.rws)
+						return this.rws
 					case ws.CLOSING:
 						this.rws.reconnect()
-						return Promise.resolve(this.rws)
+						return this.rws
 					case ws.CLOSED:
 						this.rws.reconnect()
-						return Promise.resolve(this.rws)
+						return this.rws
 				}
 			}
 			return new Promise((resolve, reject) => {
@@ -607,13 +602,10 @@ class WebSocketProxy {
 
 					this.rws.onopen = event => {
 						try {
-							/*
 							this.rws.send({
 								event: 'app_connection',
 								orbit_session_token: token,
-								subscribe_device_id: device.id
 							})
-							*/
 							this.log.debug(
 								'connection open',
 								JSON.stringify(
