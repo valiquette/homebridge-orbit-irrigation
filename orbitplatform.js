@@ -96,6 +96,13 @@ class OrbitPlatform {
 			this.log.debug('Found api key %s********************%s', signinResponse.orbit_api_key.substring(0, 35), signinResponse.orbit_api_key.substring(signinResponse.orbit_api_key.length - 35))
 			this.token = signinResponse.orbit_api_key
 			this.userId = signinResponse.user_id
+
+			//connect WebSocket
+			this.log.debug('Establish WebSocket connection')
+			this.orbitapi.openConnection(this.token, null)
+			this.irrigation.localMessage(this.orbit.updateService.bind(this))
+			this.valve.localMessage(this.orbit.updateService.bind(this))
+
 			//get device graph
 			this.deviceGraph = await this.orbitapi.getDeviceGraph(this.token, this.userId).catch(err => {
 				this.log.error('Failed to get graph info %s', err)
@@ -239,7 +246,7 @@ class OrbitPlatform {
 									scheduleResponse.forEach(schedule => {
 										if (schedule.enabled) {
 											this.log.debug('adding schedules %s program %s', schedule.name, schedule.program)
-											let switchService = valveAccessory.getServiceById(Service.Switch, schedule.program)
+											let switchService = valveAccessory.getServiceById(Service.Switch, UUIDGen.generate(schedule.device_id + schedule.program))
 											if (switchService) {
 												//update
 												switchService
@@ -276,7 +283,7 @@ class OrbitPlatform {
 									})
 									scheduleResponse.forEach(schedule => {
 										this.log.debug('removed schedule switch')
-										let switchService = valveAccessory.getServiceById(Service.Switch, schedule.program)
+										let switchService = valveAccessory.getServiceById(Service.Switch, UUIDGen.generate(schedule.device_id + schedule.program))
 										if (switchService) {
 											valveAccessory.removeService(switchService)
 											this.api.updatePlatformAccessories([valveAccessory])
@@ -430,7 +437,7 @@ class OrbitPlatform {
 									scheduleResponse.forEach(schedule => {
 										if (schedule.enabled) {
 											this.log.debug('adding schedules %s program %s', schedule.name, schedule.program)
-											let switchService = irrigationAccessory.getServiceById(Service.Switch, schedule.program)
+											let switchService = irrigationAccessory.getServiceById(Service.Switch, UUIDGen.generate(schedule.device_id + schedule.program))
 											if (switchService) {
 												//update
 												switchService
@@ -467,7 +474,7 @@ class OrbitPlatform {
 									})
 									scheduleResponse.forEach(schedule => {
 										this.log.debug('removed schedule switch')
-										let switchService = irrigationAccessory.getServiceById(Service.Switch, schedule.program)
+										let switchService = irrigationAccessory.getServiceById(Service.Switch, UUIDGen.generate(schedule.device_id + schedule.program))
 										if (switchService) {
 											irrigationAccessory.removeService(switchService)
 											this.api.updatePlatformAccessories([irrigationAccessory])
@@ -727,16 +734,8 @@ class OrbitPlatform {
 						default:
 						// do nothing
 					}
-
-					this.log.debug('Establish connection for %s', newDevice.name)
-					this.orbitapi.openConnection(this.token, newDevice)
 					this.orbitapi.onMessage(this.token, newDevice, this.orbit.updateService.bind(this))
-					this.irrigation.localMessage(this.orbit.updateService.bind(this))
-					this.valve.localMessage(this.orbit.updateService.bind(this))
-					// Send Sync after 2 sec delay, match state to bhyve state
-					setTimeout(() => {
-						this.orbitapi.sync(this.token, newDevice)
-					}, 2000)
+					this.orbitapi.sync(this.token, newDevice)
 				})
 			setTimeout(() => {
 				this.log.success('Orbit Platform finished loading')
