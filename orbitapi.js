@@ -8,8 +8,9 @@ let reconnectingwebsocket = require('reconnecting-websocket')
 let endpoint = 'https://api.orbitbhyve.com/v1'
 let WS_endpoint = 'wss://api.orbitbhyve.com/v1/events'
 
-let maxPingInterval = 30000 // Websocket get's timed out after 30s, will set a random value between 20 and 30
+let maxPingInterval = 30000
 let minPingInterval = 20000
+let pingInterval = Math.floor(Math.random() * (maxPingInterval - minPingInterval)) + minPingInterval // Websocket get's timed out after 30s, will set a random value between 20 and 30
 
 class OrbitAPI {
 	constructor(platform, log) {
@@ -584,21 +585,49 @@ class WebSocketProxy {
 					// Intercept send events for logging
 					let origSend = this.rws.send.bind(this.rws)
 					this.rws.send = (data, options, callback) => {
-						if (typeof data === 'object') {
-							data = JSON.stringify(data, null, 2)
+						switch (this.rws.readyState) {
+							case ws.CONNECTING:
+								setTimeout(() => {
+									//this.log.debug(data)
+									rws.send(data)
+								}, 1000);
+								break
+							case ws.OPEN:
+								if (typeof data === 'object') {
+									data = JSON.stringify(data, null, 2)
+								}
+								if (this.platform.showOutgoingMessages) {
+									//this.log.debug(JSON.parse(data).event)
+									if (JSON.parse(data).event != 'ping') {
+										this.log.debug('sending outgoing message %s', data)
+									}
+								}
+								origSend(data, options, callback)
+								break
+								case ws.CLOSING:
+									break
+								case ws.CLOSED:
+									this.log.info('connection not opened')
+									break
 						}
-						if (this.platform.showOutgoingMessages) {
-							//this.log.debug(JSON.parse(data).event)
-							if (JSON.parse(data).event != 'ping') {
-								this.log.debug('sending outgoing message %s', data)
-							}
-						}
-						origSend(data, options, callback)
 					}
+
 					// Ping
 					this.ping = setInterval(() => {
-						this.rws.send({event: 'ping'})
-					}, Math.floor(Math.random() * (maxPingInterval - minPingInterval)) + minPingInterval)
+						switch (this.rws.readyState) {
+							case ws.CONNECTING:
+								clearInterval(this.ping)
+								break
+							case ws.OPEN:
+								this.rws.send({event: 'ping'})
+								break
+							case ws.CLOSING:
+								break
+							case ws.CLOSED:
+								clearInterval(this.ping)
+								break
+						}
+					}, pingInterval)
 
 					this.rws.onopen = event => {
 						try {
@@ -618,7 +647,7 @@ class WebSocketProxy {
 							)
 							this.log.info('WebSocket opened')
 							resolve(this.rws)
-						} catch {
+						} catch (err) {
 							this.log.error('Error with open event \n%s', err)
 						}
 					}
@@ -642,7 +671,7 @@ class WebSocketProxy {
 								this.log.info('WebSocket closed')
 								this.log.warn('Devices will not sync until WebSocket connection is restored.')
 							}
-						} catch {
+						} catch (err) {
 							this.log.error('Error with close event \n%s', err)
 						}
 					}
@@ -676,7 +705,7 @@ class WebSocketProxy {
 									break
 							}
 							reject(event)
-						} catch {
+						} catch (err) {
 							this.log.error('Error with error event \n%s', err)
 						}
 					}
@@ -685,13 +714,9 @@ class WebSocketProxy {
 					if (this.rws) {
 						//check if connected
 						this.log.warn('error, closing connection')
-						this.rws.close((code = 1000), (reason = 'Session terminated by client'))
+						this.rws.close((1000), ('Session terminated by client'))
 						//this.rws.close()
 						try {
-							this.rws.removeEventListener('open')
-							this.rws.removeEventListener('close')
-							this.rws.removeEventListener('message')
-							this.rws.removeEventListener('error')
 							clearInterval(this.ping)
 							this.rws = null
 						} catch (err) {

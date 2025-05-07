@@ -109,8 +109,7 @@ class Orbit {
 									}
 									break
 								case 'device_idle':
-									activeService = valveAccessory.getServiceById(Service.Switch, this.activeProgram)
-									//activeService=valveAccessory.getService(Service.Switch)
+									activeService = valveAccessory.getServiceById(Service.Switch, UUIDGen.generate(jsonBody.device_id + this.activeProgram))
 									if (this.showRunall && switchServiceRunall) {
 										switchServiceRunall.getCharacteristic(Characteristic.On).updateValue(false)
 										this.log.info('Device is idle')
@@ -213,7 +212,33 @@ class Orbit {
 									this.log.debug('%s program %s %s changed', deviceName, jsonBody.program.program, jsonBody.program.name)
 									break
 								case 'rain_delay':
-									this.log.debug('%s rain delay for %s', deviceName, jsonBody.rain_delay_weather_type)
+									this.log.debug('%s rain delay %s hours for %s', deviceName, jsonBody.delay, jsonBody.rain_delay_weather_type)
+									if(jsonBody.delay > 0){
+										//device is idle
+										activeService = valveAccessory.getServiceById(Service.Switch, UUIDGen.generate(jsonBody.device_id + this.activeProgram))
+										if (this.showRunall && switchServiceRunall) {
+											switchServiceRunall.getCharacteristic(Characteristic.On).updateValue(false)
+											this.log.info('Device is idle')
+										}
+										if (activeService) {
+											//this.log.info('Device %s, %s zone idle',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
+											this.log.info('Program %s completed', activeService.getCharacteristic(Characteristic.Name).value)
+											activeService.getCharacteristic(Characteristic.On).updateValue(false)
+											this.activeProgram = false
+										} else {
+											if (this.activeProgram) {
+												this.log.info('Program %s completed', this.activeProgram)
+												this.activeProgram = false
+											}
+										}
+										activeService = valveAccessory.getService(Service.Valve)
+										if (activeService) {
+											//this.log.info('Device %s, %s zone idle',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
+											this.log.info('Device %s idle', deviceName)
+											activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
+											activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
+										}
+									}
 									break
 								case 'firmware_update_progress':
 									//do nothing
@@ -298,13 +323,13 @@ class Orbit {
 															this.log.debug('%s program %s for zone-%s %s running', deviceName, jsonBody.program, deviceResponse.zones[n].station, deviceResponse.zones[n].name)
 															//zone already running
 															/*
-														activeService=irrigationAccessory.getServiceById(Service.Valve, deviceResponse.zones[n].station)
-														activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.ACTIVE)
-														activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
-														activeService.getCharacteristic(Characteristic.SetDuration).updateValue(jsonBody.total_run_time_sec)
-														activeService.getCharacteristic(Characteristic.RemainingDuration).updateValue(parseInt(jsonBody.run_time * 60))
-														this.endTime[activeService.subtype]= new Date(Date.now() + parseInt(jsonBody.run_time * 60 * 1000)).toISOString()
-														*/
+															activeService=irrigationAccessory.getServiceById(Service.Valve, deviceResponse.zones[n].station)
+															activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.ACTIVE)
+															activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.IN_USE)
+															activeService.getCharacteristic(Characteristic.SetDuration).updateValue(jsonBody.total_run_time_sec)
+															activeService.getCharacteristic(Characteristic.RemainingDuration).updateValue(parseInt(jsonBody.run_time * 60))
+															this.endTime[activeService.subtype]= new Date(Date.now() + parseInt(jsonBody.run_time * 60 * 1000)).toISOString()
+															*/
 															match = true
 															break
 														} else if (deviceResponse.zones[n].station == jsonBody.water_event_queue[i].station) {
@@ -332,15 +357,18 @@ class Orbit {
 										}
 										//turn program switch off at last zone
 										if (jsonBody.water_event_queue.length == 1) {
-											activeService = irrigationAccessory.getServiceById(Service.Switch, this.activeProgram)
+											activeService = irrigationAccessory.getServiceById(Service.Switch, UUIDGen.generate(jsonBody.device_id + this.activeProgram))
 											if (activeService) {
 												//this.log.info('Device %s, %s zone idle',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
-												this.log.info('Program %s finishing', activeService.getCharacteristic(Characteristic.Name).value)
-												activeService.getCharacteristic(Characteristic.On).updateValue(false)
+												this.log.info('Program %s finishing last zone', activeService.getCharacteristic(Characteristic.Name).value)
+												setTimeout(() => {
+													activeService.getCharacteristic(Characteristic.On).updateValue(false)
+												}, jsonBody.water_event_queue[0].run_time_sec * 1000)
+												//activeService.getCharacteristic(Characteristic.On).updateValue(false)
 												this.activeProgram = false
 											} else {
 												if (this.activeProgram) {
-													this.log.info('Program %s finishing', this.activeProgram)
+													this.log.info('Program %s finished', this.activeProgram)
 													this.activeProgram = false
 												}
 											}
@@ -361,7 +389,7 @@ class Orbit {
 									break
 								case 'device_idle':
 									irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
-									activeService = irrigationAccessory.getServiceById(Service.Switch, this.activeProgram)
+									activeService = irrigationAccessory.getServiceById(Service.Switch, UUIDGen.generate(jsonBody.device_id + this.activeProgram))
 									if (this.showRunall && switchServiceRunall) {
 										switchServiceRunall.getCharacteristic(Characteristic.On).updateValue(false)
 										this.log.info('Device is idle')
@@ -480,7 +508,34 @@ class Orbit {
 									this.log.debug('%s program %s %s changed', deviceName, jsonBody.program.program, jsonBody.program.name)
 									break
 								case 'rain_delay':
-									this.log.debug('%s rain delay for %s', deviceName, jsonBody.rain_delay_weather_type)
+									this.log.debug('%s rain delay %s hours for %s', deviceName, jsonBody.delay, jsonBody.rain_delay_weather_type)
+									if(jsonBody.delay > 0){
+										//device is idle
+										irrigationSystemService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
+										activeService = irrigationAccessory.getServiceById(Service.Switch, UUIDGen.generate(jsonBody.device_id + this.activeProgram))
+										if (this.showRunall && switchServiceRunall) {
+											switchServiceRunall.getCharacteristic(Characteristic.On).updateValue(false)
+											this.log.info('Device is idle')
+										}
+										if (activeService) {
+											//this.log.info('Device %s, %s zone idle',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
+											this.log.info('Program %s completed', activeService.getCharacteristic(Characteristic.Name).value)
+											activeService.getCharacteristic(Characteristic.On).updateValue(false)
+											this.activeProgram = false
+										} else {
+											if (this.activeProgram) {
+												this.log.info('Program %s completed', this.activeProgram)
+												this.activeProgram = false
+											}
+										}
+										activeService = irrigationAccessory.getServiceById(Service.Valve, this.activeZone[jsonBody.device_id])
+										if (activeService) {
+											//this.log.info('Device %s, %s zone idle',deviceName, activeService.getCharacteristic(Characteristic.Name).value)
+											this.log.info('Device %s idle', deviceName)
+											activeService.getCharacteristic(Characteristic.Active).updateValue(Characteristic.Active.INACTIVE)
+											activeService.getCharacteristic(Characteristic.InUse).updateValue(Characteristic.InUse.NOT_IN_USE)
+										}
+									}
 									break
 								case 'firmware_update_progress':
 									//do nothing

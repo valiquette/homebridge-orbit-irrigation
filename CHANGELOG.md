@@ -1,5 +1,12 @@
 # Changes
 
+## 1.2.43
+fix
+-  fixed websocket closing issue
+-  fixed quick run: issue #75
+-  fixed issue updated program status when in rain or freeze delay
+-  bumped dependencies
+
 ## 1.2.42
 fix
 -  fixed websocket issue sending messages for irrigation device

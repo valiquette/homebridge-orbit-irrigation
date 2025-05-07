@@ -80,7 +80,7 @@ class basicSwitch {
 					callback()
 				}
 				break
-			default:
+			default: // schedule programs
 				if (switchService.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
 					callback('error')
 				} else {
