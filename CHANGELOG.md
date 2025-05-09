@@ -1,5 +1,9 @@
 # Changes
 
+## 1.2.44
+fix
+-  fixed issue #105 plugin crashing in some cases.
+
 ## 1.2.43
 fix
 -  fixed websocket closing issue
