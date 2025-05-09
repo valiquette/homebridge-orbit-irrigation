@@ -1,7 +1,7 @@
 {
 	"name": "homebridge-orbit-irrigation",
 	"displayName": "Orbit",
-	"version": "1.2.43",
+	"version": "1.2.44",
 	"description": "Orbit Irrigation System platform plugin for [Homebridge](https://github.com/nfarina/homebridge).",
 	"main": "index.js",
 	"dependencies": {

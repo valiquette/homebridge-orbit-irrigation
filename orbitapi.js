@@ -589,7 +589,7 @@ class WebSocketProxy {
 							case ws.CONNECTING:
 								setTimeout(() => {
 									//this.log.debug(data)
-									rws.send(data)
+									this.rws.send(data)
 								}, 1000);
 								break
 							case ws.OPEN:
