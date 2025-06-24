@@ -20,7 +20,7 @@ class battery {
 		if (device.battery.percent) {
 			percent = device.battery.percent
 		} else if (device.battery.mv) {
-			percent = ((jsonBody.mv-2000) / (3400-2000)) * 100 > 100 ? 100 : ((jsonBody.mv-2000) /(3400-2000)) * 100
+			percent = ((device.battery.mv-2000) / (3400-2000)) * 100 > 100 ? 100 : ((device.battery.mv-2000) /(3400-2000)) * 100
 		}
 		batteryStatus
 			.setCharacteristic(Characteristic.ChargingState, Characteristic.ChargingState.NOT_CHARGEABLE)
