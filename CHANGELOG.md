@@ -1,5 +1,11 @@
 # Changes
 
+## 1.2.45
+fix
+-  fixed issue #108 plugin crashing for some valve models.
+-  bumped dependencies
+
+
 ## 1.2.44
 fix
 -  fixed issue #105 plugin crashing in some cases.
