@@ -1,5 +1,11 @@
 # Changes
 
+## 1.2.46
+fix
+-  fixed issue #110 plugin crashing when show bridge is enabled
+-  bumped dependencies
+-  deprecated node 18 support
+
 ## 1.2.45
 fix
 -  fixed issue #108 plugin crashing for some valve models.

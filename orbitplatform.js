@@ -560,9 +560,6 @@ class OrbitPlatform {
 							break
 						// Handle Bridge accessories
 						case 'bridge':
-							let bridgeAccessory
-							let bridgeService
-							let service
 							if (!this.showBridge) {
 								this.log.info('Skipping Bridge %s %s based on config', newDevice.hardware_version, newDevice.name)
 								if (this.accessories[uuid]) {
@@ -574,11 +571,10 @@ class OrbitPlatform {
 							}
 							this.log.debug('Adding Bridge Device')
 							this.log.debug('Found device %s', newDevice.name)
-							//switch (newDevice.hardware_version){
-							switch (
-								newDevice.hardware_version.split('-')[0] //look for any rev
-							) {
-								//case "BH1-0001":
+							let bridgeAccessory
+							let bridgeService
+
+							switch (newDevice.hardware_version.split('-')[0]){
 								case 'BH1':
 									// Create and configure Gen 1Bridge Service
 									let meshNetwork = await this.orbitapi.getMeshes(this.token, newDevice.mesh_id).catch(err => {
@@ -586,19 +582,17 @@ class OrbitPlatform {
 									})
 									this.log.debug('Creating and configuring new bridge')
 									bridgeAccessory = this.bridge.createBridgeAccessory(newDevice, uuid, this.accessories[uuid])
-									bridgeService = bridgeAccessory.getService(Service.Tunnel)
-									bridgeService = this.bridge.createBridgeService(newDevice, meshNetwork, false)
-									this.bridge.configureBridgeService(bridgeService)
+									bridgeService = bridgeAccessory.getService(Service.WiFiTransport)
 									// Set current device status
-									bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
-									service = bridgeAccessory.getService(Service.Tunnel)
-									if (!service) {
+									if (!bridgeService) {
+										bridgeService = this.bridge.createBridgeService(newDevice, meshNetwork, false)
 										bridgeAccessory.addService(bridgeService)
+										this.api.updatePlatformAccessories([bridgeAccessory])
 									}
 									this.log.info('Adding Gen-1 Bridge')
+									this.bridge.configureBridgeService(bridgeService)
+									bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
 									break
-								//case "BH1G2-0000":
-								//case "BH1G2-0001":
 								case 'BH1G2':
 									// Create and configure Gen2 Bridge Service
 									let networkTopology = await this.orbitapi.getNetworkTopologies(this.token, newDevice.network_topology_id).catch(err => {
@@ -606,16 +600,16 @@ class OrbitPlatform {
 									})
 									this.log.debug('Creating and configuring new bridge')
 									bridgeAccessory = this.bridge.createBridgeAccessory(newDevice, uuid, this.accessories[uuid])
-									bridgeService = bridgeAccessory.getService(Service.Tunnel)
-									bridgeService = this.bridge.createBridgeService(newDevice, networkTopology, true)
-									this.bridge.configureBridgeService(bridgeService)
-									// set current device status
-									bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
-									service = bridgeAccessory.getService(Service.Tunnel)
-									if (!service) {
+									bridgeService = bridgeAccessory.getService(Service.WiFiTransport)
+									// Set current device status
+									if (!bridgeService) {
+										bridgeService = this.bridge.createBridgeService(newDevice, networkTopology, true)
 										bridgeAccessory.addService(bridgeService)
+										this.api.updatePlatformAccessories([bridgeAccessory])
 									}
 									this.log.info('Adding Gen-2 Bridge')
+									this.bridge.configureBridgeService(bridgeService)
+									bridgeService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
 									break
 								default:
 									this.log.warn('Wifi Hub hardware %s, not supported', newDevice.hardware_version)
