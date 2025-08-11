@@ -61,18 +61,6 @@ class valve {
 		return platformAccessory
 	}
 
-	configureValveService(device, zone, valveService) {
-		this.log.info('Configure Valve service for %s', valveService.getCharacteristic(Characteristic.Name).value)
-		valveService
-			.setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
-			.setCharacteristic(Characteristic.InUse, Characteristic.InUse.NOT_IN_USE)
-			.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
-			.setCharacteristic(Characteristic.RemainingDuration, 0)
-		valveService.getCharacteristic(Characteristic.Active).on('get', this.getDeviceValue.bind(this, valveService, 'DeviceActive'))
-		valveService.getCharacteristic(Characteristic.InUse).on('get', this.getDeviceValue.bind(this, valveService, 'DeviceInUse'))
-		valveService.getCharacteristic(Characteristic.ProgramMode).on('get', this.getDeviceValue.bind(this, valveService, 'DeviceProgramMode'))
-	}
-
 	updateValveService(device, zone, valve) {
 		let defaultRuntime = this.platform.defaultRuntime
 		zone.enabled = true // need orbit version of enabled
@@ -125,39 +113,17 @@ class valve {
 			valveService.getCharacteristic(Characteristic.Name).value,
 			valveService.getCharacteristic(Characteristic.SetDuration).value / 60
 		)
-		valveService.getCharacteristic(Characteristic.Active).on('get', this.getValveValue.bind(this, valveService, 'ValveActive')).on('set', this.setValveValue.bind(this, device, valveService))
-
-		valveService.getCharacteristic(Characteristic.InUse).on('get', this.getValveValue.bind(this, valveService, 'ValveInUse')).on('set', this.setValveValue.bind(this, device, valveService))
-
-		valveService.getCharacteristic(Characteristic.SetDuration).on('get', this.getValveValue.bind(this, valveService, 'ValveSetDuration')).on('set', this.setValveSetDuration.bind(this, device, valveService))
-
-		valveService.getCharacteristic(Characteristic.RemainingDuration).on('get', this.getValveValue.bind(this, valveService, 'ValveRemainingDuration'))
-	}
-
-	getDeviceValue(valveService, characteristicName, callback) {
-		//this.log.debug('%s - Set something %s', valveService.getCharacteristic(Characteristic.Name).value)
-		switch (characteristicName) {
-			case 'DeviceActive':
-				//this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName,valveService.getCharacteristic(Characteristic.Active).value)
-				if (valveService.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
-					callback('error')
-				} else {
-					callback(null, valveService.getCharacteristic(Characteristic.Active).value)
-				}
-				break
-			case 'DeviceInUse':
-				//this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName,valveService.getCharacteristic(Characteristic.InUse).value)
-				callback(null, valveService.getCharacteristic(Characteristic.InUse).value)
-				break
-			case 'DeviceProgramMode':
-				//this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName,valveService.getCharacteristic(Characteristic.ProgramMode).value)
-				callback(null, valveService.getCharacteristic(Characteristic.ProgramMode).value)
-				break
-			default:
-				this.log.debug('Unknown Device Characteristic Name called', characteristicName)
-				callback()
-				break
-		}
+		valveService.getCharacteristic(Characteristic.Active)
+			.on('get', this.getValveValue.bind(this, valveService, 'ValveActive'))
+			.on('set', this.setValveValue.bind(this, device, valveService))
+		valveService.getCharacteristic(Characteristic.InUse)
+			.on('get', this.getValveValue.bind(this, valveService, 'ValveInUse'))
+			.on('set', this.setValveValue.bind(this, device, valveService))
+		valveService.getCharacteristic(Characteristic.SetDuration)
+			.on('get', this.getValveValue.bind(this, valveService, 'ValveSetDuration'))
+			.on('set', this.setValveSetDuration.bind(this, device, valveService))
+		valveService.getCharacteristic(Characteristic.RemainingDuration)
+			.on('get', this.getValveValue.bind(this, valveService, 'ValveRemainingDuration'))
 	}
 
 	getValveValue(valveService, characteristicName, callback) {

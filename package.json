@@ -5,13 +5,13 @@
 	"description": "Orbit Irrigation System platform plugin for [Homebridge](https://github.com/nfarina/homebridge).",
 	"main": "index.js",
 	"dependencies": {
-		"axios": "^1.10.0",
+		"axios": "^1.11.0",
 		"ws": "^8.18.3",
 		"reconnecting-websocket": "^4.4.0"
 	},
 	"engines": {
 		"homebridge": "^1.11.0 || ^2.0.0-beta.0",
-		"node": "^20.19.0 || ^22.17.0 ||^24.4.0"
+		"node": "^20.19.0 || ^22.18.0 ||^24.5.0"
 	},
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"

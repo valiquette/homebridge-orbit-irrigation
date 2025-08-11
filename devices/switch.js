@@ -44,8 +44,8 @@ class basicSwitch {
 			this.log.info('Configured switch for %s', switchService.getCharacteristic(Characteristic.Name).value)
 		}
 		switchService.getCharacteristic(Characteristic.On)
-		.on('get', this.getSwitchValue.bind(this, switchService))
-		.on('set', this.setSwitchValue.bind(this, device, switchService))
+			.on('get', this.getSwitchValue.bind(this, switchService))
+			.on('set', this.setSwitchValue.bind(this, device, switchService))
 	}
 
 	setSwitchValue(device, switchService, value, callback) {
