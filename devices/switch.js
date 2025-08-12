@@ -44,66 +44,57 @@ class basicSwitch {
 			this.log.info('Configured switch for %s', switchService.getCharacteristic(Characteristic.Name).value)
 		}
 		switchService.getCharacteristic(Characteristic.On)
-			.on('get', this.getSwitchValue.bind(this, switchService))
-			.on('set', this.setSwitchValue.bind(this, device, switchService))
+			.onGet(this.getSwitchValue.bind(this, switchService))
+			.onSet(this.setSwitchValue.bind(this, device, switchService))
 	}
 
-	setSwitchValue(device, switchService, value, callback) {
+	async setSwitchValue(device, switchService, value) {
+		if (switchService.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
+			throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE)
+		}
 		this.log.debug('toggle switch state %s', switchService.getCharacteristic(Characteristic.Name).value)
 		switch (switchService.getCharacteristic(Characteristic.Name).value) {
 			case device.name + ' ' + 'Standby':
-				if (switchService.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
-					callback('error')
+				if (!value) {
+					switchService.getCharacteristic(Characteristic.On).updateValue(true)
+					this.orbitapi.deviceStandby(this.platform.token, device, 'auto')
 				} else {
-					if (!value) {
-						switchService.getCharacteristic(Characteristic.On).updateValue(true)
-						this.orbitapi.deviceStandby(this.platform.token, device, 'auto')
-					} else {
-						switchService.getCharacteristic(Characteristic.On).updateValue(false)
-						this.orbitapi.deviceStandby(this.platform.token, device, 'off')
-					}
-					callback()
+					switchService.getCharacteristic(Characteristic.On).updateValue(false)
+					this.orbitapi.deviceStandby(this.platform.token, device, 'off')
 				}
 				break
 			case device.name + ' ' + 'Run All':
-				if (switchService.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
-					callback('error')
+				if (value) {
+					switchService.getCharacteristic(Characteristic.On).updateValue(true)
+					this.orbitapi.startMultipleZone(this.platform.token, device, this.platform.defaultRuntime / 60)
+					this.log.info('Running all zones for %s min each', this.platform.defaultRuntime / 60)
 				} else {
-					if (value) {
-						switchService.getCharacteristic(Characteristic.On).updateValue(true)
-						this.orbitapi.startMultipleZone(this.platform.token, device, this.platform.defaultRuntime / 60)
-						this.log.info('Running all zones for %s min each', this.platform.defaultRuntime / 60)
-					} else {
-						switchService.getCharacteristic(Characteristic.On).updateValue(false)
-						this.orbitapi.stopDevice(this.platform.token, device)
-					}
-					callback()
+					switchService.getCharacteristic(Characteristic.On).updateValue(false)
+					this.orbitapi.stopDevice(this.platform.token, device)
 				}
 				break
 			default: // schedule programs
-				if (switchService.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
-					callback('error')
+				if (value) {
+					switchService.getCharacteristic(Characteristic.On).updateValue(true)
+					let program = String.fromCharCode(switchService.getCharacteristic(Characteristic.ServiceLabelIndex).value)
+					this.orbitapi.startSchedule(this.platform.token, device, program)
 				} else {
-					if (value) {
-						switchService.getCharacteristic(Characteristic.On).updateValue(true)
-						let program = String.fromCharCode(switchService.getCharacteristic(Characteristic.ServiceLabelIndex).value)
-						this.orbitapi.startSchedule(this.platform.token, device, program)
-					} else {
-						switchService.getCharacteristic(Characteristic.On).updateValue(false)
-						this.orbitapi.stopDevice(this.platform.token, device)
-					}
-					callback()
+					switchService.getCharacteristic(Characteristic.On).updateValue(false)
+					this.orbitapi.stopDevice(this.platform.token, device)
 				}
 				break
 		}
+		return
 	}
 
-	getSwitchValue(switchService, callback) {
+	async getSwitchValue(switchService) {
+		let currentValue
 		if (switchService.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
-			callback('error')
+			throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE)
 		} else {
-			callback(null, switchService.getCharacteristic(Characteristic.On).value)
+			currentValue = switchService.getCharacteristic(Characteristic.On).value
 		}
+		return currentValue
 	}
 }
 module.exports = basicSwitch

@@ -35,11 +35,11 @@ class bridge {
 		if (G2) {
 			bridgeService
 				.setCharacteristic(Characteristic.AccessoryIdentifier, network.network_key)
-				bridgeService.setCharacteristic(Characteristic.CurrentTransport, device.is_connected)
+			bridgeService.setCharacteristic(Characteristic.CurrentTransport, device.is_connected)
 		} else {
 			bridgeService
 				.setCharacteristic(Characteristic.AccessoryIdentifier, network.ble_network_key)
-				bridgeService.setCharacteristic(Characteristic.CurrentTransport, device.is_connected)
+			bridgeService.setCharacteristic(Characteristic.CurrentTransport, device.is_connected)
 
 		}
 		return bridgeService

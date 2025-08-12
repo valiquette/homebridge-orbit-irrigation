@@ -31,10 +31,10 @@ class battery {
 
 	configureBatteryService(batteryStatus) {
 		this.log.debug('configured battery service for %s', batteryStatus.getCharacteristic(Characteristic.Name).value)
-		batteryStatus.getCharacteristic(Characteristic.StatusLowBattery).on('get', this.getStatusLowBattery.bind(this, batteryStatus))
+		batteryStatus.getCharacteristic(Characteristic.StatusLowBattery).onGet(this.getStatusLowBattery.bind(this, batteryStatus))
 	}
 
-	getStatusLowBattery(batteryStatus, callback) {
+	async getStatusLowBattery(batteryStatus) {
 		let name = batteryStatus.getCharacteristic(Characteristic.Name).value
 		let batteryValue = batteryStatus.getCharacteristic(Characteristic.BatteryLevel).value
 		let currentValue = batteryStatus.getCharacteristic(Characteristic.StatusLowBattery).value
@@ -43,7 +43,7 @@ class battery {
 			batteryStatus.setCharacteristic(Characteristic.StatusLowBattery, Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)
 			currentValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW
 		}
-		callback(null, currentValue)
+		return currentValue
 	}
 }
 module.exports = battery

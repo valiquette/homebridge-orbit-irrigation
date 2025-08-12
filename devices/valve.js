@@ -114,36 +114,36 @@ class valve {
 			valveService.getCharacteristic(Characteristic.SetDuration).value / 60
 		)
 		valveService.getCharacteristic(Characteristic.Active)
-			.on('get', this.getValveValue.bind(this, valveService, 'ValveActive'))
-			.on('set', this.setValveValue.bind(this, device, valveService))
+			.onGet(this.getValveValue.bind(this, valveService, 'ValveActive'))
+			.onSet(this.setValveValue.bind(this, device, valveService))
 		valveService.getCharacteristic(Characteristic.InUse)
-			.on('get', this.getValveValue.bind(this, valveService, 'ValveInUse'))
-			.on('set', this.setValveValue.bind(this, device, valveService))
+			.onGet(this.getValveValue.bind(this, valveService, 'ValveInUse'))
+			.onSet(this.setValveValue.bind(this, device, valveService))
 		valveService.getCharacteristic(Characteristic.SetDuration)
-			.on('get', this.getValveValue.bind(this, valveService, 'ValveSetDuration'))
-			.on('set', this.setValveSetDuration.bind(this, device, valveService))
+			.onGet(this.getValveValue.bind(this, valveService, 'ValveSetDuration'))
+			.onSet(this.setValveSetDuration.bind(this, valveService))
 		valveService.getCharacteristic(Characteristic.RemainingDuration)
-			.on('get', this.getValveValue.bind(this, valveService, 'ValveRemainingDuration'))
+			.onGet(this.getValveValue.bind(this, valveService, 'ValveRemainingDuration'))
 	}
 
-	getValveValue(valveService, characteristicName, callback) {
+		async getValveValue(valveService, characteristicName) {
 		//this.log.debug("value", valveService.getCharacteristic(Characteristic.Name).value, characteristicName)
+		if (valveService.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
+			throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE)
+		}
+		let currentValue
 		switch (characteristicName) {
 			case 'ValveActive':
 				//this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName,valveService.getCharacteristic(Characteristic.Active).value)
-				if (valveService.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
-					callback('error')
-				} else {
-					callback(null, valveService.getCharacteristic(Characteristic.Active).value)
-				}
+				currentValue = valveService.getCharacteristic(Characteristic.Active).value
 				break
 			case 'ValveInUse':
 				//this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName,valveService.getCharacteristic(Characteristic.Active).value)
-				callback(null, valveService.getCharacteristic(Characteristic.InUse).value)
+				currentValue =  valveService.getCharacteristic(Characteristic.InUse).value
 				break
 			case 'ValveSetDuration':
 				//this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName,valveService.getCharacteristic(Characteristic.Active).value)
-				callback(null, valveService.getCharacteristic(Characteristic.SetDuration).value)
+				currentValue = valveService.getCharacteristic(Characteristic.SetDuration).value
 				break
 			case 'ValveRemainingDuration':
 				// Calc remain duration
@@ -154,21 +154,23 @@ class valve {
 					timeRemaining = 0
 				}
 				//this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName, timeRemaining)
-				callback(null, timeRemaining)
+				currentValue = valveService.getCharacteristic(Characteristic.SetDuration).value
 				break
 			default:
 				this.log.debug('Unknown Valve Characteristic Name called', characteristicName)
-				callback()
 				break
 		}
+		return currentValue
 	}
 
-	setValveValue(device, valveService, value, callback) {
+	async setValveValue(device, valveService, value) {
 		//this.log.debug('%s - Set Active state to %s', valveService.getCharacteristic(Characteristic.Name).value, value)
+		if (valveService.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
+			throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE)
+		}
 		if (value == valveService.getCharacteristic(Characteristic.Active).value) {
 			//IOS 17 bug fix for duplicate calls
 			this.log.debug('supressed duplicate call from IOS for %s, current value %s, new value %s', valveService.getCharacteristic(Characteristic.Name).value, value, valveService.getCharacteristic(Characteristic.Active).value)
-			callback()
 			return
 		}
 		let uuid = UUIDGen.generate(device.id)
@@ -245,14 +247,14 @@ class valve {
 			this.eventMsg(JSON.stringify(myJsonStop))
 			clearTimeout(this.fakeWebsocket)
 		}
-		callback()
+		return
 	}
 
-	setValveSetDuration(device, valveService, value, callback) {
+	async setValveSetDuration(valveService, value) {
 		// Set default duration from Homekit value
 		valveService.getCharacteristic(Characteristic.SetDuration).updateValue(value)
 		this.log.info('Set %s duration for %s mins', valveService.getCharacteristic(Characteristic.Name).value, value / 60)
-		callback()
+		return
 	}
 
 	localMessage(listener) {
