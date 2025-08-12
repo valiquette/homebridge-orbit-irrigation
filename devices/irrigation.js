@@ -56,9 +56,9 @@ class irrigation {
 			.setCharacteristic(Characteristic.InUse, Characteristic.InUse.NOT_IN_USE)
 			.setCharacteristic(Characteristic.StatusFault, !device.is_connected)
 			.setCharacteristic(Characteristic.RemainingDuration, 0)
-		irrigationSystemService.getCharacteristic(Characteristic.Active).on('get', this.getDeviceValue.bind(this, irrigationSystemService, 'DeviceActive'))
-		irrigationSystemService.getCharacteristic(Characteristic.InUse).on('get', this.getDeviceValue.bind(this, irrigationSystemService, 'DeviceInUse'))
-		irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).on('get', this.getDeviceValue.bind(this, irrigationSystemService, 'DeviceProgramMode'))
+		irrigationSystemService.getCharacteristic(Characteristic.Active).onGet(this.getDeviceValue.bind(this, irrigationSystemService, 'DeviceActive'))
+		irrigationSystemService.getCharacteristic(Characteristic.InUse).onGet(this.getDeviceValue.bind(this, irrigationSystemService, 'DeviceInUse'))
+		irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).onGet(this.getDeviceValue.bind(this, irrigationSystemService, 'DeviceProgramMode'))
 	}
 
 	createValveService(device, zone) {
@@ -118,59 +118,63 @@ class irrigation {
 			valveService.getCharacteristic(Characteristic.Name).value,
 			valveService.getCharacteristic(Characteristic.SetDuration).value / 60
 		)
-		valveService.getCharacteristic(Characteristic.Active).on('get', this.getValveValue.bind(this, valveService, 'ValveActive')).on('set', this.setValveValue.bind(this, device, valveService))
-
-		valveService.getCharacteristic(Characteristic.InUse).on('get', this.getValveValue.bind(this, valveService, 'ValveInUse')).on('set', this.setValveValue.bind(this, device, valveService))
-
-		valveService.getCharacteristic(Characteristic.SetDuration).on('get', this.getValveValue.bind(this, valveService, 'ValveSetDuration')).on('set', this.setValveSetDuration.bind(this, device, valveService))
-
-		valveService.getCharacteristic(Characteristic.RemainingDuration).on('get', this.getValveValue.bind(this, valveService, 'ValveRemainingDuration'))
+		valveService.getCharacteristic(Characteristic.Active)
+			.onGet(this.getValveValue.bind(this, valveService, 'ValveActive'))
+			.onSet(this.setValveValue.bind(this, device, valveService))
+		valveService.getCharacteristic(Characteristic.InUse)
+			.onGet(this.getValveValue.bind(this, valveService, 'ValveInUse'))
+			.onSet(this.setValveValue.bind(this, device, valveService))
+		valveService.getCharacteristic(Characteristic.SetDuration)
+			.onGet(this.getValveValue.bind(this, valveService, 'ValveSetDuration'))
+			.onSet(this.setValveSetDuration.bind(this, valveService))
+		valveService.getCharacteristic(Characteristic.RemainingDuration)
+			.onGet(this.getValveValue.bind(this, valveService, 'ValveRemainingDuration'))
 	}
 
-	getDeviceValue(irrigationSystemService, characteristicName, callback) {
+	getDeviceValue(irrigationSystemService, characteristicName) {
 		//this.log.debug('%s - Set something %s', irrigationSystemService.getCharacteristic(Characteristic.Name).value)
+		if (irrigationSystemService.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
+			throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE)
+		}
+		let currentValue
 		switch (characteristicName) {
 			case 'DeviceActive':
 				//this.log.debug("%s=%s %s", irrigationSystemService.getCharacteristic(Characteristic.Name).value, characteristicName,irrigationSystemService.getCharacteristic(Characteristic.Active).value)
-				if (irrigationSystemService.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
-					callback('error')
-				} else {
-					callback(null, irrigationSystemService.getCharacteristic(Characteristic.Active).value)
-				}
+				currentValue = irrigationSystemService.getCharacteristic(Characteristic.Active).value
 				break
 			case 'DeviceInUse':
 				//this.log.debug("%s=%s %s", irrigationSystemService.getCharacteristic(Characteristic.Name).value, characteristicName,irrigationSystemService.getCharacteristic(Characteristic.InUse).value)
-				callback(null, irrigationSystemService.getCharacteristic(Characteristic.InUse).value)
+				currentValue = irrigationSystemService.getCharacteristic(Characteristic.InUse).value
 				break
 			case 'DeviceProgramMode':
 				//this.log.debug("%s=%s %s", irrigationSystemService.getCharacteristic(Characteristic.Name).value, characteristicName,irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).value)
-				callback(null, irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).value)
+				currentValue = irrigationSystemService.getCharacteristic(Characteristic.ProgramMode).value
 				break
 			default:
 				this.log.debug('Unknown Device Characteristic Name called', characteristicName)
-				callback()
 				break
 		}
+		return currentValue
 	}
 
-	getValveValue(valveService, characteristicName, callback) {
+	getValveValue(valveService, characteristicName) {
 		//this.log.debug("value", valveService.getCharacteristic(Characteristic.Name).value, characteristicName)
+		if (valveService.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
+			throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE)
+		}
+		let currentValue
 		switch (characteristicName) {
 			case 'ValveActive':
 				//this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName,valveService.getCharacteristic(Characteristic.Active).value)
-				if (valveService.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
-					callback('error')
-				} else {
-					callback(null, valveService.getCharacteristic(Characteristic.Active).value)
-				}
+				currentValue = valveService.getCharacteristic(Characteristic.Active).value
 				break
 			case 'ValveInUse':
 				//this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName,valveService.getCharacteristic(Characteristic.Active).value)
-				callback(null, valveService.getCharacteristic(Characteristic.InUse).value)
+				currentValue = valveService.getCharacteristic(Characteristic.InUse).value
 				break
 			case 'ValveSetDuration':
 				//this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName,valveService.getCharacteristic(Characteristic.Active).value)
-				callback(null, valveService.getCharacteristic(Characteristic.SetDuration).value)
+				currentValue = valveService.getCharacteristic(Characteristic.SetDuration).value
 				break
 			case 'ValveRemainingDuration':
 				// Calc remain duration
@@ -181,17 +185,20 @@ class irrigation {
 					timeRemaining = 0
 				}
 				//this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName, timeRemaining)
-				callback(null, timeRemaining)
+				currentValue = timeRemaining
 				break
 			default:
 				this.log.debug('Unknown Valve Characteristic Name called', characteristicName)
-				callback()
 				break
 		}
+		return currentValue
 	}
 
-	setValveValue(device, valveService, value, callback) {
+	async setValveValue(device, valveService, value) {
 		//this.log.debug('%s - Set Active state to %s', valveService.getCharacteristic(Characteristic.Name).value, value)
+		if (valveService.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
+			throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE)
+		}
 		if (value == valveService.getCharacteristic(Characteristic.Active).value) {
 			//IOS 17 bug fix for duplicate calls
 			this.log.debug('supressed duplicate call from IOS for %s, current value %s, new value %s', valveService.getCharacteristic(Characteristic.Name).value, value, valveService.getCharacteristic(Characteristic.Active).value)
@@ -272,14 +279,14 @@ class irrigation {
 			this.eventMsg(JSON.stringify(myJsonStop))
 			clearTimeout(this.fakeWebsocket)
 		}
-		callback()
+		return
 	}
 
-	setValveSetDuration(device, valveService, value, callback) {
+	async setValveSetDuration(valveService, value) {
 		// Set default duration from Homekit value
 		valveService.getCharacteristic(Characteristic.SetDuration).updateValue(value)
 		this.log.info('Set %s duration for %s mins', valveService.getCharacteristic(Characteristic.Name).value, value / 60)
-		callback()
+		return
 	}
 
 	localMessage(listener) {

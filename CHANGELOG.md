@@ -1,5 +1,10 @@
 # Changes
 
+## 1.2.48
+update
+-  code cleanup
+-  bumped dependencies
+
 ## 1.2.47
 fix
 -  fixed issue #112 plugin crashing when show bridge is enabled

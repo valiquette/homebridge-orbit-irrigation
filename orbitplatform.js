@@ -29,7 +29,7 @@ class OrbitPlatform {
 		this.userId
 		this.useIrrigationDisplay = config.useIrrigationDisplay
 		this.showSimpleValve = config.showSimpleValve ? config.showSimpleValve : false
-		this.displayValveType = config.displayValveType
+		this.displayValveType = config.displayValveType ? config.displayValveType : 0
 		this.defaultRuntime = config.defaultRuntime * 60
 		this.runtimeSource = config.runtimeSource
 		this.showStandby = config.showStandby
@@ -204,7 +204,15 @@ class OrbitPlatform {
 								this.valve.updateValveService(newDevice, newDevice.zones[0], valveService)
 								this.valve.configureValveService(newDevice, valveService)
 								// set current device status
-								valveService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
+			  				valveService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
+
+								// Register platform accessory
+								if (!this.accessories[uuid]) {
+									this.log.debug('Registering platform accessory')
+									this.log.info('Adding new accessory %s', valveAccessory.displayName)
+									this.accessories[uuid] = valveAccessory
+									this.api.registerPlatformAccessories(PluginName, PlatformName, [valveAccessory])
+								}
 
 								// Create and configure Battery Service if needed
 								if (newDevice.battery != null) {
@@ -322,18 +330,10 @@ class OrbitPlatform {
 										this.api.updatePlatformAccessories([valveAccessory])
 									}
 								}
+							} else {
 
-								// Register platform accessory
-								if (!this.accessories[uuid]) {
-									this.log.debug('Registering platform accessory')
-									this.log.info('Adding new accessory %s', valveAccessory.displayName)
-									this.accessories[uuid] = valveAccessory
-									this.api.registerPlatformAccessories(PluginName, PlatformName, [valveAccessory])
-								}
-							}
+								// ***** Create and configure Irrigation Service ***** //
 
-							// ***** Create and configure Irrigation Service ***** //
-							else {
 								this.log.debug('Creating and configuring new device')
 
 								if (this.accessories[uuid]) {
@@ -350,6 +350,14 @@ class OrbitPlatform {
 								this.irrigation.configureIrrigationService(newDevice, irrigationSystemService)
 								// set current device status
 								irrigationSystemService.getCharacteristic(Characteristic.StatusFault).updateValue(!newDevice.is_connected)
+
+								// Register platform accessory
+								if (!this.accessories[uuid]) {
+									this.log.debug('Registering platform accessory')
+									this.log.info('New accessory %s', irrigationAccessory.displayName)
+									this.accessories[uuid] = irrigationAccessory
+									this.api.registerPlatformAccessories(PluginName, PlatformName, [irrigationAccessory])
+								}
 
 								// Create and configure Battery Service if needed
 								if (newDevice.battery != null) {
@@ -549,13 +557,6 @@ class OrbitPlatform {
 										this.api.updatePlatformAccessories([irrigationAccessory])
 									}
 								}
-								// Register platform accessory
-								if (!this.accessories[uuid]) {
-									this.log.debug('Registering platform accessory')
-									this.log.info('New accessory %s', irrigationAccessory.displayName)
-									this.accessories[uuid] = irrigationAccessory
-									this.api.registerPlatformAccessories(PluginName, PlatformName, [irrigationAccessory])
-								}
 							}
 							break
 						// Handle Bridge accessories
@@ -587,7 +588,6 @@ class OrbitPlatform {
 									if (!bridgeService) {
 										bridgeService = this.bridge.createBridgeService(newDevice, meshNetwork, false)
 										bridgeAccessory.addService(bridgeService)
-										this.api.updatePlatformAccessories([bridgeAccessory])
 									}
 									this.log.info('Adding Gen-1 Bridge')
 									this.bridge.configureBridgeService(bridgeService)
@@ -605,7 +605,6 @@ class OrbitPlatform {
 									if (!bridgeService) {
 										bridgeService = this.bridge.createBridgeService(newDevice, networkTopology, true)
 										bridgeAccessory.addService(bridgeService)
-										this.api.updatePlatformAccessories([bridgeAccessory])
 									}
 									this.log.info('Adding Gen-2 Bridge')
 									this.bridge.configureBridgeService(bridgeService)
