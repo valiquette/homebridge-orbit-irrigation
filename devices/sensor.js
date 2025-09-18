@@ -63,7 +63,8 @@ class sensor {
 
 	configureBatteryService(batteryStatus) {
 		this.log.debug('configured battery service for %s', batteryStatus.getCharacteristic(Characteristic.Name).value)
-		batteryStatus.getCharacteristic(Characteristic.StatusLowBattery).on('get', this.getStatusLowBattery.bind(this, batteryStatus))
+		batteryStatus.getCharacteristic(Characteristic.StatusLowBattery)
+			.onGet(this.getStatusLowBattery.bind(this, batteryStatus))
 	}
 
 	createLeakService(device) {
@@ -91,7 +92,8 @@ class sensor {
 
 	configureLeakService(leakSensor) {
 		this.log.debug('configured leak sensor for %s', leakSensor.getCharacteristic(Characteristic.Name).value)
-		leakSensor.getCharacteristic(Characteristic.LeakDetected).on('get', this.getLeakStatus.bind(this, leakSensor))
+		leakSensor.getCharacteristic(Characteristic.LeakDetected)
+			.onGet(this.getLeakStatus.bind(this, leakSensor))
 	}
 
 	createTempService(device) {
@@ -107,7 +109,8 @@ class sensor {
 
 	configureTempService(tempSensor) {
 		this.log.debug('configured temp sensor for %s', tempSensor.getCharacteristic(Characteristic.Name).value)
-		tempSensor.getCharacteristic(Characteristic.CurrentTemperature).on('get', this.getTempStatus.bind(this, tempSensor))
+		tempSensor.getCharacteristic(Characteristic.CurrentTemperature)
+			.onGet(this.getTempStatus.bind(this, tempSensor))
 	}
 
 	createOccupancyService(device) {
@@ -123,7 +126,8 @@ class sensor {
 
 	configureOccupancyService(occupancyStatus) {
 		this.log.debug('configured Occupancy service')
-		occupancyStatus.getCharacteristic(Characteristic.OccupancyDetected).on('get', this.getStatusOccupancy.bind(this, occupancyStatus))
+		occupancyStatus.getCharacteristic(Characteristic.OccupancyDetected)
+			.onGet(this.getStatusOccupancy.bind(this, occupancyStatus))
 	}
 
 	async getStatusLowBattery(batteryStatus, callback) {
@@ -135,7 +139,7 @@ class sensor {
 			batteryStatus.setCharacteristic(Characteristic.StatusLowBattery, Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)
 			currentValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW
 		}
-		callback(null, currentValue)
+		//callback(null, currentValue)
 
 		try {
 			let sensorResponse = await this.orbitapi.getDevice(this.platform.token, batteryStatus.subtype).catch(err => {
@@ -148,15 +152,16 @@ class sensor {
 		} catch (err) {
 			this.log.error('Failed to read sensor', err)
 		}
+		return currentValue
 	}
 
-	getLeakStatus(leakSensor, callback) {
+	async getLeakStatus(leakSensor) {
 		if (leakSensor.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
 			if (leakSensor.getCharacteristic(Characteristic.StatusActive).value == true) {
 				this.log.debug('%s, Fault Detected', leakSensor.getCharacteristic(Characteristic.Name).value)
 				leakSensor.setCharacteristic(Characteristic.StatusActive, false)
 			}
-			callback('error')
+			throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE)
 		} else {
 			leakSensor.setCharacteristic(Characteristic.StatusActive, true)
 			let leak = leakSensor.getCharacteristic(Characteristic.LeakDetected).value
@@ -166,17 +171,17 @@ class sensor {
 				leakSensor.setCharacteristic(Characteristic.LeakDetected, Characteristic.LeakDetected.LEAK_DETECTED)
 				currentValue = Characteristic.LeakDetected.LEAK_DETECTED
 			}
-			callback(null, currentValue)
+			return currentValue
 		}
 	}
 
-	getTempStatus(tempSensor, callback) {
+	async getTempStatus(tempSensor) {
 		if (tempSensor.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
 			if (tempSensor.getCharacteristic(Characteristic.StatusActive).value == true) {
 				this.log.debug('%s, Fault Detected', tempSensor.getCharacteristic(Characteristic.Name).value)
 				tempSensor.setCharacteristic(Characteristic.StatusActive, false)
 			}
-			callback('error')
+			throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE)
 		} else {
 			tempSensor.setCharacteristic(Characteristic.StatusActive, true)
 			let temp = tempSensor.getCharacteristic(Characteristic.CurrentTemperature).value
@@ -184,17 +189,17 @@ class sensor {
 			if (this.platform.showExtraDebugMessages) {
 				this.log.debug('Temp Detected', Math.round((temp * 9) / 5 + 32))
 			}
-			callback(null, currentValue)
+			return currentValue
 		}
 	}
 
-	getStatusOccupancy(OccupancySensor, callback) {
+	async getStatusOccupancy(OccupancySensor) {
 		if (OccupancySensor.getCharacteristic(Characteristic.StatusFault).value == Characteristic.StatusFault.GENERAL_FAULT) {
 			if (OccupancySensor.getCharacteristic(Characteristic.StatusActive).value == true) {
 				this.log.debug('%s, Fault Detected', OccupancySensor.getCharacteristic(Characteristic.Name).value)
 				OccupancySensor.setCharacteristic(Characteristic.StatusActive, false)
 			}
-			callback('error')
+			throw new HapStatusError(HAPStatus.SERVICE_COMMUNICATION_FAILURE)
 		} else {
 			OccupancySensor.setCharacteristic(Characteristic.StatusActive, true)
 			let alarm = OccupancySensor.getCharacteristic(Characteristic.OccupancyDetected).value
@@ -204,7 +209,7 @@ class sensor {
 				this.log.info('Temperture limits for %s exceeded', OccupancySensor.getCharacteristic(Characteristic.Name).value)
 				currentValue = Characteristic.OccupancyDetected.OCCUPANCY_DETECTED
 			}
-			callback(null, currentValue)
+			return currentValue
 		}
 	}
 }

@@ -1,5 +1,11 @@
 # Changes
 
+## 1.2.49
+update
+-  code cleanup
+-  bumped dependencies
+-  fixed an issue with time remaining issue #117
+
 ## 1.2.48
 update
 -  code cleanup

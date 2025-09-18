@@ -154,7 +154,7 @@ class valve {
 					timeRemaining = 0
 				}
 				//this.log.debug("%s=%s %s", valveService.getCharacteristic(Characteristic.Name).value, characteristicName, timeRemaining)
-				currentValue = valveService.getCharacteristic(Characteristic.SetDuration).value
+				currentValue = timeRemaining
 				break
 			default:
 				this.log.debug('Unknown Valve Characteristic Name called', characteristicName)
