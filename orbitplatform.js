@@ -104,10 +104,20 @@ class OrbitPlatform {
 			this.log.debug('Fetching Build info...')
 			this.log.info('Getting Account info...')
 			// login to the API and get the token
+			/* Attempt to retrieve session token */
 			let signinResponse = await this.orbitapi.getToken(this.email, this.password).catch(err => {
 				this.log.error('Failed to get token for build', err)
 			})
-			this.log.info('Found account for', signinResponse.user_name)
+
+			/* Validate response and user data before accessing properties */
+			if (signinResponse && signinResponse.user_name) {
+				this.log.info('Found account for', signinResponse.user_name)
+				this.token = signinResponse.orbit_api_key
+				this.userId = signinResponse.user_id
+			} else {
+				/* Throw error to trigger the catch block if authentication fails */
+				throw new Error('Authentication failed or invalid response from Orbit API')
+			}
 			//this.log.debug('Found api key',signinResponse.orbit_api_key)
 			this.log.debug('Found api key %s********************%s', signinResponse.orbit_api_key.substring(0, 35), signinResponse.orbit_api_key.substring(signinResponse.orbit_api_key.length - 35))
 			this.token = signinResponse.orbit_api_key
@@ -752,8 +762,9 @@ class OrbitPlatform {
 		} catch (err) {
 			if (this.retryAttempt < this.retryMax) {
 				this.retryAttempt++
-				this.log.error('Failed to get devices. Retry attempt %s of %s in %s seconds...', this.retryAttempt, this.retryMax, this.retryWait * this.retryAttempt)
-				this.log.error(err)
+				/* I use a cleaner log format to avoid messy stack traces in the console */
+				this.log.error('Failed to get devices (Attempt %s/%s). Next retry in %s seconds.', this.retryAttempt, this.retryMax, this.retryWait * this.retryAttempt)
+				this.log.error('Reason: %s', err.message || err)
 				setTimeout(async () => {
 					this.getDevices()
 				}, this.retryWait * this.retryAttempt * 1000)
