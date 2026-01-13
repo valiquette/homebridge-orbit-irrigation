@@ -1,4 +1,8 @@
 'use strict'
+/* File-scope definitions for HAP constants to prevent ReferenceErrors */
+let HapStatusError
+let HAPStatus
+
 let OrbitAPI = require('./orbitapi')
 let OrbitUpdate = require('./orbitupdate')
 let battery = require('./devices/battery')
@@ -10,6 +14,18 @@ let basicSwitch = require('./devices/switch')
 
 class OrbitPlatform {
 	constructor(log, config, api) {
+		/* Inherit HAP definitions from static class properties */
+		HapStatusError = OrbitPlatform.HapStatusError
+		HAPStatus = OrbitPlatform.HAPStatus
+
+		/* Set global fallbacks for legacy device modules in the devices folder */
+		if (typeof global.HapStatusError === 'undefined') {
+			global.HapStatusError = HapStatusError
+		}
+		if (typeof global.HAPStatus === 'undefined') {
+			global.HAPStatus = HAPStatus
+		}
+
 		this.orbitapi = new OrbitAPI(this, log)
 		this.orbit = new OrbitUpdate(this, log, config)
 		this.battery = new battery(this, log, config)
