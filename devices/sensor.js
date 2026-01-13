@@ -23,7 +23,8 @@ class sensor {
 			.setCharacteristic(Characteristic.Name, device.location_name + ' ' + device.name)
 			.setCharacteristic(Characteristic.Manufacturer, 'Orbit Irrigation')
 			.setCharacteristic(Characteristic.SerialNumber, device.mac_address)
-			.setCharacteristic(Characteristic.Model, device.hardware_version)
+			/* I add a fallback for hardware_version to satisfy string type requirements */
+			.setCharacteristic(Characteristic.Model, device.hardware_version || 'Orbit Sensor')
 			.setCharacteristic(Characteristic.Identify, true)
 			.setCharacteristic(Characteristic.FirmwareRevision, device.firmware_version)
 			.setCharacteristic(Characteristic.HardwareRevision, device.hardware_version)

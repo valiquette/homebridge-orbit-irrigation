@@ -769,7 +769,9 @@ class OrbitPlatform {
 					this.getDevices()
 				}, this.retryWait * this.retryAttempt * 1000)
 			} else {
-				this.log.error('Failed to get devices...\n%s', err)
+				/* Final attempt failed, logging reason and stopping retries */
+    			this.log.error('Failed to get devices after maximum attempts. Stopping.')
+    			this.log.error('Final reason: %s', err.message || err)
 			}
 		}
 	}

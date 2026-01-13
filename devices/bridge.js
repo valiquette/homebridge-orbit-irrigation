@@ -21,7 +21,8 @@ class bridge {
 			.setCharacteristic(Characteristic.Name, device.name)
 			.setCharacteristic(Characteristic.Manufacturer, 'Orbit Irrigation')
 			.setCharacteristic(Characteristic.SerialNumber, device.mac_address)
-			.setCharacteristic(Characteristic.Model, device.hardware_version)
+			/* I ensure the model characteristic is never undefined to prevent validation warnings */
+			.setCharacteristic(Characteristic.Model, device.hardware_version || 'Orbit Bridge')
 			.setCharacteristic(Characteristic.Identify, true)
 			.setCharacteristic(Characteristic.FirmwareRevision, device.firmware_version)
 			.setCharacteristic(Characteristic.HardwareRevision, device.hardware_version)
