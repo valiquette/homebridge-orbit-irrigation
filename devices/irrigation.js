@@ -40,7 +40,8 @@ class irrigation {
 			.setCharacteristic(Characteristic.Name, device.name)
 			.setCharacteristic(Characteristic.Manufacturer, 'Orbit Irrigation')
 			.setCharacteristic(Characteristic.SerialNumber, device.mac_address)
-			.setCharacteristic(Characteristic.Model, device.hardware_version)
+			/* I provide a fallback string if hardware_version is missing to avoid Homebridge warnings */
+			.setCharacteristic(Characteristic.Model, device.hardware_version || 'Orbit Irrigation')
 			.setCharacteristic(Characteristic.Identify, true)
 			.setCharacteristic(Characteristic.FirmwareRevision, device.firmware_version)
 			.setCharacteristic(Characteristic.HardwareRevision, device.hardware_version)
@@ -102,7 +103,8 @@ class irrigation {
 			.setCharacteristic(Characteristic.SerialNumber, UUIDGen.generate('zone-' + zone.station))
 			.setCharacteristic(Characteristic.Name, zone.name)
 			.setCharacteristic(Characteristic.ConfiguredName, zone.name)
-			.setCharacteristic(Characteristic.Model, zone.sprinkler_type ? zone.sprinkler_type : 'unknown')
+			/* I ensure model is always a string to comply with Homebridge 2.0 requirements */
+			.setCharacteristic(Characteristic.Model, zone.sprinkler_type || 'Orbit Zone')
 		if (zone.enabled) {
 			valve.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
 		} else {

@@ -9,5 +9,10 @@ module.exports = homebridge => {
 	PluginName = packageJson.name
 	PluginVersion = packageJson.version
 	PlatformName = 'bhyve'
+
+	/* Inject HAP definitions into OrbitPlatform class for global access */
+	OrbitPlatform.HapStatusError = homebridge.hap.HapStatusError
+	OrbitPlatform.HAPStatus = homebridge.hap.HAPStatus
+
 	homebridge.registerPlatform(PluginName, PlatformName, OrbitPlatform, true)
 }
