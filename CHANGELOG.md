@@ -1,5 +1,12 @@
 # Changes
 
+## 1.2.50
+fix
+-  support Homebridge 2.0 & Node 24 (HAP definitions, strict types)
+-  addresses Homebridge charateristic warnings
+-  implemented safer login handling to avoid crashes on auth failure
+-  bumped dependencies
+
 ## 1.2.49
 update
 -  code cleanup
