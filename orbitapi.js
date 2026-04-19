@@ -40,15 +40,16 @@ class OrbitAPI {
 				},
 				responseType: 'json'
 			}).catch(err => {
-				this.log.error('Error getting API key %s', err.message)
+				this.log.error('Error getting API key - %s', err.message)
 				this.log.debug(JSON.stringify(err, null, 2))
 				if (err.response) {
-					this.log.warn(JSON.stringify(err.response.data, null, 2))
-					return err.response.data
+					this.log.debug(JSON.stringify(err.response.data, null, 2))
+				} else if (err.code) {
+					this.log.debug(err.code)
 				} else {
-					this.log.warn('%s - %s', err.name, err.code)
-					return new Error('no network')
+					this.log.warn('Error %s', err.name)
 				}
+				throw err?.code?? err
 			})
 			if (response.status == 200) {
 				if (this.platform.showAPIMessages) {
@@ -57,7 +58,7 @@ class OrbitAPI {
 				return response.data
 			}
 		} catch (err) {
-			this.log.error('Error retrieving API key \n%s', err)
+			throw err
 		}
 	}
 
@@ -77,18 +78,16 @@ class OrbitAPI {
 				},
 				responseType: 'json'
 			}).catch(err => {
-				this.log.error('Error getting devices %s', err.message)
+				this.log.error('Error getting devices - %s', err.message)
 				this.log.debug(JSON.stringify(err, null, 2))
 				if (err.response) {
-					this.log.warn(JSON.stringify(err.response.data, null, 2))
-					return err.response.data
+					this.log.debug(JSON.stringify(err.response.data, null, 2))
 				} else if (err.code) {
-					this.log.warn(err.code)
-					return err
+					this.log.debug(err.code)
 				} else {
 					this.log.warn('Error %s', err.name)
-					return err
 				}
+				throw err?.code?? err
 			})
 			if (response.status == 200) {
 				if (this.platform.showAPIMessages) {
@@ -97,7 +96,7 @@ class OrbitAPI {
 				return response.data
 			}
 		} catch (err) {
-			this.log.error('Error retrieving devices \n%s', err)
+			throw err
 		}
 	}
 
@@ -117,18 +116,16 @@ class OrbitAPI {
 				},
 				responseType: 'json'
 			}).catch(err => {
-				this.log.error('Error getting device %s', err.message)
+				this.log.error('Error getting device - %s', err.message)
 				this.log.debug(JSON.stringify(err, null, 2))
 				if (err.response) {
-					this.log.warn(JSON.stringify(err.response.data, null, 2))
-					return err.response.data
+					this.log.debug(JSON.stringify(err.response.data, null, 2))
 				} else if (err.code) {
-					this.log.warn(err.code)
-					return err
+					this.log.debug(err.code)
 				} else {
 					this.log.warn('Error %s', err.name)
-					return err
 				}
+				throw err?.code?? err
 			})
 			if (response.status == 200) {
 				if (this.platform.showAPIMessages) {
@@ -137,7 +134,7 @@ class OrbitAPI {
 				return response.data
 			}
 		} catch (err) {
-			this.log.error('Error retrieving device \n%s', err)
+			throw err
 		}
 	}
 
@@ -157,18 +154,16 @@ class OrbitAPI {
 				},
 				responseType: 'json'
 			}).catch(err => {
-				this.log.error('Error getting mesh info %s', err.message)
+				this.log.error('Error getting mesh info - %s', err.message)
 				this.log.debug(JSON.stringify(err, null, 2))
 				if (err.response) {
-					this.log.warn(JSON.stringify(err.response.data, null, 2))
-					return err.response.data
+					this.log.debug(JSON.stringify(err.response.data, null, 2))
 				} else if (err.code) {
-					this.log.warn(err.code)
-					return 'err'
+					this.log.debug(err.code)
 				} else {
 					this.log.warn('Error %s', err.name)
-					return err
 				}
+				throw err?.code?? err
 			})
 			if (response.status == 200) {
 				if (this.platform.showAPIMessages) {
@@ -177,7 +172,7 @@ class OrbitAPI {
 				return response.data
 			}
 		} catch (err) {
-			this.log.error('Error retrieving mesh info \n%s', err)
+			throw err
 		}
 	}
 
@@ -197,18 +192,16 @@ class OrbitAPI {
 				},
 				responseType: 'json'
 			}).catch(err => {
-				this.log.error('Error getting network topologies info %s', err.message)
+				this.log.error('Error getting network topologies info - %s', err.message)
 				this.log.debug(JSON.stringify(err, null, 2))
 				if (err.response) {
-					this.log.warn(JSON.stringify(err.response.data, null, 2))
-					return err.response.data
+					this.log.debug(JSON.stringify(err.response.data, null, 2))
 				} else if (err.code) {
-					this.log.warn(err.code)
-					return err
+					this.log.debug(err.code)
 				} else {
 					this.log.warn('Error %s', err.name)
-					return err
 				}
+				throw err?.code?? err
 			})
 			if (response.status == 200) {
 				if (this.platform.showAPIMessages) {
@@ -217,7 +210,7 @@ class OrbitAPI {
 				return response.data
 			}
 		} catch (err) {
-			this.log.error('Error retrieving network topologies info \n%s', err)
+			throw err
 		}
 	}
 
@@ -255,18 +248,16 @@ class OrbitAPI {
 				},
 				responseType: 'json'
 			}).catch(err => {
-				this.log.error('Error getting graph %s', err.message)
+				this.log.error('Error getting graph - %s', err.message)
 				this.log.debug(JSON.stringify(err, null, 2))
 				if (err.response) {
-					this.log.warn(JSON.stringify(err.response.data, null, 2))
-					return err.response.data
+					this.log.debug(JSON.stringify(err.response.data, null, 2))
 				} else if (err.code) {
-					this.log.warn(err.code)
-					return err
+					this.log.debug(err.code)
 				} else {
 					this.log.warn('Error %s', err.name)
-					return err
 				}
+				throw err?.code?? err
 			})
 			if (response.status == 200) {
 				if (this.platform.showAPIMessages) {
@@ -275,7 +266,7 @@ class OrbitAPI {
 				return response.data
 			}
 		} catch (err) {
-			this.log.error('Error retrieving graph \n%s', err)
+			throw err
 		}
 	}
 
@@ -298,18 +289,16 @@ class OrbitAPI {
 				},
 				responseType: 'json'
 			}).catch(err => {
-				this.log.error('Error getting scheduled %s', err.message)
+				this.log.error('Error getting schedules - %s', err.message)
 				this.log.debug(JSON.stringify(err, null, 2))
 				if (err.response) {
-					this.log.warn(JSON.stringify(err.response.data, null, 2))
-					return err.response.data
+					this.log.debug(JSON.stringify(err.response.data, null, 2))
 				} else if (err.code) {
-					this.log.warn(err.code)
-					return err
+					this.log.debug(err.code)
 				} else {
 					this.log.warn('Error %s', err.name)
-					return err
 				}
+				throw err?.code?? err
 			})
 			if (response.status == 200) {
 				if (this.platform.showAPIMessages) {
@@ -318,7 +307,7 @@ class OrbitAPI {
 				return response.data
 			}
 		} catch (err) {
-			this.log.error('Error retrieving schedules \n%s', err)
+			throw err
 		}
 	}
 
@@ -469,12 +458,14 @@ class OrbitAPI {
 			this.log.debug('Opening WebSocket Connection')
 			this.wsp
 				.connect(token, device)
-				//.then(ws =>
-				//	ws.send({
-				//		event: 'app_connection',
-				//		orbit_session_token: token
-				//	})
-				//)
+				/*
+				.then(ws =>
+					ws.send({
+						event: 'app_connection',
+						orbit_session_token: token
+					})
+				)
+				*/
 				.catch(err => {
 					this.log.error('Error opening connection \n%s', err)
 				})
