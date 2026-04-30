@@ -537,6 +537,10 @@ class Orbit {
 										}
 									}
 									break
+								case 'rain_sensor_status':
+									//do nothing
+									this.log.debug('%s rain sensor event', deviceName)
+									break
 								case 'firmware_update_progress':
 									//do nothing
 									let progress = jsonBody.offset / jsonBody.size

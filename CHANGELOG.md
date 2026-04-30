@@ -2,6 +2,10 @@
 
 ## 1.2.50
 fix
+-  supress rain sensor events from logs
+
+## 1.2.50
+fix
 -  fix condition that caused leak sensor error message
 -  addresses Homebridge leak sensor battery charateristic warnings
 -  bumped dependencies
