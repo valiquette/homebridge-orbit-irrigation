@@ -130,7 +130,7 @@ class sensor {
 			.onGet(this.getStatusOccupancy.bind(this, occupancyStatus))
 	}
 
-	async getStatusLowBattery(batteryStatus, callback) {
+	async getStatusLowBattery(batteryStatus) {
 		let name = batteryStatus.getCharacteristic(Characteristic.Name).value
 		let batteryValue = batteryStatus.getCharacteristic(Characteristic.BatteryLevel).value
 		let currentValue = batteryStatus.getCharacteristic(Characteristic.StatusLowBattery).value
@@ -139,18 +139,17 @@ class sensor {
 			batteryStatus.setCharacteristic(Characteristic.StatusLowBattery, Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW)
 			currentValue = Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW
 		}
-		//callback(null, currentValue)
 
 		try {
 			let sensorResponse = await this.orbitapi.getDevice(this.platform.token, batteryStatus.subtype).catch(err => {
-				this.log.error('Failed to get device response %s', err)
+				throw (err)
 			})
 			this.log.debug('check sensor battery status %s %s', sensorResponse.location_name, sensorResponse.name)
 			sensorResponse.device_id = sensorResponse.id
 			sensorResponse.event = 'battery_status'
 			this.orbit.updateService.bind(this.platform)(JSON.stringify(sensorResponse))
 		} catch (err) {
-			this.log.error('Failed to read sensor', err)
+			this.log.warn('Failed to read sensor', err)
 		}
 		return currentValue
 	}
