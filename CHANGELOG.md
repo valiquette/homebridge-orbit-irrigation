@@ -1,5 +1,9 @@
 # Changes
 
+## 1.3.0
+refactor
+-  refactored in typescript
+
 ## 1.2.50
 fix
 -  supress rain sensor events from logs
