@@ -609,20 +609,20 @@ export default class Orbit {
 				break;
 			}
 			case 'flood_sensor': {
-				let FSAccessory: PlatformAccessory;
+				let floodAccessory: PlatformAccessory;
 				let leakService: any;
 				let tempService: any;
 				let batteryService: any;
 				let occupancySensor: any;
 				if (this.platform.showFloodSensor || this.platform.showTempSensor) {
-					FSAccessory = this.platform.accessories[index];
-					if (!FSAccessory) {
+					floodAccessory = this.platform.accessories[index];
+					if (!floodAccessory) {
 						return;
 					}
-					leakService = FSAccessory.getService(this.Service.LeakSensor);
-					tempService = FSAccessory.getService(this.Service.TemperatureSensor);
-					batteryService = FSAccessory.getService(this.Service.Battery);
-					occupancySensor = FSAccessory.getService(this.Service.OccupancySensor);
+					leakService = floodAccessory.getService(this.Service.LeakSensor);
+					tempService = floodAccessory.getService(this.Service.TemperatureSensor);
+					batteryService = floodAccessory.getService(this.Service.Battery);
+					occupancySensor = floodAccessory.getService(this.Service.OccupancySensor);
 					switch (jsonBody.event) {
 					case 'battery_status':
 						this.log.debug('update battery status %s %s to %s%', jsonBody.location_name, jsonBody.name, jsonBody.battery.percent);

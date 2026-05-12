@@ -33,8 +33,16 @@ export default class sensor {
 			.setCharacteristic(this.Characteristic.HardwareRevision, device.hardware_version || 'unknown')
 			.setCharacteristic(this.Characteristic.SoftwareRevision, pkg.version);
 		platformAccessory.getService(this.Service.AccessoryInformation)!.getCharacteristic(this.Characteristic.Identify)
-			.onSet(this.orbitapi.identify.bind(device));
+			//.onSet(this.setIdentify.bind(this, device));  //homebridge warning, need to use old method
+			.on('set', () => {
+				this.setIdentify.bind(this, device);
+			});
 		return platformAccessory;
+	}
+
+	setIdentify(device: any) {
+		(this.orbitapi.identify(this.platform.token, device));
+		return;
 	}
 
 	createBatteryService(device: any, platformAccessory: PlatformAccessory) {
