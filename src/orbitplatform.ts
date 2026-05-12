@@ -206,7 +206,7 @@ export default class OrbitPlatform implements DynamicPlatformPlugin {
 									if (this.accessories[index]) {
 										this.log.debug('Removed cached device', device.id);
 										this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [this.accessories[index]]);
-										delete this.accessories[index];
+										this.accessories.splice(index, 1);
 									}
 									return;
 								}
@@ -228,7 +228,7 @@ export default class OrbitPlatform implements DynamicPlatformPlugin {
 										if (this.accessories[index].getService(this.Service.AccessoryInformation)!.getCharacteristic(this.Characteristic.ProductData).value != 'Valve') {
 											this.log.warn('Changing from Irrigation to Valve, check room assignments in Homekit');
 											this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [this.accessories[index]]);
-											delete this.accessories[index];
+											this.accessories.splice(index, 1);
 										}
 									}
 									const valveAccessory = this.valve.createValveAccessory(newDevice, newDevice.zones[0], uuid, this.accessories[index]);
@@ -375,7 +375,7 @@ export default class OrbitPlatform implements DynamicPlatformPlugin {
 										if (this.accessories[index].getService(this.Service.AccessoryInformation)!.getCharacteristic(this.Characteristic.ProductData).value != 'Irrigation') {
 											this.log.warn('Changing from Valve to Irrigation, check room assignments in Homekit');
 											this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [this.accessories[index]]);
-											delete this.accessories[index];
+											this.accessories.splice(index, 1);
 										}
 									}
 
@@ -602,7 +602,7 @@ export default class OrbitPlatform implements DynamicPlatformPlugin {
 									if (this.accessories[index]) {
 										this.log.debug('Removed cached device', device.id);
 										this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [this.accessories[index]]);
-										delete this.accessories[index];
+										this.accessories.splice(index, 1);
 									}
 									return;
 								}
@@ -665,7 +665,7 @@ export default class OrbitPlatform implements DynamicPlatformPlugin {
 									if (this.accessories[index]) {
 										this.log.debug('Removed cached device', device.id);
 										this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [this.accessories[index]]);
-										delete this.accessories[index];
+										this.accessories.splice(index, 1);
 									}
 									return;
 								}
@@ -692,7 +692,7 @@ export default class OrbitPlatform implements DynamicPlatformPlugin {
 									if (this.accessories[index]) {
 										this.log.debug('Removed cached device', device.id);
 										this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [this.accessories[index]]);
-										delete this.accessories[index];
+										this.accessories.splice(index, 1);
 									}
 								}
 
