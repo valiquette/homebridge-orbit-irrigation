@@ -3,11 +3,10 @@ import type { Service, Characteristic } from 'homebridge';
 import OrbitPlatform from '../orbitplatform.js';
 
 export default class battery {
-	public readonly Service!: typeof Service;
-	public readonly Characteristic!: typeof Characteristic;
+	public readonly Service: typeof Service;
+	public readonly Characteristic: typeof Characteristic;
 	constructor(
 		private readonly platform: OrbitPlatform,
-
 		private log = platform.log,
 	) {
 		this.Service = platform.Service;

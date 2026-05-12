@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 //Pulbic site https://techsupport.orbitbhyve.com
 'use strict';
+import { Logging } from 'homebridge';
 import OrbitPlatform from './orbitplatform.js';
 import { PLUGIN_NAME, PLUGIN_VERSION } from './settings.js';
 import axios from 'axios';
@@ -17,7 +18,7 @@ const pingInterval = Math.floor(Math.random() * (maxPingInterval - minPingInterv
 export default class OrbitAPI {
 	constructor(
 		private readonly platform: OrbitPlatform,
-		private readonly log: any = platform.log,
+		private readonly log: Logging = platform.log,
 		private wsp = new WebSocketProxy(platform, log),
 	) {}
 
@@ -59,7 +60,7 @@ export default class OrbitAPI {
 				}
 				return response.data;
 			}
-		} catch (err) {
+		} catch (err: any) {
 			this.log.debug(err);
 			throw err;
 		}
@@ -98,7 +99,7 @@ export default class OrbitAPI {
 				}
 				return response.data;
 			}
-		} catch (err) {
+		} catch (err: any) {
 			this.log.debug(err);
 			throw err;
 		}
@@ -137,7 +138,7 @@ export default class OrbitAPI {
 				}
 				return response.data;
 			}
-		} catch (err) {
+		} catch (err: any) {
 			this.log.debug(err);
 			throw err;
 		}
@@ -176,7 +177,7 @@ export default class OrbitAPI {
 				}
 				return response.data;
 			}
-		} catch (err) {
+		} catch (err: any) {
 			this.log.debug(err);
 			throw err;
 		}
@@ -215,7 +216,7 @@ export default class OrbitAPI {
 				}
 				return response.data;
 			}
-		} catch (err) {
+		} catch (err: any) {
 			this.log.debug(err);
 			throw err;
 		}
@@ -272,7 +273,7 @@ export default class OrbitAPI {
 				}
 				return response.data;
 			}
-		} catch (err) {
+		} catch (err: any) {
 			this.log.debug(err);
 			throw err;
 		}
@@ -314,7 +315,7 @@ export default class OrbitAPI {
 				}
 				return response.data;
 			}
-		} catch (err) {
+		} catch (err: any) {
 			this.log.debug(err);
 			throw err;
 		}
@@ -489,7 +490,7 @@ export default class OrbitAPI {
 		}
 	}
 
-	onMessage(token: any, device: { name: any; id: any; }, listener: (arg0: any, arg1: any) => void) {
+	onMessage(token: any, device: any, listener: (arg0: any, arg1: any) => void) {
 		try {
 			this.log.debug('Adding Event Listener for %s', device.name);
 			this.wsp
@@ -507,7 +508,7 @@ export default class OrbitAPI {
 		}
 	}
 
-	sync(token: any, device: { name: any; id: any; }) {
+	sync(token: any, device: any) {
 		try {
 			this.log.debug('Syncing device %s info', device.name);
 			this.wsp
@@ -526,7 +527,7 @@ export default class OrbitAPI {
 		}
 	}
 
-	identify(token: any, device: { name: any; id: any; }) {
+	identify(token: any, device: any) {
 		try {
 			this.log.debug('Identify device %s info', device.name);
 			this.wsp
@@ -550,7 +551,7 @@ export default class OrbitAPI {
 export class WebSocketProxy {
 	constructor(
 		private readonly platform: OrbitPlatform,
-		private readonly log: any = platform.log,
+		private readonly log: Logging,
 		private rws: any = null,
 		private ping: any = null,
 	){}
@@ -580,9 +581,9 @@ export class WebSocketProxy {
 						minReconnectionDelay: Math.floor(1000 + Math.random() * 4000),
 						reconnectionDelayGrowFactor: 1.3,
 						minUptime: 5000,
-						connectionTimeout: 4000, //10000
+						connectionTimeout: 8000, //4000-10000
 						maxRetries: Infinity,
-						maxEnqueuedMessages: 1, //Infinity
+						maxEnqueuedMessages: 1,
 						startClosed: false,
 						debug: false,
 					};
@@ -593,9 +594,17 @@ export class WebSocketProxy {
 						switch (this.rws.readyState) {
 						case ws.CONNECTING:
 							setTimeout(() => {
-								//this.log.debug(data)
-								this.rws.send(data);
-							}, 1000);
+								if (typeof data === 'object') {
+									data = JSON.stringify(data, null, 2);
+								}
+								if (this.platform.showOutgoingMessages) {
+									//this.log.debug(JSON.parse(data).event)
+									if (JSON.parse(data).event != 'ping') {
+										this.log.debug('sending outgoing message %s', data);
+									}
+								}
+								origSend(data, options, callback);
+							}, 2000);
 							break;
 						case ws.OPEN:
 							if (typeof data === 'object') {
@@ -617,23 +626,6 @@ export class WebSocketProxy {
 						}
 					};
 
-					// Ping
-					this.ping = setInterval(() => {
-						switch (this.rws.readyState) {
-						case ws.CONNECTING:
-							clearInterval(this.ping);
-							break;
-						case ws.OPEN:
-							this.rws.send({ event: 'ping' });
-							break;
-						case ws.CLOSING:
-							break;
-						case ws.CLOSED:
-							clearInterval(this.ping);
-							break;
-						}
-					}, pingInterval);
-
 					this.rws.onopen = (event: { type: any; }) => {
 						try {
 							this.rws.send({
@@ -651,6 +643,10 @@ export class WebSocketProxy {
 								),
 							);
 							this.log.info('WebSocket opened');
+							// start ping
+							this.ping = setInterval(() => {
+								this.rws.send({ event: 'ping' });
+							}, pingInterval);
 							resolve(this.rws);
 						} catch (err) {
 							this.log.error('Error with open event \n%s', err);
@@ -672,7 +668,8 @@ export class WebSocketProxy {
 									2,
 								),
 							);
-							if (event.code == 1000 || event.code == 1005 || event.code == 1006) {
+							clearInterval(this.ping);
+							if ((event.code == 1000 || event.code == 1005 || event.code == 1006) && this.rws.readyState == 3) {
 								this.log.info('WebSocket closed');
 								this.log.warn('Devices will not sync until WebSocket connection is restored.');
 							}
@@ -718,14 +715,15 @@ export class WebSocketProxy {
 					this.log.error('caught', error.message);
 					if (this.rws) {
 						//check if connected
-						this.log.warn('error, closing connection');
-						this.rws.close((1000), ('Session terminated by client'));
-						//this.rws.close()
-						try {
-							clearInterval(this.ping);
-							this.rws = null;
-						} catch (err) {
-							this.log.error('Error closing connection \n%s', err);
+						if (this.rws.readyState == ws.OPEN) {
+							this.log.warn('error, closing connection');
+							this.rws.close((1000), ('Session terminated by client'));
+							try {
+								clearInterval(this.ping);
+								this.rws = null;
+							} catch (err) {
+								this.log.error('Error closing connection \n%s', err);
+							}
 						}
 					}
 				}

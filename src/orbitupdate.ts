@@ -1,17 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use strict';
-import type { PlatformAccessory, Service, Characteristic } from 'homebridge';
+import type { PlatformAccessory, Service, Characteristic, Logging } from 'homebridge';
 import OrbitAPI from './orbitapi.js';
 import OrbitPlatform from './orbitplatform.js';
 
 export default class Orbit {
-	public readonly Service!: typeof Service;
-	public readonly Characteristic!: typeof Characteristic;
+	public readonly Service: typeof Service;
+	public readonly Characteristic: typeof Characteristic;
 	constructor(
 		private readonly platform: OrbitPlatform,
 		private orbitapi = new OrbitAPI(platform),
-		private log = platform.log,
-		private config = platform.config,
+		private readonly log: Logging = platform.log,
 	) {
 		this.Service = platform.Service;
 		this.Characteristic = platform.Characteristic;

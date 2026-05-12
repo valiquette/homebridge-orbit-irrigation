@@ -4,8 +4,8 @@ import pkg from 'homebridge-orbit-irrigation/package.json' with { type: 'json' }
 import OrbitPlatform from '../orbitplatform.js';
 
 export default class bridge {
-	public readonly Service!: typeof Service;
-	public readonly Characteristic!: typeof Characteristic;
+	public readonly Service: typeof Service;
+	public readonly Characteristic: typeof Characteristic;
 	constructor(
 		private readonly platform: OrbitPlatform,
 		private log = platform.log,

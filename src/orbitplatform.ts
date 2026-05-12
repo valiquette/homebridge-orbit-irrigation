@@ -16,10 +16,10 @@ import basicSwitch from './devices/switch.js';
 
 export default class OrbitPlatform implements DynamicPlatformPlugin {
 	[x: string]: any;
-	public readonly Service!: typeof Service;
-	public readonly Characteristic!: typeof Characteristic;
+	public readonly Service: typeof Service;
+	public readonly Characteristic: typeof Characteristic;
 	public readonly HAPStatus!: typeof HAPStatus;
-	public readonly HapStatusError!: typeof HapStatusError;
+	public readonly HapStatusError: typeof HapStatusError;
 	public readonly accessories: PlatformAccessory[] = [];
 	constructor(
 		public readonly log: Logging,
@@ -28,21 +28,20 @@ export default class OrbitPlatform implements DynamicPlatformPlugin {
 	) {
 		this.Service = api.hap.Service;
 		this.Characteristic = api.hap.Characteristic;
-		//this.HAPStatus = api.hap.HAPStatus;
 		this.HapStatusError = api.hap.HapStatusError;
 		this.platform = this;
 		this.genUUID = api.hap.uuid.generate;
 
-		this.orbitapi = new OrbitAPI(this.platform);
-		this.orbit = new OrbitUpdate(this.platform);
-		this.battery = new battery(this.platform);
-		this.bridge = new bridge(this.platform);
-		this.irrigation = new irrigation(this.platform);
-		this.valve = new valve(this.platform);
-		this.sensor = new sensor(this.platform);
-		this.basicSwitch = new basicSwitch(this.platform);
-		this.log = log;
-		this.config = config;
+		this.log.debug('Finished initializing platform:', config.name);
+
+		this.orbitapi = new OrbitAPI(this);
+		this.orbit = new OrbitUpdate(this);
+		this.battery = new battery(this);
+		this.bridge = new bridge(this);
+		this.irrigation = new irrigation(this);
+		this.valve = new valve(this);
+		this.sensor = new sensor(this);
+		this.basicSwitch = new basicSwitch(this);
 		this.email = config.email;
 		this.password = config.password;
 		this.token;
@@ -79,7 +78,6 @@ export default class OrbitPlatform implements DynamicPlatformPlugin {
 		this.networkTopology;
 		this.networkTopologyId;
 		this.deviceGraph;
-		this.accessories = [];
 
 		if (!config.email || !config.password) {
 			this.log.error('Valid email and password are required in order to communicate with the b-hyve, please check the plugin config');
@@ -148,7 +146,7 @@ export default class OrbitPlatform implements DynamicPlatformPlugin {
 			});
 			this.log.debug('Found device graph for user id %s, %s', this.userId, this.deviceGraph);
 			this.deviceGraph.devices
-				.filter((device: { address: { line_1: any; line_2?: string; city?: string; state?: string; country?: string; } | undefined; is_connected: any; hardware_version: any; name: any; network_topology_id: any; mesh_id: any; location_name: any; }) => {
+				.filter((device: any) => {
 					if (device.address == undefined) {
 						device.address = {
 							line_1: 'undefined location',

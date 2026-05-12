@@ -6,8 +6,8 @@ import OrbitPlatform from '../orbitplatform.js';
 
 
 export default class valve {
-	public readonly Service!: typeof Service;
-	public readonly Characteristic!: typeof Characteristic;
+	public readonly Service: typeof Service;
+	public readonly Characteristic: typeof Characteristic;
 	constructor(
 		private readonly platform: OrbitPlatform,
 		private orbitapi = new OrbitAPI(platform),

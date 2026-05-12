@@ -1,10 +1,5 @@
 {
   "compilerOptions": {
-		"allowJs": true,
-    "checkJs": false,
-		"types": [
-      "node"
-    ],
 		"skipLibCheck": true,
     "target": "esnext",
     "lib": [
@@ -24,7 +19,7 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": [
-    //"eslint.config.js",
+    "eslint.config.js",
     "homebridge-ui",
     "src"
   ],
