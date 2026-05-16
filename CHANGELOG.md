@@ -1,5 +1,9 @@
 # Changes
 
+## 1.3.2
+fix
+-  fixed but when updating irrigation
+
 ## 1.3.1
 fix
 -  fixed but when updating hose timer
