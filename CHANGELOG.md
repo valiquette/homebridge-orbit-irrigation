@@ -1,5 +1,9 @@
 # Changes
 
+## 1.3.1
+fix
+-  fixed but when updating hose timer
+
 ## 1.3.0
 refactor
 -  refactored in typescript
