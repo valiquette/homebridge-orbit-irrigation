@@ -208,8 +208,9 @@ export default class irrigation {
 			this.log.debug('supressed duplicate call from IOS for %s, current value %s, new value %s', valveService.getCharacteristic(this.Characteristic.Name).value, value, valveService.getCharacteristic(this.Characteristic.Active).value);
 			return;
 		}
-		const uuid = this.platform.genUUID(device.id);
-		const irrigationAccessory: PlatformAccessory = this.platform.accessories[uuid];
+		const uuid: string = this.platform.genUUID(device.id);
+		const index: number = this.platform.accessories.findIndex(accessory => accessory.UUID === uuid);
+		const irrigationAccessory: PlatformAccessory = this.platform.accessories[index];
 		const irrigationSystemService: any = irrigationAccessory.getService(this.Service.IrrigationSystem);
 		// Set homekit state and prepare message for Orbit API
 		const runTime = valveService.getCharacteristic(this.Characteristic.SetDuration).value;
