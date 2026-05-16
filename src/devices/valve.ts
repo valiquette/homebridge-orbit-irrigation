@@ -181,7 +181,6 @@ export default class valve {
 		}
 		const uuid = this.platform.genUUID (device.id);
 		const valveAccessory = this.platform.accessories[uuid];
-		valveService = valveAccessory.getService(this.Service.Valve);
 		// Set homekit state and prepare message for Orbit API
 		const runTime = valveService.getCharacteristic(this.Characteristic.SetDuration).value;
 		if (value == this.Characteristic.Active.ACTIVE) {
