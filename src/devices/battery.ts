@@ -40,7 +40,7 @@ export default class battery {
 		batteryStatus.getCharacteristic(this.Characteristic.StatusLowBattery).onGet(this.getStatusLowBattery.bind(this, batteryStatus));
 	}
 
-	async getStatusLowBattery(batteryStatus: Service) {
+	getStatusLowBattery(batteryStatus: Service) {
 		const name = batteryStatus.getCharacteristic(this.Characteristic.Name).value;
 		const batteryValue = batteryStatus.getCharacteristic(this.Characteristic.BatteryLevel).value;
 		let currentValue = batteryStatus.getCharacteristic(this.Characteristic.StatusLowBattery).value;

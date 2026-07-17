@@ -174,7 +174,7 @@ export default class OrbitPlatform implements DynamicPlatformPlugin {
 							}
 						} else {
 							this.log.info('Offline device %s %s found at the configured location address: %s', device.hardware_version, device.name, device.address.line_1);
-							this.log.warn('%s is disconnected! This will show as non-responding in Homekit until the connection is restored.', device.name);
+							this.log.warn(`${device.name} disconnected at ${new Date().toLocaleString()}! This will show as non-responding in Homekit until the connection is restored.`);
 						}
 						locationMatch = true;
 					} else if (device.address.line_1 == 'undefined location' && (this.networkTopologyId == device.network_topology_id || this.meshId == device.mesh_id)) {
@@ -183,6 +183,7 @@ export default class OrbitPlatform implements DynamicPlatformPlugin {
 						} else {
 							this.log.info('Offline device %s %s found for the location: %s', device.hardware_version, device.name, device.location_name);
 							this.log.warn('%s is disconnected! This will show as non-responding in Homekit until the connection is restored.', device.name);
+							this.log.warn(`${device.name} is offline at ${new Date().toLocaleString()}! This will show as non-responding in Homekit until the connection is restored.`);
 						}
 						locationMatch = true;
 					} else {

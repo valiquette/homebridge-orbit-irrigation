@@ -198,7 +198,7 @@ export default class irrigation {
 		return currentValue;
 	}
 
-	async setValveValue(device: any, valveService: any, value: any) {
+	setValveValue(device: any, valveService: any, value: any) {
 		//this.log.debug('%s - Set Active state to %s', valveService.getCharacteristic(this.Characteristic.Name).value, value)
 		if (valveService.getCharacteristic(this.Characteristic.StatusFault).value == this.Characteristic.StatusFault.GENERAL_FAULT) {
 			throw new this.platform.HapStatusError(this.platform.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
@@ -286,7 +286,7 @@ export default class irrigation {
 		return;
 	}
 
-	async setValveSetDuration(valveService: any, value: number) {
+	setValveSetDuration(valveService: any, value: number) {
 		// Set default duration from Homekit value
 		valveService.getCharacteristic(this.Characteristic.SetDuration).updateValue(value);
 		this.log.info('Set %s duration for %s mins', valveService.getCharacteristic(this.Characteristic.Name).value, value / 60);

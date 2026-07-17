@@ -57,7 +57,7 @@ export default class basicSwitch {
 			.onSet(this.setSwitchValue.bind(this, device, switchService));
 	}
 
-	async setSwitchValue(device: any, switchService: any, value: any) {
+	setSwitchValue(device: any, switchService: any, value: any) {
 		if (switchService.getCharacteristic(this.Characteristic.StatusFault).value == this.Characteristic.StatusFault.GENERAL_FAULT) {
 			throw new this.platform.HapStatusError(this.platform.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
 		}
@@ -96,7 +96,7 @@ export default class basicSwitch {
 		return;
 	}
 
-	async getSwitchValue(switchService: any) {
+	getSwitchValue(switchService: any) {
 		let currentValue;
 		if (switchService.getCharacteristic(this.Characteristic.StatusFault).value == this.Characteristic.StatusFault.GENERAL_FAULT) {
 			throw new this.platform.HapStatusError(this.platform.HAPStatus.SERVICE_COMMUNICATION_FAILURE);

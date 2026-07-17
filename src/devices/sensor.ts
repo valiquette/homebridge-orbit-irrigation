@@ -143,7 +143,7 @@ export default class sensor {
 			.onGet(this.getStatusOccupancy.bind(this, occupancyStatus));
 	}
 
-	async getStatusLowBattery(batteryStatus: any) {
+	getStatusLowBattery(batteryStatus: any) {
 		const name = batteryStatus.getCharacteristic(this.Characteristic.Name).value;
 		const batteryValue = batteryStatus.getCharacteristic(this.Characteristic.BatteryLevel).value;
 		let currentValue = batteryStatus.getCharacteristic(this.Characteristic.StatusLowBattery).value;
@@ -152,7 +152,11 @@ export default class sensor {
 			batteryStatus.setCharacteristic(this.Characteristic.StatusLowBattery, this.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW);
 			currentValue = this.platform.Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW;
 		}
+		this.updateStatus(batteryStatus)
+		return currentValue;
+	}
 
+	async updateStatus(batteryStatus: any) {
 		try {
 			const sensorResponse = await this.orbitapi.getDevice(this.platform.token, batteryStatus.subtype).catch(err => {
 				throw (err);
@@ -164,10 +168,9 @@ export default class sensor {
 		} catch (err) {
 			this.log.warn('Failed to read sensor', err);
 		}
-		return currentValue;
 	}
 
-	async getLeakStatus(leakSensor: any) {
+	getLeakStatus(leakSensor: any) {
 		if (leakSensor.getCharacteristic(this.Characteristic.StatusFault).value == this.Characteristic.StatusFault.GENERAL_FAULT) {
 			if (leakSensor.getCharacteristic(this.Characteristic.StatusActive).value == true) {
 				this.log.debug('%s, Fault Detected', leakSensor.getCharacteristic(this.Characteristic.Name).value);
@@ -187,7 +190,7 @@ export default class sensor {
 		}
 	}
 
-	async getTempStatus(tempSensor: any) {
+	getTempStatus(tempSensor: any) {
 		if (tempSensor.getCharacteristic(this.Characteristic.StatusFault).value == this.Characteristic.StatusFault.GENERAL_FAULT) {
 			if (tempSensor.getCharacteristic(this.Characteristic.StatusActive).value == true) {
 				this.log.debug('%s, Fault Detected', tempSensor.getCharacteristic(this.Characteristic.Name).value);
@@ -205,7 +208,7 @@ export default class sensor {
 		}
 	}
 
-	async getStatusOccupancy(OccupancySensor: any) {
+	getStatusOccupancy(OccupancySensor: any) {
 		if (OccupancySensor.getCharacteristic(this.Characteristic.StatusFault).value == this.Characteristic.StatusFault.GENERAL_FAULT) {
 			if (OccupancySensor.getCharacteristic(this.Characteristic.StatusActive).value == true) {
 				this.log.debug('%s, Fault Detected', OccupancySensor.getCharacteristic(this.Characteristic.Name).value);
